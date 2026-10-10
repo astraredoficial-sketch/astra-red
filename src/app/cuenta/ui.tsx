@@ -19,7 +19,7 @@ export function CuentaUi() {
     id: "acc-1",
     name: "Cargando...",
     email: "",
-    avatar: "??",
+    avatar: "🧙‍♂️",
     location: "",
     membership: "free" as const,
     joinedDate: "",
@@ -43,7 +43,7 @@ export function CuentaUi() {
     setAccounts(updated);
     saveAccounts(updated);
     setShowVipModal(false);
-    alert("?? ¡Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4$4$4$4.99/mes).");
+    alert("¡Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4.99/mes).");
   };
 
   const handleLogout = () => {
@@ -57,7 +57,7 @@ export function CuentaUi() {
   // ELIMINAR CUENTA Y BORRAR TODOS LOS DATOS
   const handleDeleteAccount = () => {
     const confirmation = confirm(
-      "?? ¿ESTÁS COMPLETAMENTE SEGURO/A?\n\nEsta acción borrará permanentemente tu cuenta (" +
+      "¿ESTÁS COMPLETAMENTE SEGURO/A?\n\nEsta acción borrará permanentemente tu cuenta (" +
         currentAccount.name +
         "), tus correos, cartas astrales y configuraciones. Tendrás que inscribirte nuevamente desde cero."
     );
@@ -72,13 +72,13 @@ export function CuentaUi() {
       remaining[0].isCurrent = true;
       setAccounts(remaining);
       saveAccounts(remaining);
-      alert("? Cuenta eliminada con éxito. Se ha cambiado a tu otra cuenta guardada.");
+      alert("✅ Cuenta eliminada con éxito. Se ha cambiado a tu otra cuenta guardada.");
     } else {
       // Borrar completamente el almacenamiento local y redirigir al registro desde cero
       if (typeof window !== "undefined") {
         localStorage.clear();
       }
-      alert("? Tu cuenta y todos tus datos astrales han sido eliminados de forma definitiva.");
+      alert("🗑️ Tu cuenta y todos tus datos astrales han sido eliminados de forma definitiva.");
       window.location.href = "/onboarding";
     }
   };
@@ -108,12 +108,12 @@ export function CuentaUi() {
                       : "bg-slate-800 text-slate-300 border border-slate-700")
                   }
                 >
-                  {currentAccount.membership === "vip" ? "? ASTRA VIP" : "?? PLAN FREE"}
+                  {currentAccount.membership === "vip" ? "ASTRA VIP" : "✨ PLAN FREE"}
                 </span>
               </div>
               <p className="text-xs text-slate-400">{currentAccount.email}</p>
               <p className="text-[11px] text-amber-300 font-mono">
-                ?? {currentAccount.location} · Miembro desde {currentAccount.joinedDate}
+                📍 {currentAccount.location} · Miembro desde {currentAccount.joinedDate}
               </p>
             </div>
           </div>
@@ -124,7 +124,7 @@ export function CuentaUi() {
                 onClick={() => setShowVipModal(true)}
                 className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-xs font-black rounded-xl transition cursor-pointer shadow-lg uppercase tracking-wider"
               >
-                ? Cambiar a VIP
+                ⭐ Cambiar a VIP
               </button>
             ) : (
               <button
@@ -147,7 +147,7 @@ export function CuentaUi() {
           <div className="md:col-span-2 space-y-4">
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
               <h3 className="text-xs font-bold font-serif text-amber-400 uppercase tracking-widest flex items-center gap-2">
-                <span>?</span> DETALLES DE TU MEMBRESÍA
+                <span>💎</span> DETALLES DE TU MEMBRESÍA
               </h3>
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs">
                 <div className="flex justify-between items-center">
@@ -169,7 +169,7 @@ export function CuentaUi() {
 
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
               <h3 className="text-xs font-bold font-serif text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <span>??</span> INFORMACIÓN PERSONAL
+                <span>👤</span> INFORMACIÓN PERSONAL
               </h3>
               <div className="space-y-3 text-xs">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -207,21 +207,21 @@ export function CuentaUi() {
                   href="/"
                   className="w-full py-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>??</span> Salir a Inicio (Home)
+                  <span>🏠</span> Salir a Inicio (Home)
                 </Link>
 
                 <button
                   onClick={() => setShowSwitchModal(true)}
                   className="w-full py-3 bg-purple-950/40 hover:bg-purple-900/40 border border-purple-500/30 text-purple-300 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>??</span> Cambiar de Cuenta
+                  <span>🔄</span> Cambiar de Cuenta
                 </button>
 
                 <button
                   onClick={handleLogout}
                   className="w-full py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>??</span> Cerrar Sesión
+                  <span>🚪</span> Cerrar Sesión
                 </button>
 
                 {/* BOTÓN ELIMINAR CUENTA */}
@@ -229,7 +229,7 @@ export function CuentaUi() {
                   onClick={handleDeleteAccount}
                   className="w-full py-3 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 font-extrabold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>???</span> Eliminar Cuenta
+                  <span>🗑️</span> Eliminar Cuenta
                 </button>
               </div>
             </div>
@@ -246,7 +246,7 @@ export function CuentaUi() {
                   onClick={() => setShowSwitchModal(false)}
                   className="text-slate-400 hover:text-white cursor-pointer text-sm font-bold"
                 >
-                  ?
+                  ×
                 </button>
               </div>
 
