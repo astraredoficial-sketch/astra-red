@@ -1,28 +1,30 @@
-ï»¿"use client";
+"use client";
 
+import { Country, City } from 'country-state-city';
 import React, { useState } from "react";
+import { Country, City } from 'country-state-city';
 import { getAllAccounts, saveAccounts } from "@/lib/userStore";
 
 const CITIES_LIST = [
   // Venezuela
-  { name: "Barinas, Barinas, Venezuela", coords: "8.6226Â° N, 70.2075Â° W" },
-  { name: "Caracas, Distrito Capital, Venezuela", coords: "10.4806Â° N, 66.9036Â° W" },
-  { name: "MÃ©rida, MÃ©rida, Venezuela", coords: "8.5983Â° N, 71.1450Â° W" },
-  { name: "Maracaibo, Zulia, Venezuela", coords: "10.6427Â° N, 71.6125Â° W" },
-  { name: "Valencia, Carabobo, Venezuela", coords: "10.1621Â° N, 68.0077Â° W" },
-  { name: "Barquisimeto, Lara, Venezuela", coords: "10.0678Â° N, 69.3474Â° W" },
-  { name: "San CristÃ³bal, TÃ¡chira, Venezuela", coords: "7.7669Â° N, 72.2250Â° W" },
-  { name: "Puerto La Cruz, AnzoÃ¡tegui, Venezuela", coords: "10.2117Â° N, 64.6322Â° W" },
-  { name: "MaturÃ­n, Monagas, Venezuela", coords: "9.7456Â° N, 63.1832Â° W" },
-  { name: "Ciudad BolÃ­var, BolÃ­var, Venezuela", coords: "8.1256Â° N, 63.5453Â° W" },
+  { name: "Barinas, Barinas, Venezuela", coords: "8.6226° N, 70.2075° W" },
+  { name: "Caracas, Distrito Capital, Venezuela", coords: "10.4806° N, 66.9036° W" },
+  { name: "Mérida, Mérida, Venezuela", coords: "8.5983° N, 71.1450° W" },
+  { name: "Maracaibo, Zulia, Venezuela", coords: "10.6427° N, 71.6125° W" },
+  { name: "Valencia, Carabobo, Venezuela", coords: "10.1621° N, 68.0077° W" },
+  { name: "Barquisimeto, Lara, Venezuela", coords: "10.0678° N, 69.3474° W" },
+  { name: "San Cristóbal, Táchira, Venezuela", coords: "7.7669° N, 72.2250° W" },
+  { name: "Puerto La Cruz, Anzoátegui, Venezuela", coords: "10.2117° N, 64.6322° W" },
+  { name: "Maturín, Monagas, Venezuela", coords: "9.7456° N, 63.1832° W" },
+  { name: "Ciudad Bolívar, Bolívar, Venezuela", coords: "8.1256° N, 63.5453° W" },
   // Internacionales
-  { name: "BogotÃ¡, Colombia", coords: "4.7110Â° N, 74.0721Â° W" },
-  { name: "Madrid, EspaÃ±a", coords: "40.4168Â° N, 3.7038Â° W" },
-  { name: "Buenos Aires, Argentina", coords: "34.6037Â° S, 58.3816Â° W" },
-  { name: "Ciudad de MÃ©xico, MÃ©xico", coords: "19.4326Â° N, 99.1332Â° W" },
-  { name: "Miami, Estados Unidos", coords: "25.7617Â° N, 80.1918Â° W" },
-  { name: "Santiago, Chile", coords: "33.4489Â° S, 70.6693Â° W" },
-  { name: "Lima, PerÃº", coords: "12.0464Â° S, 77.0428Â° W" }
+  { name: "Bogotá, Colombia", coords: "4.7110° N, 74.0721° W" },
+  { name: "Madrid, España", coords: "40.4168° N, 3.7038° W" },
+  { name: "Buenos Aires, Argentina", coords: "34.6037° S, 58.3816° W" },
+  { name: "Ciudad de México, México", coords: "19.4326° N, 99.1332° W" },
+  { name: "Miami, Estados Unidos", coords: "25.7617° N, 80.1918° W" },
+  { name: "Santiago, Chile", coords: "33.4489° S, 70.6693° W" },
+  { name: "Lima, Perú", coords: "12.0464° S, 77.0428° W" }
 ];
 
 export function OnboardingUi() {
@@ -52,7 +54,7 @@ export function OnboardingUi() {
           email: email.trim() || acc.email,
           password: password || acc.password,
           location: selectedLocation,
-          isComplete: true, // Â¡Registro completado con Ã©xito!
+          isComplete: true, // ¡Registro completado con éxito!
         };
       }
       return acc;
@@ -74,7 +76,7 @@ export function OnboardingUi() {
 
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in">
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white">Â¿CÃ³mo te llamas?</h1>
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white">¿Cómo te llamas?</h1>
             <p className="text-xs text-slate-400">Personaliza tu identidad en tu universo privado.</p>
             
             <div className="space-y-1">
@@ -102,10 +104,10 @@ export function OnboardingUi() {
         {step === 2 && (
           <div className="space-y-4 animate-in fade-in">
             <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white">Credenciales de acceso</h1>
-            <p className="text-xs text-slate-400">Configura tu correo y contraseÃ±a segura.</p>
+            <p className="text-xs text-slate-400">Configura tu correo y contraseña segura.</p>
 
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-300">Correo electrÃ³nico</label>
+              <label className="block text-xs font-semibold text-slate-300">Correo electrónico</label>
               <input
                 type="email"
                 required
@@ -117,11 +119,11 @@ export function OnboardingUi() {
             </div>
 
             <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-300">ContraseÃ±a</label>
+              <label className="block text-xs font-semibold text-slate-300">Contraseña</label>
               <input
                 type="password"
                 required
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
@@ -134,11 +136,11 @@ export function OnboardingUi() {
                 onClick={() => setStep(1)}
                 className="w-1/3 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl transition text-xs"
               >
-                AtrÃ¡s
+                Atrás
               </button>
               <button
                 type="button"
-                onClick={() => { if(email && password) setStep(3); else alert("Completa correo y contraseÃ±a."); }}
+                onClick={() => { if(email && password) setStep(3); else alert("Completa correo y contraseña."); }}
                 className="w-2/3 py-3 bg-gradient-to-r from-rose-500 to-rose-600 text-white font-extrabold rounded-2xl transition text-xs shadow-xl"
               >
                 Siguiente
@@ -149,11 +151,11 @@ export function OnboardingUi() {
 
         {step === 3 && (
           <form onSubmit={handleFinish} className="space-y-4 animate-in fade-in">
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white">Â¿DÃ³nde naciste?</h1>
-            <p className="text-xs text-slate-400">Selecciona tu ciudad natal para calcular efemÃ©rides y carta natal con precisiÃ³n.</p>
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white">¿Dónde naciste?</h1>
+            <p className="text-xs text-slate-400">Selecciona tu ciudad natal para calcular efemérides y carta natal con precisión.</p>
 
             <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-300">Buscar ciudad o paÃ­s:</label>
+              <label className="block text-xs font-semibold text-slate-300">Buscar ciudad o país:</label>
               <input
                 type="text"
                 placeholder="Escribe para filtrar (ej. Barinas, Caracas...)"
@@ -180,7 +182,7 @@ export function OnboardingUi() {
             </div>
 
             <div className="p-3 bg-purple-950/40 border border-purple-500/30 rounded-2xl text-xs text-purple-200">
-              ğŸ“ UbicaciÃ³n seleccionada: <strong className="text-white">{selectedLocation}</strong>
+              ?? Ubicación seleccionada: <strong className="text-white">{selectedLocation}</strong>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -189,7 +191,7 @@ export function OnboardingUi() {
                 onClick={() => setStep(2)}
                 className="w-1/3 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl transition text-xs"
               >
-                AtrÃ¡s
+                Atrás
               </button>
               <button
                 type="submit"
@@ -205,3 +207,4 @@ export function OnboardingUi() {
     </div>
   );
 }
+

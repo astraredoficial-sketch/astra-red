@@ -1,4 +1,4 @@
-ï»¿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect } from "react";
@@ -12,7 +12,7 @@ export function MensajesUi() {
 
   useEffect(() => {
     if (ready && !me) {
-      window.location.replace("/onboarding");
+      // // window.location.replace("/onboarding");
     }
   }, [ready, me]);
 
@@ -47,27 +47,27 @@ export function MensajesUi() {
         <h1 className="mt-2 font-serif text-4xl">Mensajes</h1>
 
         <p className="mt-3 text-sm leading-6 text-muted">
-          Las conexiones empiezan con una conversaciÃ³n.
+          Las conexiones empiezan con una conversación.
         </p>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs leading-5 text-muted">
           Prototipo local: los mensajes se guardan en este navegador.
-          TodavÃ­a no se envÃ­an a otros usuarios.
+          Todavía no se envían a otros usuarios.
         </div>
 
         {conversations.length === 0 ? (
           <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-thread/30 bg-thread/10 text-3xl text-thread">
-              â™¡
+              ?
             </div>
 
             <h2 className="mt-5 font-serif text-2xl">
-              Tu prÃ³xima conversaciÃ³n empieza aquÃ­
+              Tu próxima conversación empieza aquí
             </h2>
 
             <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted">
               Explora los destinos y abre el perfil de una persona
-              para iniciar una conversaciÃ³n de prueba.
+              para iniciar una conversación de prueba.
             </p>
 
             <Link
@@ -116,7 +116,7 @@ export function MensajesUi() {
                   </div>
 
                   <span aria-hidden="true" className="text-thread">
-                    â€º
+                    ›
                   </span>
                 </Link>
               );
@@ -127,4 +127,5 @@ export function MensajesUi() {
     </div>
   );
 }
+
 

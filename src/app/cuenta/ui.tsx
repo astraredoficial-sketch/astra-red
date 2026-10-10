@@ -1,4 +1,4 @@
-Ôªø"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -18,7 +18,7 @@ export function CuentaUi() {
     id: "acc-1",
     name: "Cargando...",
     email: "",
-    avatar: "üë§",
+    avatar: "??",
     location: "",
     membership: "free" as const,
     joinedDate: "",
@@ -42,11 +42,11 @@ export function CuentaUi() {
     setAccounts(updated);
     saveAccounts(updated);
     setShowVipModal(false);
-    alert("üéâ ¬°Felicidades " + currentAccount.name + "! Has activado Astra Red VIP (.99/mes).");
+    alert("?? °Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4$4.99/mes).");
   };
 
   const handleLogout = () => {
-    if (confirm("¬øDeseas cerrar sesi√≥n? Se requerir√° tu correo y contrase√±a para ingresar de nuevo.")) {
+    if (confirm("øDeseas cerrar sesiÛn? Se requerir· tu correo y contraseÒa para ingresar de nuevo.")) {
       const resetAccounts = accounts.map((acc) => ({ ...acc, isCurrent: false }));
       saveAccounts(resetAccounts);
       window.location.href = "/";
@@ -56,9 +56,9 @@ export function CuentaUi() {
   // ELIMINAR CUENTA Y BORRAR TODOS LOS DATOS
   const handleDeleteAccount = () => {
     const confirmation = confirm(
-      "‚ö†Ô∏è ¬øEST√ÅS COMPLETAMENTE SEGURO/A?\n\nEsta acci√≥n borrar√° permanentemente tu cuenta (" +
+      "?? øEST¡S COMPLETAMENTE SEGURO/A?\n\nEsta acciÛn borrar· permanentemente tu cuenta (" +
         currentAccount.name +
-        "), tus correos, cartas astrales y configuraciones. Tendr√°s que inscribirte nuevamente desde cero."
+        "), tus correos, cartas astrales y configuraciones. Tendr·s que inscribirte nuevamente desde cero."
     );
 
     if (!confirmation) return;
@@ -71,13 +71,13 @@ export function CuentaUi() {
       remaining[0].isCurrent = true;
       setAccounts(remaining);
       saveAccounts(remaining);
-      alert("‚úÖ Cuenta eliminada con √©xito. Se ha cambiado a tu otra cuenta guardada.");
+      alert("? Cuenta eliminada con Èxito. Se ha cambiado a tu otra cuenta guardada.");
     } else {
       // Borrar completamente el almacenamiento local y redirigir al registro desde cero
       if (typeof window !== "undefined") {
         localStorage.clear();
       }
-      alert("‚úÖ Tu cuenta y todos tus datos astrales han sido eliminados de forma definitiva.");
+      alert("? Tu cuenta y todos tus datos astrales han sido eliminados de forma definitiva.");
       window.location.href = "/onboarding";
     }
   };
@@ -92,7 +92,7 @@ export function CuentaUi() {
           <div className="bg-gradient-to-b from-slate-900 via-purple-950/60 to-slate-950 border border-amber-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center space-y-6 shadow-2xl relative">
             
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-[11px] px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-              <span>‚≠ê</span> ACCESO RESTRINGIDO A PLAN FREE
+              <span>?</span> ACCESO RESTRINGIDO A PLAN FREE
             </div>
 
             <div className="space-y-2">
@@ -100,22 +100,22 @@ export function CuentaUi() {
                 Hola {currentAccount.name}, Desbloquea tu VIP
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
-                Tu cuenta actualmente est√° en el <span className="text-rose-400 font-bold">Plan Free</span>. Suscr√≠bete a Astra Red VIP para calcular efem√©rides astron√≥micas exactas.
+                Tu cuenta actualmente est· en el <span className="text-rose-400 font-bold">Plan Free</span>. SuscrÌbete a Astra Red VIP para calcular efemÈrides astronÛmicas exactas.
               </p>
             </div>
 
             <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-left text-xs space-y-2.5">
               <div className="flex items-center gap-2 text-slate-200">
-                <span className="text-amber-400 font-bold">‚úì</span>
-                <span>Motor de B√∫squeda Cient√≠fico de Efem√©rides Celestiales.</span>
+                <span className="text-amber-400 font-bold">?</span>
+                <span>Motor de B˙squeda CientÌfico de EfemÈrides Celestiales.</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200">
-                <span className="text-amber-400 font-bold">‚úì</span>
+                <span className="text-amber-400 font-bold">?</span>
                 <span>Notificaciones de Alertas Activas ilimitadas.</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200">
-                <span className="text-amber-400 font-bold">‚úì</span>
-                <span>An√°lisis ilimitado de Sinastr√≠a C√≥smica VIP.</span>
+                <span className="text-amber-400 font-bold">?</span>
+                <span>An·lisis ilimitado de SinastrÌa CÛsmica VIP.</span>
               </div>
             </div>
 
@@ -126,14 +126,14 @@ export function CuentaUi() {
                 </span>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Mensual</span>
-                  <span className="text-2xl font-black font-serif text-amber-300">.99 <span className="text-xs font-normal text-slate-400">/ mes</span></span>
+                  <span className="text-2xl font-black font-serif text-amber-300">$4.99 <span className="text-xs font-normal text-slate-400">/ mes</span></span>
                 </div>
               </div>
 
               <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between text-left opacity-80 hover:opacity-100 transition">
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Anual</span>
-                  <span className="text-2xl font-black font-serif text-white">.99 <span className="text-xs font-normal text-slate-400">/ a√±o</span></span>
+                  <span className="text-2xl font-black font-serif text-white">$4.99 <span className="text-xs font-normal text-slate-400">/ aÒo</span></span>
                 </div>
               </div>
             </div>
@@ -143,14 +143,14 @@ export function CuentaUi() {
                 onClick={handleUpgradeToVip}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-rose-500 hover:opacity-90 text-slate-950 font-extrabold rounded-2xl transition shadow-xl uppercase tracking-wider text-xs cursor-pointer transform hover:scale-[1.02]"
               >
-                ‚≠ê Suscribirme Ahora (.99/mes)
+                ? Suscribirme Ahora ($4$4.99/mes)
               </button>
 
               <button
                 onClick={() => setShowVipModal(false)}
                 className="block w-full py-2.5 text-slate-400 hover:text-white text-xs font-semibold transition cursor-pointer"
               >
-                Volver a la secci√≥n Cuenta
+                Volver a la secciÛn Cuenta
               </button>
             </div>
           </div>
@@ -175,12 +175,12 @@ export function CuentaUi() {
                       : "bg-slate-800 text-slate-300 border border-slate-700")
                   }
                 >
-                  {currentAccount.membership === "vip" ? "‚≠ê ASTRA VIP" : "üå± PLAN FREE"}
+                  {currentAccount.membership === "vip" ? "? ASTRA VIP" : "?? PLAN FREE"}
                 </span>
               </div>
               <p className="text-xs text-slate-400">{currentAccount.email}</p>
               <p className="text-[11px] text-amber-300 font-mono">
-                üìç {currentAccount.location} ¬∑ Miembro desde {currentAccount.joinedDate}
+                ?? {currentAccount.location} ∑ Miembro desde {currentAccount.joinedDate}
               </p>
             </div>
           </div>
@@ -191,7 +191,7 @@ export function CuentaUi() {
                 onClick={() => setShowVipModal(true)}
                 className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-xs font-black rounded-xl transition cursor-pointer shadow-lg uppercase tracking-wider"
               >
-                ‚≠ê Cambiar a VIP
+                ? Cambiar a VIP
               </button>
             ) : (
               <button
@@ -214,7 +214,7 @@ export function CuentaUi() {
           <div className="md:col-span-2 space-y-4">
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
               <h3 className="text-xs font-bold font-serif text-amber-400 uppercase tracking-widest flex items-center gap-2">
-                <span>‚≠ê</span> DETALLES DE TU MEMBRES√çA
+                <span>?</span> DETALLES DE TU MEMBRESÕA
               </h3>
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs">
                 <div className="flex justify-between items-center">
@@ -228,15 +228,15 @@ export function CuentaUi() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Motor Astron√≥mico:</span>
-                  <span className="text-emerald-400 font-bold">Activo (SunCalc & Efem√©rides)</span>
+                  <span className="text-slate-400">Motor AstronÛmico:</span>
+                  <span className="text-emerald-400 font-bold">Activo (SunCalc & EfemÈrides)</span>
                 </div>
               </div>
             </div>
 
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
               <h3 className="text-xs font-bold font-serif text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <span>‚öôÔ∏è</span> INFORMACI√ìN PERSONAL
+                <span>??</span> INFORMACI”N PERSONAL
               </h3>
               <div className="space-y-3 text-xs">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -250,7 +250,7 @@ export function CuentaUi() {
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1">Correo Electr√≥nico</label>
+                    <label className="block text-slate-400 mb-1">Correo ElectrÛnico</label>
                     <input
                       type="email"
                       key={currentAccount.id + "-email"}
@@ -266,7 +266,7 @@ export function CuentaUi() {
           <div className="space-y-4 md:col-span-1">
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
               <h3 className="text-xs font-bold font-serif text-slate-400 uppercase tracking-widest">
-                SESI√ìN Y ACCESOS
+                SESI”N Y ACCESOS
               </h3>
 
               <div className="space-y-2 text-xs">
@@ -274,29 +274,29 @@ export function CuentaUi() {
                   href="/"
                   className="w-full py-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>üè†</span> Salir a Inicio (Home)
+                  <span>??</span> Salir a Inicio (Home)
                 </Link>
 
                 <button
                   onClick={() => setShowSwitchModal(true)}
                   className="w-full py-3 bg-purple-950/40 hover:bg-purple-900/40 border border-purple-500/30 text-purple-300 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>üîÑ</span> Cambiar de Cuenta
+                  <span>??</span> Cambiar de Cuenta
                 </button>
 
                 <button
                   onClick={handleLogout}
                   className="w-full py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>üö™</span> Cerrar Sesi√≥n
+                  <span>??</span> Cerrar SesiÛn
                 </button>
 
-                {/* BOT√ìN ELIMINAR CUENTA */}
+                {/* BOT”N ELIMINAR CUENTA */}
                 <button
                   onClick={handleDeleteAccount}
                   className="w-full py-3 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 font-extrabold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>üóëÔ∏è</span> Eliminar Cuenta
+                  <span>???</span> Eliminar Cuenta
                 </button>
               </div>
             </div>
@@ -313,7 +313,7 @@ export function CuentaUi() {
                   onClick={() => setShowSwitchModal(false)}
                   className="text-slate-400 hover:text-white cursor-pointer text-sm font-bold"
                 >
-                  ‚úï
+                  ?
                 </button>
               </div>
 
@@ -351,3 +351,4 @@ export function CuentaUi() {
     </div>
   );
 }
+

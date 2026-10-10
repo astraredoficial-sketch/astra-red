@@ -1,4 +1,4 @@
-Ôªø"use client";
+"use client";
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -34,7 +34,7 @@ export function ConversacionUi() {
 
   useEffect(() => {
     if (ready && !me) {
-      router.replace("/onboarding");
+      // router.replace("/onboarding");
     }
   }, [ready, me, router]);
 
@@ -46,7 +46,7 @@ export function ConversacionUi() {
   if (!ready || !me) {
     return (
       <div className="grid flex-1 place-items-center text-muted">
-        Abriendo conversaci√≥n...
+        Abriendo conversaciÛn...
       </div>
     );
   }
@@ -56,7 +56,7 @@ export function ConversacionUi() {
       <div className="grid flex-1 place-items-center px-6 text-center">
         <div>
           <p className="text-muted">
-            No encontramos esta conversaci√≥n.
+            No encontramos esta conversaciÛn.
           </p>
           <Link href="/mensajes" className="mt-4 inline-block text-thread">
             Volver a mensajes
@@ -97,7 +97,7 @@ export function ConversacionUi() {
             aria-label="Volver a mensajes"
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 hover:bg-white/5"
           >
-            ‚Üê
+            ?
           </Link>
 
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-astral/40 bg-gradient-to-br from-astral/40 to-thread/20 font-serif text-xl">
@@ -112,29 +112,29 @@ export function ConversacionUi() {
               href={`/conectar/${other.id}`}
               className="text-xs text-astral hover:text-thread"
             >
-              Ver sinastr√≠a
+              Ver sinastrÌa
             </Link>
           </div>
         </header>
 
         <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-5 text-muted">
-          Chat de prueba: solo t√∫ puedes ver los mensajes guardados
+          Chat de prueba: solo t˙ puedes ver los mensajes guardados
           en este navegador. La otra persona no los recibe.
         </div>
 
         <section
-          aria-label="Mensajes de la conversaci√≥n"
+          aria-label="Mensajes de la conversaciÛn"
           aria-live="polite"
           className="my-4 flex min-h-[280px] flex-1 flex-col gap-3 overflow-y-auto rounded-2xl border border-white/[0.06] bg-black/10 p-3 sm:p-5"
         >
           {messages.length === 0 ? (
             <div className="m-auto max-w-xs py-10 text-center">
-              <div className="text-3xl text-thread">‚ú¶</div>
+              <div className="text-3xl text-thread">?</div>
               <h2 className="mt-3 font-serif text-xl">
                 Abre el hilo
               </h2>
               <p className="mt-2 text-sm leading-6 text-muted">
-                Escribe el primer mensaje y empieza la conversaci√≥n.
+                Escribe el primer mensaje y empieza la conversaciÛn.
               </p>
             </div>
           ) : (
@@ -202,12 +202,12 @@ export function ConversacionUi() {
               className="glow-thread grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-thread text-lg text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
               aria-label="Enviar mensaje"
             >
-              ‚Üë
+              ?
             </button>
           </div>
 
           <div className="flex items-center justify-between px-3 pb-1 text-[10px] text-muted">
-            <span>Enter para enviar con el bot√≥n</span>
+            <span>Enter para enviar con el botÛn</span>
             <span>{draft.length}/2000</span>
           </div>
 
