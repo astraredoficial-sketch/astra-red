@@ -47,12 +47,12 @@ export function MensajesUi() {
         <h1 className="mt-2 font-serif text-4xl">Mensajes</h1>
 
         <p className="mt-3 text-sm leading-6 text-muted">
-          Las conexiones empiezan con una conversación.
+          Las conexiones empiezan con una conversaciÃ³n.
         </p>
 
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs leading-5 text-muted">
           Prototipo local: los mensajes se guardan en este navegador.
-          Todavía no se envían a otros usuarios.
+          TodavÃ­a no se envÃ­an a otros usuarios.
         </div>
 
         {conversations.length === 0 ? (
@@ -62,12 +62,12 @@ export function MensajesUi() {
             </div>
 
             <h2 className="mt-5 font-serif text-2xl">
-              Tu próxima conversación empieza aquí
+              Tu prÃ³xima conversaciÃ³n empieza aquÃ­
             </h2>
 
             <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted">
               Explora los destinos y abre el perfil de una persona
-              para iniciar una conversación de prueba.
+              para iniciar una conversaciÃ³n de prueba.
             </p>
 
             <Link
@@ -116,7 +116,7 @@ export function MensajesUi() {
                   </div>
 
                   <span aria-hidden="true" className="text-thread">
-                    ›
+                    â€º
                   </span>
                 </Link>
               );

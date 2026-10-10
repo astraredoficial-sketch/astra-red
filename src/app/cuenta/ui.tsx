@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { AppNav } from "@/components/AppNav";
+import { VipPaywall } from "@/components/VipPaywall";
 import { getAllAccounts, saveAccounts, Account } from "@/lib/userStore";
 
 export function CuentaUi() {
@@ -42,11 +43,11 @@ export function CuentaUi() {
     setAccounts(updated);
     saveAccounts(updated);
     setShowVipModal(false);
-    alert("?? °Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4$4$4$4.99/mes).");
+    alert("?? ¬°Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4$4$4$4.99/mes).");
   };
 
   const handleLogout = () => {
-    if (confirm("øDeseas cerrar sesiÛn? Se requerir· tu correo y contraseÒa para ingresar de nuevo.")) {
+    if (confirm("¬øDeseas cerrar sesi√≥n? Se requerir√° tu correo y contrase√±a para ingresar de nuevo.")) {
       const resetAccounts = accounts.map((acc) => ({ ...acc, isCurrent: false }));
       saveAccounts(resetAccounts);
       window.location.href = "/";
@@ -56,9 +57,9 @@ export function CuentaUi() {
   // ELIMINAR CUENTA Y BORRAR TODOS LOS DATOS
   const handleDeleteAccount = () => {
     const confirmation = confirm(
-      "?? øEST¡S COMPLETAMENTE SEGURO/A?\n\nEsta acciÛn borrar· permanentemente tu cuenta (" +
+      "?? ¬øEST√ÅS COMPLETAMENTE SEGURO/A?\n\nEsta acci√≥n borrar√° permanentemente tu cuenta (" +
         currentAccount.name +
-        "), tus correos, cartas astrales y configuraciones. Tendr·s que inscribirte nuevamente desde cero."
+        "), tus correos, cartas astrales y configuraciones. Tendr√°s que inscribirte nuevamente desde cero."
     );
 
     if (!confirmation) return;
@@ -71,7 +72,7 @@ export function CuentaUi() {
       remaining[0].isCurrent = true;
       setAccounts(remaining);
       saveAccounts(remaining);
-      alert("? Cuenta eliminada con Èxito. Se ha cambiado a tu otra cuenta guardada.");
+      alert("? Cuenta eliminada con √©xito. Se ha cambiado a tu otra cuenta guardada.");
     } else {
       // Borrar completamente el almacenamiento local y redirigir al registro desde cero
       if (typeof window !== "undefined") {
@@ -87,75 +88,7 @@ export function CuentaUi() {
       <AppNav active="cuenta" />
 
       {/* MODAL PAYWALL VIP */}
-      {showVipModal && (
-        <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
-          <div className="bg-gradient-to-b from-slate-900 via-purple-950/60 to-slate-950 border border-amber-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center space-y-6 shadow-2xl relative">
-            
-            <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-[11px] px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-              <span>?</span> ACCESO RESTRINGIDO A PLAN FREE
-            </div>
-
-            <div className="space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-bold font-serif text-white">
-                Hola {currentAccount.name}, Desbloquea tu VIP
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
-                Tu cuenta actualmente est· en el <span className="text-rose-400 font-bold">Plan Free</span>. SuscrÌbete a Astra Red VIP para calcular efemÈrides astronÛmicas exactas.
-              </p>
-            </div>
-
-            <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-left text-xs space-y-2.5">
-              <div className="flex items-center gap-2 text-slate-200">
-                <span className="text-amber-400 font-bold">?</span>
-                <span>Motor de B˙squeda CientÌfico de EfemÈrides Celestiales.</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-200">
-                <span className="text-amber-400 font-bold">?</span>
-                <span>Notificaciones de Alertas Activas ilimitadas.</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-200">
-                <span className="text-amber-400 font-bold">?</span>
-                <span>An·lisis ilimitado de SinastrÌa CÛsmica VIP.</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div className="bg-slate-900 border-2 border-amber-500/50 rounded-2xl p-3.5 flex flex-col justify-between text-left relative shadow-xl">
-                <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full uppercase absolute -top-2.5 right-3">
-                  Recomendado
-                </span>
-                <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Mensual</span>
-                  <span className="text-2xl font-black font-serif text-amber-300">$4$4.99 <span className="text-xs font-normal text-slate-400">/ mes</span></span>
-                </div>
-              </div>
-
-              <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between text-left opacity-80 hover:opacity-100 transition">
-                <div>
-                  <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Anual</span>
-                  <span className="text-2xl font-black font-serif text-white">$4$4.99 <span className="text-xs font-normal text-slate-400">/ aÒo</span></span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-2">
-              <button
-                onClick={handleUpgradeToVip}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-rose-500 hover:opacity-90 text-slate-950 font-extrabold rounded-2xl transition shadow-xl uppercase tracking-wider text-xs cursor-pointer transform hover:scale-[1.02]"
-              >
-                ? Suscribirme Ahora ($4$4$4$4.99/mes)
-              </button>
-
-              <button
-                onClick={() => setShowVipModal(false)}
-                className="block w-full py-2.5 text-slate-400 hover:text-white text-xs font-semibold transition cursor-pointer"
-              >
-                Volver a la secciÛn Cuenta
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {showVipModal && <VipPaywall name={currentAccount.name} onUpgrade={handleUpgradeToVip} onClose={() => setShowVipModal(false)} />}
 
       <main className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 w-full flex-1">
         {/* ENCABEZADO DE CUENTA */}
@@ -180,7 +113,7 @@ export function CuentaUi() {
               </div>
               <p className="text-xs text-slate-400">{currentAccount.email}</p>
               <p className="text-[11px] text-amber-300 font-mono">
-                ?? {currentAccount.location} ∑ Miembro desde {currentAccount.joinedDate}
+                ?? {currentAccount.location} ¬∑ Miembro desde {currentAccount.joinedDate}
               </p>
             </div>
           </div>
@@ -214,7 +147,7 @@ export function CuentaUi() {
           <div className="md:col-span-2 space-y-4">
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
               <h3 className="text-xs font-bold font-serif text-amber-400 uppercase tracking-widest flex items-center gap-2">
-                <span>?</span> DETALLES DE TU MEMBRESÕA
+                <span>?</span> DETALLES DE TU MEMBRES√çA
               </h3>
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs">
                 <div className="flex justify-between items-center">
@@ -228,15 +161,15 @@ export function CuentaUi() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Motor AstronÛmico:</span>
-                  <span className="text-emerald-400 font-bold">Activo (SunCalc & EfemÈrides)</span>
+                  <span className="text-slate-400">Motor Astron√≥mico:</span>
+                  <span className="text-emerald-400 font-bold">Activo (SunCalc & Efem√©rides)</span>
                 </div>
               </div>
             </div>
 
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
               <h3 className="text-xs font-bold font-serif text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <span>??</span> INFORMACI”N PERSONAL
+                <span>??</span> INFORMACI√ìN PERSONAL
               </h3>
               <div className="space-y-3 text-xs">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -250,7 +183,7 @@ export function CuentaUi() {
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-400 mb-1">Correo ElectrÛnico</label>
+                    <label className="block text-slate-400 mb-1">Correo Electr√≥nico</label>
                     <input
                       type="email"
                       key={currentAccount.id + "-email"}
@@ -266,7 +199,7 @@ export function CuentaUi() {
           <div className="space-y-4 md:col-span-1">
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
               <h3 className="text-xs font-bold font-serif text-slate-400 uppercase tracking-widest">
-                SESI”N Y ACCESOS
+                SESI√ìN Y ACCESOS
               </h3>
 
               <div className="space-y-2 text-xs">
@@ -288,10 +221,10 @@ export function CuentaUi() {
                   onClick={handleLogout}
                   className="w-full py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
-                  <span>??</span> Cerrar SesiÛn
+                  <span>??</span> Cerrar Sesi√≥n
                 </button>
 
-                {/* BOT”N ELIMINAR CUENTA */}
+                {/* BOT√ìN ELIMINAR CUENTA */}
                 <button
                   onClick={handleDeleteAccount}
                   className="w-full py-3 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 font-extrabold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"

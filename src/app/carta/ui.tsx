@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -40,18 +40,18 @@ export function CartaUi() {
       </header>
 
       {/* Contenido principal */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
         
-        {/* Tarjeta de Perfil Dinámica */}
+        {/* Tarjeta de Perfil Din�mica */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl relative overflow-hidden">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="text-2xl">{currentAccount.avatar || "✨"}</span>
+                <span className="text-2xl">{currentAccount.avatar || "?"}</span>
                 <h1 className="text-2xl font-serif font-bold text-white">{currentAccount.name}</h1>
               </div>
               <p className="text-xs text-purple-400 font-mono">
-                📍 {currentAccount.location || "Ubicación no especificada"} &bull; Miembro {currentAccount.membership.toUpperCase()}
+                ?? {currentAccount.location || "Ubicaci�n no especificada"} &bull; Miembro {currentAccount.membership.toUpperCase()}
               </p>
               <p className="text-xs text-slate-400 italic">
                 &quot;Universo privado sincronizado y protegido.&quot;
@@ -66,12 +66,12 @@ export function CartaUi() {
           </div>
         </div>
 
-        {/* Sección central de la Carta Natal */}
+        {/* Secci�n central de la Carta Natal */}
         <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-8 flex flex-col items-center justify-center text-center space-y-4 relative min-h-[300px]">
           <div className="w-48 h-48 rounded-full border border-dashed border-rose-500/40 flex items-center justify-center relative animate-spin-slow">
             <div className="absolute w-36 h-36 rounded-full border border-purple-500/30"></div>
             <div className="text-center space-y-1">
-              <span className="text-2xl">✨</span>
+              <span className="text-2xl">?</span>
               <h2 className="text-sm font-serif font-bold text-amber-300">Sagitario</h2>
               <p className="text-[10px] text-slate-400 uppercase tracking-widest">ASC Capricornio</p>
             </div>
@@ -81,22 +81,22 @@ export function CartaUi() {
           </p>
         </div>
 
-        {/* Tríada Astrológica */}
+        {/* Tr�ada Astrol�gica */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-1">
-            <span className="text-[10px] text-amber-400 font-bold tracking-wider uppercase">☀️ Sol</span>
+            <span className="text-[10px] text-amber-400 font-bold tracking-wider uppercase">?? Sol</span>
             <h3 className="text-sm font-bold text-white">Sagitario</h3>
-            <p className="text-xs text-slate-400">Esencia, vitalidad y propósito de vida.</p>
+            <p className="text-xs text-slate-400">Esencia, vitalidad y prop�sito de vida.</p>
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-1">
-            <span className="text-[10px] text-purple-400 font-bold tracking-wider uppercase">🌙 Luna</span>
+            <span className="text-[10px] text-purple-400 font-bold tracking-wider uppercase">?? Luna</span>
             <h3 className="text-sm font-bold text-white">Acuario</h3>
-            <p className="text-xs text-slate-400">Mundo emocional, intuición y refugio.</p>
+            <p className="text-xs text-slate-400">Mundo emocional, intuici�n y refugio.</p>
           </div>
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 space-y-1">
-            <span className="text-[10px] text-rose-400 font-bold tracking-wider uppercase">🌅 Ascendente</span>
+            <span className="text-[10px] text-rose-400 font-bold tracking-wider uppercase">?? Ascendente</span>
             <h3 className="text-sm font-bold text-white">Capricornio</h3>
-            <p className="text-xs text-slate-400">Máscara social y aprendizaje de vida.</p>
+            <p className="text-xs text-slate-400">M�scara social y aprendizaje de vida.</p>
           </div>
         </div>
 
