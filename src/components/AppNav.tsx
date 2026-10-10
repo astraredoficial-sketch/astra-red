@@ -17,19 +17,19 @@ export function AppNav({ active }: Props) {
   ];
 
   return (
-    <header className="bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40">
-      <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+    <header className="bg-slate-950/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 w-full shadow-lg">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         <Link 
           href="/carta" 
-          className="flex items-center gap-2.5 cursor-pointer group transition transform hover:scale-105"
+          className="flex items-center gap-3 cursor-pointer group transition transform hover:scale-105"
         >
-          <span className="text-2xl transition group-hover:rotate-12">✨</span>
-          <span className="font-serif font-bold text-lg text-white tracking-wide">
+          <span className="text-3xl transition group-hover:rotate-12">✨</span>
+          <span className="font-serif font-bold text-2xl text-white tracking-wide">
             Astra<span className="text-rose-500 group-hover:text-rose-400 transition">Red</span>
           </span>
         </Link>
 
-        <nav className="flex items-center gap-1 sm:gap-2">
+        <nav className="flex items-center gap-3 sm:gap-4">
           {navItems.map((item) => {
             const isActive = active === item.id;
             return (
@@ -37,14 +37,14 @@ export function AppNav({ active }: Props) {
                 key={item.id}
                 href={item.href}
                 className={
-                  "px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer " +
+                  "px-4 py-2.5 rounded-xl text-sm font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm " +
                   (isActive
-                    ? "bg-rose-600 text-white shadow-md shadow-rose-950/50"
-                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900")
+                    ? "bg-rose-600 text-white shadow-md shadow-rose-950/60"
+                    : "text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800/60")
                 }
               >
-                <span>{item.icon}</span>
-                <span className="hidden sm:inline">{item.label}</span>
+                <span className="text-base">{item.icon}</span>
+                <span>{item.label}</span>
               </Link>
             );
           })}
