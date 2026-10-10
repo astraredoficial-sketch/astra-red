@@ -1,5 +1,5 @@
-﻿import { PerfilUi } from "./ui";
+﻿import { PerfilUI } from "./ui";
 
-export default function PerfilPage() {
-  return <PerfilUi />;
+export default function Page() {
+  return <PerfilUI />;
 }

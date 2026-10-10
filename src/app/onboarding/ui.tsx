@@ -168,7 +168,7 @@ export function OnboardingUi() {
                 <div
                   key={idx}
                   onClick={() => setSelectedLocation(city.name)}
-                  className={p-2.5 rounded-xl text-xs cursor-pointer transition flex justify-between items-center }
+                  className="p-2.5 rounded-xl text-xs cursor-pointer transition flex justify-between items-center"
                 >
                   <span>{city.name}</span>
                   <span className="text-[10px] text-purple-400 font-mono">{city.coords}</span>
