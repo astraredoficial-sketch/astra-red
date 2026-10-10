@@ -1,0 +1,79 @@
+﻿========== ESTRUCTURA DEL PROYECTO ==========
+
+Mode   Name                    FullName                            
+----   ----                    --------                            
+d----- public                  D:\astra-red\public                 
+d----- src                     D:\astra-red\src                    
+-a---- .gitignore              D:\astra-red\.gitignore             
+-a---- AGENTS.md               D:\astra-red\AGENTS.md              
+-a---- eslint.config.mjs       D:\astra-red\eslint.config.mjs      
+-a---- inspeccion-proyecto.txt D:\astra-red\inspeccion-proyecto.txt
+-a---- next-env.d.ts           D:\astra-red\next-env.d.ts          
+-a---- next.config.ts          D:\astra-red\next.config.ts         
+-a---- package-lock.json       D:\astra-red\package-lock.json      
+-a---- package.json            D:\astra-red\package.json           
+-a---- README.md               D:\astra-red\README.md              
+-a---- tsconfig.json           D:\astra-red\tsconfig.json          
+
+
+
+
+========== ARCHIVOS DE SRC ==========
+D:\astra-red\src\app\favicon.ico
+D:\astra-red\src\app\globals.css
+D:\astra-red\src\app\layout.tsx
+D:\astra-red\src\app\page.tsx
+D:\astra-red\src\app\carta\page.tsx
+D:\astra-red\src\app\carta\ui.tsx
+D:\astra-red\src\app\conectar\[id]\page.tsx
+D:\astra-red\src\app\conectar\[id]\ui.tsx
+D:\astra-red\src\app\destinos\page.tsx
+D:\astra-red\src\app\destinos\ui.tsx
+D:\astra-red\src\app\onboarding\page.tsx
+D:\astra-red\src\app\onboarding\ui.tsx
+D:\astra-red\src\components\AppNav.tsx
+D:\astra-red\src\components\BrandMark.tsx
+D:\astra-red\src\components\ChartWheel.tsx
+D:\astra-red\src\components\CitySearch.tsx
+D:\astra-red\src\components\HiloRojo.tsx
+D:\astra-red\src\components\Triad.tsx
+D:\astra-red\src\hooks\useSession.ts
+D:\astra-red\src\lib\cities.ts
+D:\astra-red\src\lib\lookup.ts
+D:\astra-red\src\lib\profiles.ts
+D:\astra-red\src\lib\storage.ts
+D:\astra-red\src\lib\types.ts
+D:\astra-red\src\lib\astro\chart.ts
+D:\astra-red\src\lib\astro\constants.ts
+D:\astra-red\src\lib\astro\synastry.ts
+D:\astra-red\src\lib\astro\time.ts
+
+========== PACKAGE.JSON ==========
+{
+  "name": "astra-red",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "astronomy-engine": "^2.1.19",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
+

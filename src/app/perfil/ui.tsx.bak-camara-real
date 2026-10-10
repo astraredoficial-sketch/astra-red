@@ -1,0 +1,315 @@
+﻿"use client";
+
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { AppNav } from "@/components/AppNav";
+import { useSession } from "@/hooks/useSession";
+import { supabase } from "@/lib/supabase/client";
+
+const inputClass =
+  "w-full rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-ink outline-none transition focus:border-thread/60 focus:ring-2 focus:ring-thread/20";
+
+export function PerfilUi() {
+  const { ready, me, refresh } = useSession();
+  const router = useRouter();
+
+  const [name, setName] = useState("");
+  const [bio, setBio] = useState("");
+  const [phone, setPhone] = useState("");
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (ready && !me) router.replace("/acceso?mode=login");
+  }, [ready, me, router]);
+
+  useEffect(() => {
+    if (!me) return;
+    setName(me.name);
+    setBio(me.bio);
+    setPhone(me.phoneNumber ?? "");
+    setWhatsappOptIn(me.whatsappOptIn ?? false);
+    setAvatarUrl(me.avatarUrl ?? null);
+  }, [me]);
+
+  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+
+    const cleanName = name.trim();
+    const cleanPhone = phone.trim();
+
+    if (cleanName.length < 2) {
+      setError("Escribe un nombre de al menos 2 caracteres.");
+      return;
+    }
+
+    if (whatsappOptIn && !cleanPhone) {
+      setError("Añade tu teléfono antes de aceptar las alertas por WhatsApp.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user || user.id !== me?.id) {
+        throw new Error("Tu sesión ha cambiado. Vuelve a iniciar sesión.");
+      }
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          name: cleanName,
+          bio: bio.trim(),
+          phone_number: cleanPhone || null,
+          whatsapp_opt_in: whatsappOptIn,
+          whatsapp_opt_in_at: whatsappOptIn
+            ? new Date().toISOString()
+            : null,
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      refresh();
+      setNotice("Perfil guardado correctamente.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo guardar el perfil.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function uploadPhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setError("");
+    setNotice("");
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setError("Usa una imagen JPG, PNG o WebP.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError("La imagen no puede superar los 5 MB.");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user || user.id !== me?.id) {
+        throw new Error("Tu sesión ha cambiado. Vuelve a iniciar sesión.");
+      }
+
+      const extension = file.type === "image/png"
+        ? "png"
+        : file.type === "image/webp"
+          ? "webp"
+          : "jpg";
+      const path = `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-photos")
+        .upload(path, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from("profile-photos").getPublicUrl(path);
+      const publicUrl = data.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          avatar_url: publicUrl,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      refresh();
+      setNotice("Foto de perfil actualizada.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "No se pudo subir la foto.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  if (!ready || !me) {
+    return (
+      <div className="grid flex-1 place-items-center text-muted">
+        Preparando tu perfil...
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-1 flex-col">
+      <AppNav />
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8">
+        <p className="text-xs uppercase tracking-[0.3em] text-astral">
+          Tu espacio personal
+        </p>
+        <h1 className="mt-2 font-serif text-4xl">Mi perfil</h1>
+        <p className="mt-2 text-sm leading-6 text-muted">
+          Personaliza cómo te presentas y administra tus preferencias de contacto.
+        </p>
+
+        <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-7">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+            <div className="grid size-28 shrink-0 place-items-center overflow-hidden rounded-full border border-astral/40 bg-astral/10 text-3xl text-astral">
+              {avatarUrl ? (
+                <Image
+                  src={avatarUrl}
+                  alt="Foto de perfil"
+                  width={112}
+                  height={112}
+                  unoptimized
+                  className="size-28 object-cover"
+                />
+              ) : (
+                name.trim().charAt(0).toUpperCase() || "✦"
+              )}
+            </div>
+            <div className="text-center sm:pt-2 sm:text-left">
+              <h2 className="font-serif text-2xl">{me.name}</h2>
+              <p className="mt-1 text-sm text-muted">
+                JPG, PNG o WebP · máximo 5 MB
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <label className={`inline-flex cursor-pointer items-center rounded-full border border-white/15 px-4 py-2 text-sm transition hover:bg-white/5 ${uploading ? "pointer-events-none opacity-50" : ""}`}>
+                  {uploading ? "Subiendo foto..." : "Subir foto"}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    disabled={uploading}
+                    onChange={(event) => void uploadPhoto(event)}
+                    className="sr-only"
+                  />
+                </label>
+
+                <label className={`inline-flex cursor-pointer items-center rounded-full border border-astral/40 bg-astral/10 px-4 py-2 text-sm text-astral transition hover:bg-astral/20 ${uploading ? "pointer-events-none opacity-50" : ""}`}>
+                  Tomar foto
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    disabled={uploading}
+                    onChange={(event) => void uploadPhoto(event)}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={saveProfile} className="mt-8 flex flex-col gap-5">
+            <div>
+              <label htmlFor="profile-name" className="mb-2 block text-sm text-muted">
+                Nombre
+              </label>
+              <input
+                id="profile-name"
+                className={inputClass}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                maxLength={60}
+                minLength={2}
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="profile-bio" className="mb-2 block text-sm text-muted">
+                Descripción
+              </label>
+              <textarea
+                id="profile-bio"
+                className={inputClass}
+                value={bio}
+                onChange={(event) => setBio(event.target.value)}
+                maxLength={500}
+                rows={4}
+                placeholder="Cuéntales algo sobre ti..."
+              />
+              <p className="mt-1 text-right text-xs text-muted">{bio.length}/500</p>
+            </div>
+
+            <div>
+              <label htmlFor="profile-phone" className="mb-2 block text-sm text-muted">
+                Teléfono con prefijo internacional
+              </label>
+              <input
+                id="profile-phone"
+                className={inputClass}
+                type="tel"
+                autoComplete="tel"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                maxLength={25}
+                placeholder="+34 600 000 000"
+              />
+              <p className="mt-1 text-xs leading-5 text-muted">
+                Incluye el prefijo de tu país si quieres recibir alertas por WhatsApp.
+              </p>
+            </div>
+
+            <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+              <input
+                type="checkbox"
+                checked={whatsappOptIn}
+                onChange={(event) => setWhatsappOptIn(event.target.checked)}
+                className="mt-1 accent-[#ff2a5f]"
+              />
+              <span>
+                <span className="block text-sm font-medium">
+                  Acepto recibir alertas por WhatsApp
+                </span>
+                <span className="mt-1 block text-xs leading-5 text-muted">
+                  Es opcional. Puedes retirar tu consentimiento desmarcando esta casilla.
+                  Guardar esta preferencia no activa por sí solo el envío de mensajes.
+                </span>
+              </span>
+            </label>
+
+            {error && (
+              <p role="alert" className="break-words text-sm text-thread">{error}</p>
+            )}
+            {notice && (
+              <p role="status" className="text-sm text-astral">{notice}</p>
+            )}
+
+            <button
+              type="submit"
+              disabled={saving || uploading}
+              className="glow-thread rounded-full bg-thread px-6 py-3.5 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {saving ? "Guardando..." : "Guardar cambios"}
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
+  );
+}
+
