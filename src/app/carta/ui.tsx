@@ -1,7 +1,8 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { AppNav } from "@/components/AppNav";
 import { getAllAccounts, Account } from "@/lib/userStore";
 
 export function CartaUi() {
@@ -24,20 +25,7 @@ export function CartaUi() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      {/* Navbar superior */}
-      <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
-          <span className="font-serif font-bold text-lg text-white">Astra<span className="text-rose-500">Red</span></span>
-        </div>
-        <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-300">
-          <Link href="/carta" className="text-rose-400 font-bold">Carta Natal</Link>
-          <Link href="/destinos" className="hover:text-white transition">Destinos</Link>
-          <Link href="/calendario" className="hover:text-white transition">Calendario VIP</Link>
-          <Link href="/mensajes" className="hover:text-white transition">Mensajes</Link>
-          <Link href="/cuenta" className="hover:text-white transition">Cuenta</Link>
-        </nav>
-      </header>
+      <AppNav active="carta" />
 
       {/* Contenido principal */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6">
