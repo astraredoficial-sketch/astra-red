@@ -1,4 +1,4 @@
-Ôªø"use client";
+"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -21,7 +21,7 @@ export function VipPaywallModal({
       <div className="bg-gradient-to-b from-slate-900 via-purple-950/60 to-slate-950 border border-amber-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center space-y-6 shadow-2xl relative">
         
         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-[11px] px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-          <span>‚≠ê</span> ACCESO RESTRINGIDO A PLAN FREE
+          <span>?</span> ACCESO RESTRINGIDO A PLAN FREE
         </div>
 
         <div className="space-y-2">
@@ -29,22 +29,22 @@ export function VipPaywallModal({
             Hola {userName}, Desbloquea tu VIP
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
-            Tu cuenta actualmente est√° en el <span className="text-rose-400 font-bold">Plan Free</span>. Suscr√≠bete a Astra Red VIP para calcular efem√©rides astron√≥micas exactas.
+            Tu cuenta actualmente est· en el <span className="text-rose-400 font-bold">Plan Free</span>. SuscrÌbete a Astra Red VIP para calcular efemÈrides astronÛmicas exactas.
           </p>
         </div>
 
         <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-left text-xs space-y-2.5">
           <div className="flex items-center gap-2 text-slate-200">
-            <span className="text-amber-400 font-bold">‚úì</span>
-            <span>Motor de B√∫squeda Cient√≠fico de Efem√©rides Celestiales.</span>
+            <span className="text-amber-400 font-bold">?</span>
+            <span>Motor de B˙squeda CientÌfico de EfemÈrides Celestiales.</span>
           </div>
           <div className="flex items-center gap-2 text-slate-200">
-            <span className="text-amber-400 font-bold">‚úì</span>
+            <span className="text-amber-400 font-bold">?</span>
             <span>Notificaciones de Alertas Activas ilimitadas.</span>
           </div>
           <div className="flex items-center gap-2 text-slate-200">
-            <span className="text-amber-400 font-bold">‚úì</span>
-            <span>An√°lisis ilimitado de Sinastr√≠a C√≥smica VIP.</span>
+            <span className="text-amber-400 font-bold">?</span>
+            <span>An·lisis ilimitado de SinastrÌa CÛsmica VIP.</span>
           </div>
         </div>
 
@@ -55,14 +55,14 @@ export function VipPaywallModal({
             </span>
             <div>
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Mensual</span>
-              <span className="text-2xl font-black font-serif text-amber-300">$4.99 <span className="text-xs font-normal text-slate-400">/ mes</span></span>
+              <span className="text-2xl font-black font-serif text-amber-300">$4$4.99 <span className="text-xs font-normal text-slate-400">/ mes</span></span>
             </div>
           </div>
 
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between text-left opacity-80 hover:opacity-100 transition">
             <div>
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Anual</span>
-              <span className="text-2xl font-black font-serif text-white">$39.99 <span className="text-xs font-normal text-slate-400">/ a√±o</span></span>
+              <span className="text-2xl font-black font-serif text-white">$39$4.99 <span className="text-xs font-normal text-slate-400">/ aÒo</span></span>
             </div>
           </div>
         </div>
@@ -72,7 +72,7 @@ export function VipPaywallModal({
             onClick={onUpgrade}
             className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-rose-500 hover:opacity-90 text-slate-950 font-extrabold rounded-2xl transition shadow-xl uppercase tracking-wider text-xs cursor-pointer transform hover:scale-[1.02]"
           >
-            ‚≠ê Suscribirme Ahora ($4.99/mes)
+            ? Suscribirme Ahora ($4$4$4.99/mes)
           </button>
 
           {showBackToCuentaLink ? (
@@ -80,7 +80,7 @@ export function VipPaywallModal({
               href="/cuenta"
               className="block w-full py-2.5 text-slate-400 hover:text-white text-xs font-semibold transition"
             >
-              Volver a la secci√≥n Cuenta
+              Volver a la secciÛn Cuenta
             </Link>
           ) : (
             onClose && (

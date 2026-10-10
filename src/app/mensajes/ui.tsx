@@ -12,7 +12,7 @@ export function MensajesUi() {
 
   useEffect(() => {
     if (ready && !me) {
-      // // window.location.replace("/onboarding");
+      // // // window.location.replace("/onboarding");
     }
   }, [ready, me]);
 

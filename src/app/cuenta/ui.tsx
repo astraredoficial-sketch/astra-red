@@ -42,7 +42,7 @@ export function CuentaUi() {
     setAccounts(updated);
     saveAccounts(updated);
     setShowVipModal(false);
-    alert("?? ¡Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4$4.99/mes).");
+    alert("?? ¡Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4$4$4$4.99/mes).");
   };
 
   const handleLogout = () => {
@@ -126,14 +126,14 @@ export function CuentaUi() {
                 </span>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Mensual</span>
-                  <span className="text-2xl font-black font-serif text-amber-300">$4.99 <span className="text-xs font-normal text-slate-400">/ mes</span></span>
+                  <span className="text-2xl font-black font-serif text-amber-300">$4$4.99 <span className="text-xs font-normal text-slate-400">/ mes</span></span>
                 </div>
               </div>
 
               <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between text-left opacity-80 hover:opacity-100 transition">
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Anual</span>
-                  <span className="text-2xl font-black font-serif text-white">$4.99 <span className="text-xs font-normal text-slate-400">/ año</span></span>
+                  <span className="text-2xl font-black font-serif text-white">$4$4.99 <span className="text-xs font-normal text-slate-400">/ año</span></span>
                 </div>
               </div>
             </div>
@@ -143,7 +143,7 @@ export function CuentaUi() {
                 onClick={handleUpgradeToVip}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-rose-500 hover:opacity-90 text-slate-950 font-extrabold rounded-2xl transition shadow-xl uppercase tracking-wider text-xs cursor-pointer transform hover:scale-[1.02]"
               >
-                ? Suscribirme Ahora ($4$4.99/mes)
+                ? Suscribirme Ahora ($4$4$4$4.99/mes)
               </button>
 
               <button

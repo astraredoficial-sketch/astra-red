@@ -1,4 +1,4 @@
-Ôªø"use client";
+"use client";
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
@@ -26,18 +26,18 @@ export function CalendarioUi() {
   const [iaSuggestions, setIaSuggestions] = useState<AstralCalculationResult[]>([]);
 
   const [appNotifications, setAppNotifications] = useState<Array<{ id: string; msg: string; time: string }>>([
-    { id: "n1", msg: "üü° Sistema conectado a Efem√©rides Astron√≥micas Reales (SunCalc).", time: "Ahora" },
+    { id: "n1", msg: "?? Sistema conectado a EfemÈrides AstronÛmicas Reales (SunCalc).", time: "Ahora" },
   ]);
 
   const [savedEvents, setSavedEvents] = useState<AstralEvent[]>([
     {
       id: "ev-1",
-      title: "Corte de cabello para crecimiento r√°pido",
+      title: "Corte de cabello para crecimiento r·pido",
       category: "cabello",
       date: "2026-10-15",
-      lunarPhase: "Luna Creciente üåí",
+      lunarPhase: "Luna Creciente ??",
       bestTime: "10:00 AM - 02:00 PM",
-      note: "C√°lculo matem√°tico verificado con posici√≥n celeste.",
+      note: "C·lculo matem·tico verificado con posiciÛn celeste.",
       status: "programada",
     },
   ]);
@@ -54,7 +54,7 @@ export function CalendarioUi() {
     );
     saveAccounts(updated);
     setCurrentAccount({ ...currentAccount, membership: "vip" });
-    alert("üéâ ¬°Felicidades " + currentAccount.name + "! Has activado Astra Red VIP (.99/mes). Acceso total desbloqueado.");
+    alert("?? °Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4$4.99/mes). Acceso total desbloqueado.");
   };
 
   const handleIaSearch = (e: React.FormEvent) => {
@@ -89,7 +89,7 @@ export function CalendarioUi() {
   const handleSelectIaSuggestion = (sug: AstralCalculationResult) => {
     const created: AstralEvent = {
       id: Date.now().toString(),
-      title: iaQuery || "Actividad Astron√≥mica",
+      title: iaQuery || "Actividad AstronÛmica",
       category: "ia",
       date: sug.date,
       lunarPhase: sug.phaseName,
@@ -100,9 +100,9 @@ export function CalendarioUi() {
 
     setSavedEvents([created, ...savedEvents]);
 
-    const notifMsg = "üîî Alerta en la App: Te notificaremos el " + sug.date + " para \"" + iaQuery + "\" con base en el c√°lculo celeste real.";
+    const notifMsg = "?? Alerta en la App: Te notificaremos el " + sug.date + " para \"" + iaQuery + "\" con base en el c·lculo celeste real.";
     setAppNotifications([{ id: Date.now().toString(), msg: notifMsg, time: "Ahora mismo" }, ...appNotifications]);
-    alert("¬°Alerta guardada! Efem√©ride astron√≥mica programada para el " + sug.date + ".");
+    alert("°Alerta guardada! EfemÈride astronÛmica programada para el " + sug.date + ".");
   };
 
   const handleDeleteEvent = (id: string) => {
@@ -115,13 +115,13 @@ export function CalendarioUi() {
     <div className="min-h-screen bg-slate-950 text-white flex flex-col relative overflow-x-hidden">
       <AppNav active="calendario" />
 
-      {/* MODAL BLOQUEANTE DE SUSCRIPCI√ìN (PAYWALL) PARA USUARIOS FREE */}
+      {/* MODAL BLOQUEANTE DE SUSCRIPCI”N (PAYWALL) PARA USUARIOS FREE */}
       {isFree && (
         <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
           <div className="bg-gradient-to-b from-slate-900 via-purple-950/60 to-slate-950 border border-amber-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center space-y-6 shadow-2xl relative">
             
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-[11px] px-3 py-1 rounded-full uppercase tracking-wider shadow-lg">
-              <span>‚≠ê</span> ACCESO RESTRINGIDO A PLAN FREE
+              <span>?</span> ACCESO RESTRINGIDO A PLAN FREE
             </div>
 
             <div className="space-y-2">
@@ -129,22 +129,22 @@ export function CalendarioUi() {
                 Hola {currentAccount?.name || "Usuario"}, Desbloquea tu VIP
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
-                Tu cuenta actualmente est√° en el <span className="text-rose-400 font-bold">Plan Free</span>. Suscr√≠bete a Astra Red VIP para calcular efem√©rides astron√≥micas exactas.
+                Tu cuenta actualmente est· en el <span className="text-rose-400 font-bold">Plan Free</span>. SuscrÌbete a Astra Red VIP para calcular efemÈrides astronÛmicas exactas.
               </p>
             </div>
 
             <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-left text-xs space-y-2.5">
               <div className="flex items-center gap-2 text-slate-200">
-                <span className="text-amber-400 font-bold">‚úì</span>
-                <span>Motor de B√∫squeda Cient√≠fico de Efem√©rides Celestiales.</span>
+                <span className="text-amber-400 font-bold">?</span>
+                <span>Motor de B˙squeda CientÌfico de EfemÈrides Celestiales.</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200">
-                <span className="text-amber-400 font-bold">‚úì</span>
+                <span className="text-amber-400 font-bold">?</span>
                 <span>Notificaciones de Alertas Activas ilimitadas.</span>
               </div>
               <div className="flex items-center gap-2 text-slate-200">
-                <span className="text-amber-400 font-bold">‚úì</span>
-                <span>An√°lisis ilimitado de Sinastr√≠a C√≥smica VIP.</span>
+                <span className="text-amber-400 font-bold">?</span>
+                <span>An·lisis ilimitado de SinastrÌa CÛsmica VIP.</span>
               </div>
             </div>
 
@@ -155,14 +155,14 @@ export function CalendarioUi() {
                 </span>
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Mensual</span>
-                  <span className="text-2xl font-black font-serif text-amber-300">$4.99 <span className="text-xs font-normal text-slate-400">/ mes</span></span>
+                  <span className="text-2xl font-black font-serif text-amber-300">$4$4.99 <span className="text-xs font-normal text-slate-400">/ mes</span></span>
                 </div>
               </div>
 
               <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between text-left opacity-80 hover:opacity-100 transition">
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Anual</span>
-                  <span className="text-2xl font-black font-serif text-white">$39.99 <span className="text-xs font-normal text-slate-400">/ a√±o</span></span>
+                  <span className="text-2xl font-black font-serif text-white">$39$4.99 <span className="text-xs font-normal text-slate-400">/ aÒo</span></span>
                 </div>
               </div>
             </div>
@@ -172,14 +172,14 @@ export function CalendarioUi() {
                 onClick={handleUpgradeToVip}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-rose-500 hover:opacity-90 text-slate-950 font-extrabold rounded-2xl transition shadow-xl uppercase tracking-wider text-xs cursor-pointer transform hover:scale-[1.02]"
               >
-                ‚≠ê Suscribirme Ahora ($4.99/mes)
+                ? Suscribirme Ahora ($4$4$4.99/mes)
               </button>
 
               <Link
                 href="/cuenta"
                 className="block w-full py-2.5 text-slate-400 hover:text-white text-xs font-semibold transition"
               >
-                Volver a la secci√≥n Cuenta
+                Volver a la secciÛn Cuenta
               </Link>
             </div>
           </div>
@@ -192,13 +192,13 @@ export function CalendarioUi() {
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                MOTOR CIENT√çFICO 100% REAL ‚≠ê
+                MOTOR CIENTÕFICO 100% REAL ?
               </span>
-              <span className="text-xs text-amber-300 font-medium">C√°lculos Lunares Activos</span>
+              <span className="text-xs text-amber-300 font-medium">C·lculos Lunares Activos</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-white">Calendario de Efem√©rides Reales</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-white">Calendario de EfemÈrides Reales</h1>
             <p className="text-xs text-slate-300">
-              C√°lculos matem√°ticos exactos basados en la posici√≥n celeste y fases lunares cient√≠ficas.
+              C·lculos matem·ticos exactos basados en la posiciÛn celeste y fases lunares cientÌficas.
             </p>
           </div>
 
@@ -207,13 +207,13 @@ export function CalendarioUi() {
               onClick={() => setActiveTab("ia")}
               className={"px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer " + (activeTab === "ia" ? "bg-amber-500 text-slate-950 shadow-md font-bold" : "text-slate-400 hover:text-white")}
             >
-              üî≠ Motor Cient√≠fico
+              ?? Motor CientÌfico
             </button>
             <button
               onClick={() => setActiveTab("sinastria")}
               className={"px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer " + (activeTab === "sinastria" ? "bg-amber-500 text-slate-950 shadow-md font-bold" : "text-slate-400 hover:text-white")}
             >
-              üíï Sinastr√≠a VIP
+              ?? SinastrÌa VIP
             </button>
           </div>
         </div>
@@ -222,7 +222,7 @@ export function CalendarioUi() {
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-2">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold font-serif text-amber-300 uppercase tracking-widest flex items-center gap-2">
-              <span>üîî</span> NOTIFICACIONES DE LA APP
+              <span>??</span> NOTIFICACIONES DE LA APP
             </h3>
             <span className="bg-rose-950 text-rose-300 text-[10px] px-2 py-0.5 rounded-full border border-rose-500/30 font-bold">
               {appNotifications.length} Activas
@@ -243,15 +243,15 @@ export function CalendarioUi() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-1 bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
               <h3 className="text-xs font-bold font-serif text-amber-300 uppercase tracking-widest flex items-center gap-2">
-                <span>üî≠</span> CONSULTA MATEM√ÅTICA
+                <span>??</span> CONSULTA MATEM¡TICA
               </h3>
 
               <form onSubmit={handleIaSearch} className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-medium">¬øQu√© deseas calcular para el 2026 o 2027?</label>
+                  <label className="block text-slate-400 mb-1 font-medium">øQuÈ deseas calcular para el 2026 o 2027?</label>
                   <textarea
                     rows={3}
-                    placeholder="Ej: 'quiero cortarme el cabello en el 2027' o 'cosechar ma√≠z en 2027'"
+                    placeholder="Ej: 'quiero cortarme el cabello en el 2027' o 'cosechar maÌz en 2027'"
                     value={iaQuery}
                     onChange={(e) => setIaQuery(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-white focus:outline-none focus:border-amber-500 transition resize-none leading-relaxed font-medium"
@@ -263,7 +263,7 @@ export function CalendarioUi() {
                   disabled={isProcessingIa}
                   className="w-full py-3 bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 text-slate-950 font-extrabold rounded-2xl transition shadow-xl uppercase tracking-wider cursor-pointer"
                 >
-                  {isProcessingIa ? "Calculando Coordenadas..." : "üî¨ Calcular con Motor Real"}
+                  {isProcessingIa ? "Calculando Coordenadas..." : "?? Calcular con Motor Real"}
                 </button>
               </form>
 
@@ -271,13 +271,13 @@ export function CalendarioUi() {
                 <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Pruebas recomendadas:</span>
                 <div className="flex flex-col gap-1 text-[11px]">
                   <button onClick={() => setIaQuery("quiero cortarme el cabello en el 2027")} className="text-left text-rose-300 hover:underline cursor-pointer">
-                    üíá "quiero cortarme el cabello en el 2027"
+                    ?? "quiero cortarme el cabello en el 2027"
                   </button>
-                  <button onClick={() => setIaQuery("cosechar ma√≠z en 2027")} className="text-left text-amber-300 hover:underline cursor-pointer">
-                    üåæ "cosechar ma√≠z en 2027"
+                  <button onClick={() => setIaQuery("cosechar maÌz en 2027")} className="text-left text-amber-300 hover:underline cursor-pointer">
+                    ?? "cosechar maÌz en 2027"
                   </button>
                   <button onClick={() => setIaQuery("podar plantas en diciembre")} className="text-left text-emerald-300 hover:underline cursor-pointer">
-                    ‚úÇÔ∏è "podar plantas en diciembre"
+                    ?? "podar plantas en diciembre"
                   </button>
                 </div>
               </div>
@@ -285,7 +285,7 @@ export function CalendarioUi() {
 
             <div className="md:col-span-2 space-y-4">
               <h3 className="text-xs font-bold font-serif text-slate-300 uppercase tracking-widest">
-                RESULTADOS DE EFEM√âRIDES CELESTES
+                RESULTADOS DE EFEM…RIDES CELESTES
               </h3>
 
               {iaSuggestions.length > 0 ? (
@@ -301,7 +301,7 @@ export function CalendarioUi() {
                         </div>
                         <div className="text-left sm:text-right">
                           <span className="text-xs text-amber-400 font-bold block">{sug.date}</span>
-                          <span className="text-[10px] text-rose-300 font-mono font-bold">‚è∞ {sug.bestTime}</span>
+                          <span className="text-[10px] text-rose-300 font-mono font-bold">? {sug.bestTime}</span>
                         </div>
                       </div>
 
@@ -313,17 +313,17 @@ export function CalendarioUi() {
                         onClick={() => handleSelectIaSuggestion(sug)}
                         className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-2xl transition shadow-lg uppercase tracking-wider cursor-pointer"
                       >
-                        üîî Guardar Alerta en la App para esta fecha real
+                        ?? Guardar Alerta en la App para esta fecha real
                       </button>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="bg-slate-900/60 border border-dashed border-slate-800 rounded-3xl p-8 text-center space-y-3">
-                  <span className="text-4xl">üî≠</span>
+                  <span className="text-4xl">??</span>
                   <h4 className="text-sm font-bold text-slate-300">Escribe tu consulta en el panel izquierdo</h4>
                   <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    El motor matem√°tico procesar√° las efem√©rides celestes reales de forma inmediata.
+                    El motor matem·tico procesar· las efemÈrides celestes reales de forma inmediata.
                   </p>
                 </div>
               )}
@@ -338,7 +338,7 @@ export function CalendarioUi() {
                     savedEvents.map((ev) => (
                       <div key={ev.id} className="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
                         <div className="space-y-1">
-                          <span className="text-amber-400 font-bold text-xs">{ev.date} ¬∑ {ev.lunarPhase}</span>
+                          <span className="text-amber-400 font-bold text-xs">{ev.date} ∑ {ev.lunarPhase}</span>
                           <h5 className="text-sm font-bold text-white">{ev.title}</h5>
                           <p className="text-xs text-slate-400">{ev.note}</p>
                         </div>
@@ -350,7 +350,7 @@ export function CalendarioUi() {
                             onClick={() => handleDeleteEvent(ev.id)}
                             className="px-3 py-1 bg-rose-950/80 hover:bg-rose-900 border border-rose-500/40 text-rose-300 text-xs font-bold rounded-xl transition cursor-pointer"
                           >
-                            üóëÔ∏è Eliminar
+                            ??? Eliminar
                           </button>
                         </div>
                       </div>
@@ -366,8 +366,8 @@ export function CalendarioUi() {
 
         {activeTab === "sinastria" && (
           <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
-            <h3 className="text-xl font-bold font-serif text-white">An√°lisis de Sinastr√≠a C√≥smica</h3>
-            <p className="text-xs text-slate-400">C√°lculo de compatibilidad basado en aspectos planetarios reales.</p>
+            <h3 className="text-xl font-bold font-serif text-white">An·lisis de SinastrÌa CÛsmica</h3>
+            <p className="text-xs text-slate-400">C·lculo de compatibilidad basado en aspectos planetarios reales.</p>
           </div>
         )}
       </main>
