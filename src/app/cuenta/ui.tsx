@@ -101,6 +101,29 @@ export function CuentaUi() {
               </div>
             </section>
 
+            <section className="overflow-hidden rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-purple-900/30 to-slate-900 p-6 shadow-xl shadow-amber-950/20">
+              <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
+                <div>
+                  <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-950">
+                    AstraRed VIP
+                  </span>
+                  <h2 className="mt-3 font-serif text-2xl">
+                    Tu calendario astral, sin límites
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
+                    Explora el Calendario VIP y elige el plan mensual o anual
+                    que prefieras.
+                  </p>
+                </div>
+                <Link
+                  href="/calendario"
+                  className="shrink-0 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-rose-400 px-6 py-3 text-center text-sm font-extrabold text-slate-950 shadow-lg shadow-amber-950/30 transition hover:scale-[1.02] hover:brightness-110"
+                >
+                  ✨ Hazte VIP
+                </Link>
+              </div>
+            </section>
+
             <section className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
               <h2 className="font-serif text-xl">Preferencias de conexión</h2>
               <p className="mt-3 text-sm text-slate-300">

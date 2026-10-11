@@ -1,11 +1,11 @@
 ﻿"use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/AppNav";
 import { VipPaywall } from "@/components/VipPaywall";
 import { findOptimalAstralDates, AstralCalculationResult } from "@/lib/astronomyEngine";
-import { getCurrentAccount, getAllAccounts, saveAccounts, Account } from "@/lib/userStore";
+import { useSession } from "@/hooks/useSession";
 
 interface AstralEvent {
   id: string;
@@ -19,7 +19,8 @@ interface AstralEvent {
 }
 
 export function CalendarioUi() {
-  const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
+  const router = useRouter();
+  const { ready, me, store, error: sessionError } = useSession();
 
   const [activeTab, setActiveTab] = useState<"ia" | "sinastria">("ia");
   const [iaQuery, setIaQuery] = useState("");
@@ -44,19 +45,11 @@ export function CalendarioUi() {
   ]);
 
   useEffect(() => {
-    setCurrentAccount(getCurrentAccount());
-  }, []);
-
-  const handleUpgradeToVip = () => {
-    if (!currentAccount) return;
-    const all = getAllAccounts();
-    const updated = all.map((acc) =>
-      acc.id === currentAccount.id ? { ...acc, membership: "vip" as const } : acc
+    if (!ready || sessionError || me) return;
+    router.replace(
+      store?.currentUserId ? "/onboarding" : "/acceso?mode=login",
     );
-    saveAccounts(updated);
-    setCurrentAccount({ ...currentAccount, membership: "vip" });
-    alert("?? ¡Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4$4.99/mes). Acceso total desbloqueado.");
-  };
+  }, [me, ready, router, sessionError, store?.currentUserId]);
 
   const handleIaSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,14 +103,26 @@ export function CalendarioUi() {
     setSavedEvents(savedEvents.filter((ev) => ev.id !== id));
   };
 
-  const isFree = currentAccount?.membership === "free";
+  const isFree = Boolean(me);
+
+  if (!ready || (!me && !sessionError)) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-slate-950 text-slate-300">
+        Verificando tu cuenta...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col relative overflow-x-hidden">
       <AppNav active="calendario" />
 
-      {/* MODAL BLOQUEANTE DE SUSCRIPCIÓN (PAYWALL) PARA USUARIOS FREE */}
-      {isFree && <VipPaywall name={currentAccount?.name || "Usuario"} onUpgrade={handleUpgradeToVip} />}
+      {sessionError && (
+        <p role="alert" className="mx-auto mt-6 w-full max-w-3xl px-4 text-sm text-rose-300">
+          {sessionError}
+        </p>
+      )}
+      {me && isFree && <VipPaywall name={me.name} />}
 
       <main className={"max-w-5xl mx-auto p-4 sm:p-6 space-y-6 w-full flex-1 transition " + (isFree ? "blur-md pointer-events-none select-none opacity-30" : "")}>
         {/* ENCABEZADO */}
@@ -307,4 +312,3 @@ export function CalendarioUi() {
     </div>
   );
 }
-
