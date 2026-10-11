@@ -202,10 +202,11 @@ export function OnboardingUi() {
                 Atrás
               </button>
               <button
-                  type="button"
+                type="button"
                 onClick={() => setStep(3)}
+                className="flex-1 py-3.5 bg-gradient-to-r from-rose-500 to-rose-600 text-white font-extrabold rounded-2xl transition shadow-xl text-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
               >
-                  Siguiente
+                Siguiente
               </button>
             </div>
           </form>
@@ -253,16 +254,23 @@ export function OnboardingUi() {
 
             <button
               type="submit"
-          >
-            Finalizar registro
-          </button>
-        </div>
+              className="flex-1 py-3.5 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-slate-950 font-extrabold rounded-2xl transition shadow-xl text-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Crear mi carta natal
+            </button>
+          </div>
       </form>
     )}
       </div>
     </div>
   );
 }
+
+
+
+
+
+
 
 
 
