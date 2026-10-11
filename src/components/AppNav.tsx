@@ -11,7 +11,7 @@ export function AppNav({ active }: Props) {
   const navItems = [
     { id: "carta", label: "Carta Natal", href: "/carta", icon: "✨" },
     { id: "destinos", label: "Destinos", href: "/destinos", icon: "🔥" },
-    { id: "calendario", label: "Calendario VIP", href: "/calendario", icon: "⭐" },
+    { id: "calendario", label: "Calendario astral", href: "/calendario", icon: "🌙" },
     { id: "mensajes", label: "Mensajes", href: "/mensajes", icon: "💬" },
     { id: "cuenta", label: "Cuenta", href: "/cuenta", icon: "👤" },
   ];
@@ -53,4 +53,3 @@ export function AppNav({ active }: Props) {
     </header>
   );
 }
-
