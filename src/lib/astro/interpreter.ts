@@ -63,11 +63,29 @@ export function generateLifeSummary(chart: NatalChart): string {
   const sun = chart.triad.sun;
   const moon = chart.triad.moon;
   const asc = chart.triad.asc;
+  const placementFor = (planet: PlanetId) =>
+    chart.planets.find((item) => item.id === planet);
+  const describe = (planet: PlanetId, topic: string) => {
+    const placement = placementFor(planet);
+    if (!placement) return "";
+    const meaning =
+      signMeanings[placement.sign] ??
+      "una energía singular dentro de tu mapa personal.";
+    return `${topic}: ${placement.sign} trae ${meaning} Esta área se expresa especialmente en la casa ${placement.house}.`;
+  };
 
-  return (
-    `Tu carta revela tu esencia con el Sol en ${sun.sign}, ` +
-    `tu mundo emocional con la Luna en ${moon.sign}, ` +
-    `y la energía que proyectas mediante un Ascendente en ${asc.sign}. ` +
-    `Esta combinación representa una historia personal única.`
-  );
+  return [
+    `Identidad y dirección: tu Sol en ${sun.sign} representa ${signMeanings[sun.sign] ?? "una energía singular dentro de tu mapa personal."} La casa ${sun.house} señala el ámbito donde esta esencia busca expresarse.`,
+    `Necesidades emocionales: tu Luna en ${moon.sign} representa ${signMeanings[moon.sign] ?? "una energía singular dentro de tu mapa personal."} La casa ${moon.house} describe dónde tiendes a buscar pertenencia y seguridad.`,
+    `Primera impresión: el Ascendente en ${asc.sign} representa ${signMeanings[asc.sign] ?? "una energía singular dentro de tu mapa personal."} Es la forma inicial en que te acercas a entornos y vínculos nuevos.`,
+    describe("mercury", "Comunicación y aprendizaje"),
+    describe("venus", "Afecto y relaciones"),
+    describe("mars", "Iniciativa y energía"),
+    describe("jupiter", "Expansión y oportunidades"),
+    describe("saturn", "Responsabilidad y aprendizajes"),
+    describe("node", "Dirección de crecimiento"),
+    "La astrología ofrece un marco simbólico de reflexión; no determina tu personalidad ni predice hechos inevitables.",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }

@@ -16,7 +16,8 @@
     "next": "16.4.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "suncalc": "^2.1.1"
+    "suncalc": "^2.1.1",
+    "tz-lookup": "^6.1.25"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
@@ -24,6 +25,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/suncalc": "^1.9.2",
+    "@types/tz-lookup": "^6.1.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "tailwindcss": "^4",

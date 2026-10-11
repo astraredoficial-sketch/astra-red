@@ -1,49 +1,203 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import {
-  useEffect,
-  useMemo,
-  useState,
-  type FormEvent,
-} from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AppNav } from "@/components/AppNav";
 import { useSession } from "@/hooks/useSession";
-import { findProfile } from "@/lib/lookup";
-import {
-  getChatMessages,
-  sendChatMessage,
-} from "@/lib/chat";
+import { supabase } from "@/lib/supabase/client";
+
+type MessageRow = {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  body: string;
+  created_at: string;
+};
+
+type ChatMessage = {
+  id: string;
+  senderId: string;
+  text: string;
+  createdAt: string;
+};
+
+function toMessage(row: MessageRow): ChatMessage {
+  return {
+    id: row.id,
+    senderId: row.sender_id,
+    text: row.body,
+    createdAt: row.created_at,
+  };
+}
 
 export function ConversacionUi() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { ready, me } = useSession();
-
+  const { ready, store, me, error: sessionError } = useSession();
   const otherId = params.id;
-
   const other = useMemo(
-    () => (ready ? findProfile(otherId) : undefined),
-    [ready, otherId]
+    () => store?.profiles.find((profile) => profile.id === otherId),
+    [otherId, store],
   );
-
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
-  const [, setRevision] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [isMatch, setIsMatch] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (ready && !me) {
-      // router.replace("/onboarding");
+    if (!ready || sessionError || me) return;
+    router.replace(store?.currentUserId ? "/onboarding" : "/acceso?mode=login");
+  }, [me, ready, router, sessionError, store?.currentUserId]);
+
+  useEffect(() => {
+    if (!me || !other || other.id === me.id) {
+      return;
     }
-  }, [ready, me, router]);
 
-  const messages =
-    ready && me && other
-      ? getChatMessages(me.id, other.id)
-      : [];
+    let active = true;
+    const currentUser = me;
+    const currentOther = other;
+    const [userA, userB] = [currentUser.id, currentOther.id].sort();
+    const messageFilter =
+      `and(sender_id.eq.${currentUser.id},recipient_id.eq.${currentOther.id}),` +
+      `and(sender_id.eq.${currentOther.id},recipient_id.eq.${currentUser.id})`;
 
-  if (!ready || !me) {
+    async function loadConversation() {
+      setLoading(true);
+      setError("");
+
+      const { data: match, error: matchError } = await supabase
+        .from("matches")
+        .select("user_a")
+        .eq("user_a", userA)
+        .eq("user_b", userB)
+        .maybeSingle();
+
+      if (!active) return;
+      if (matchError) {
+        setError(`No se pudo comprobar la conexión: ${matchError.message}`);
+        setLoading(false);
+        return;
+      }
+      if (!match) {
+        setIsMatch(false);
+        setLoading(false);
+        return;
+      }
+
+      setIsMatch(true);
+      const { data, error: messagesError } = await supabase
+        .from("chat_messages")
+        .select("id, sender_id, recipient_id, body, created_at")
+        .or(messageFilter)
+        .order("created_at", { ascending: true });
+
+      if (!active) return;
+      if (messagesError) {
+        setError(`No se pudieron cargar los mensajes: ${messagesError.message}`);
+        setLoading(false);
+        return;
+      }
+      setMessages((data as MessageRow[]).map(toMessage));
+      setLoading(false);
+
+      const channel = supabase
+        .channel(`conversation:${userA}:${userB}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "chat_messages" },
+          (payload) => {
+            const row = payload.new as MessageRow;
+            const belongsToConversation =
+              (row.sender_id === currentUser.id &&
+                row.recipient_id === currentOther.id) ||
+              (row.sender_id === currentOther.id &&
+                row.recipient_id === currentUser.id);
+            if (!belongsToConversation) return;
+
+            const incoming = toMessage(row);
+            setMessages((current) =>
+              current.some((message) => message.id === incoming.id)
+                ? current
+                : [...current, incoming],
+            );
+          },
+        )
+        .subscribe((status, channelError) => {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            setError(
+              `El chat está guardado, pero no se pudo activar la actualización en tiempo real: ${
+                channelError?.message ?? status
+              }`,
+            );
+          }
+        });
+
+      return () => {
+        void supabase.removeChannel(channel);
+      };
+    }
+
+    let unsubscribe: (() => void) | undefined;
+    void loadConversation().then((cleanup) => {
+      if (!active) {
+        cleanup?.();
+      } else {
+        unsubscribe = cleanup;
+      }
+    });
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [me, other]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!me || !other || !isMatch || busy) return;
+    const currentUser = me;
+    const currentOther = other;
+
+    const body = draft.trim();
+    if (!body) return;
+
+    setBusy(true);
+    setError("");
+    try {
+      const { data, error: sendError } = await supabase
+        .from("chat_messages")
+        .insert({
+          sender_id: currentUser.id,
+          recipient_id: currentOther.id,
+          body,
+        })
+        .select("id, sender_id, recipient_id, body, created_at")
+        .single();
+
+      if (sendError) throw sendError;
+      const sent = toMessage(data as MessageRow);
+      setMessages((current) =>
+        current.some((message) => message.id === sent.id)
+          ? current
+          : [...current, sent],
+      );
+      setDraft("");
+    } catch (cause) {
+      setError(
+        `No se pudo enviar el mensaje: ${
+          cause instanceof Error ? cause.message : "Error desconocido."
+        }`,
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!ready || (!me && !sessionError)) {
     return (
       <div className="grid flex-1 place-items-center text-muted">
         Abriendo conversación...
@@ -51,44 +205,30 @@ export function ConversacionUi() {
     );
   }
 
-  if (!other || other.id === me.id) {
+  if (sessionError) {
+    return (
+      <div role="alert" className="grid flex-1 place-items-center px-6 text-center text-thread">
+        {sessionError}
+      </div>
+    );
+  }
+
+  if (!other || other.id === me?.id) {
     return (
       <div className="grid flex-1 place-items-center px-6 text-center">
         <div>
-          <p className="text-muted">
-            No encontramos esta conversación.
-          </p>
-          <Link href="/mensajes" className="mt-4 inline-block text-thread">
-            Volver a mensajes
+          <p className="text-muted">No encontramos este perfil.</p>
+          <Link href="/destinos" className="mt-4 inline-block text-thread">
+            Volver a Destinos
           </Link>
         </div>
       </div>
     );
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!me || !other) return;
-
-    setError("");
-
-    try {
-      sendChatMessage(me.id, other.id, draft);
-      setDraft("");
-      setRevision((value) => value + 1);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "No se pudo guardar el mensaje."
-      );
-    }
-  }
-
   return (
     <div className="flex flex-1 flex-col">
-      <AppNav />
+      <AppNav active="mensajes" />
 
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-3 py-4 sm:px-4 sm:py-6">
         <header className="flex items-center gap-3 border-b border-white/10 pb-4">
@@ -97,17 +237,13 @@ export function ConversacionUi() {
             aria-label="Volver a mensajes"
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 hover:bg-white/5"
           >
-            ?
+            ←
           </Link>
-
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-astral/40 bg-gradient-to-br from-astral/40 to-thread/20 font-serif text-xl">
             {other.name.charAt(0).toUpperCase()}
           </div>
-
           <div className="min-w-0 flex-1">
-            <h1 className="truncate font-serif text-2xl">
-              {other.name}
-            </h1>
+            <h1 className="truncate font-serif text-2xl">{other.name}</h1>
             <Link
               href={`/conectar/${other.id}`}
               className="text-xs text-astral hover:text-thread"
@@ -117,113 +253,108 @@ export function ConversacionUi() {
           </div>
         </header>
 
-        <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-xs leading-5 text-muted">
-          Chat de prueba: solo tú puedes ver los mensajes guardados
-          en este navegador. La otra persona no los recibe.
-        </div>
-
-        <section
-          aria-label="Mensajes de la conversación"
-          aria-live="polite"
-          className="my-4 flex min-h-[280px] flex-1 flex-col gap-3 overflow-y-auto rounded-2xl border border-white/[0.06] bg-black/10 p-3 sm:p-5"
-        >
-          {messages.length === 0 ? (
-            <div className="m-auto max-w-xs py-10 text-center">
-              <div className="text-3xl text-thread">?</div>
-              <h2 className="mt-3 font-serif text-xl">
-                Abre el hilo
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                Escribe el primer mensaje y empieza la conversación.
-              </p>
-            </div>
-          ) : (
-            messages.map((message) => {
-              const mine = message.senderId === me.id;
-
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${mine ? "justify-end" : "justify-start"}`}
-                >
-                  <article
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 sm:max-w-[75%] ${
-                      mine
-                        ? "rounded-br-sm bg-thread text-white"
-                        : "rounded-bl-sm border border-white/10 bg-[#171323]"
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap break-words text-sm leading-6">
-                      {message.text}
-                    </p>
-
-                    <time
-                      className={`mt-1 block text-right text-[10px] ${
-                        mine ? "text-white/70" : "text-muted"
-                      }`}
-                    >
-                      {new Date(message.createdAt).toLocaleTimeString(
-                        "es",
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}
-                    </time>
-                  </article>
-                </div>
-              );
-            })
-          )}
-        </section>
-
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-2xl border border-white/10 bg-[#12101a] p-2"
-        >
-          <label htmlFor="chat-message" className="sr-only">
-            Escribe un mensaje
-          </label>
-
-          <div className="flex items-end gap-2">
-            <textarea
-              id="chat-message"
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Escribe algo bonito..."
-              rows={1}
-              maxLength={2000}
-              className="max-h-32 min-h-11 flex-1 resize-y bg-transparent px-3 py-3 text-sm text-ink outline-none placeholder:text-muted"
-            />
-
-            <button
-              type="submit"
-              disabled={!draft.trim()}
-              className="glow-thread grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-thread text-lg text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
-              aria-label="Enviar mensaje"
-            >
-              ?
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between px-3 pb-1 text-[10px] text-muted">
-            <span>Enter para enviar con el botón</span>
-            <span>{draft.length}/2000</span>
-          </div>
-
-          {error && (
-            <p role="alert" className="px-3 pb-2 text-sm text-thread">
-              {error}
+        {loading ? (
+          <p className="my-8 text-center text-sm text-muted">
+            Cargando conversación...
+          </p>
+        ) : !isMatch ? (
+          <section className="my-auto py-12 text-center">
+            <h2 className="font-serif text-xl">Esta conversación aún no está abierta</h2>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted">
+              Solo pueden escribirse quienes se hayan dado me gusta mutuamente.
             </p>
-          )}
-        </form>
+            <Link
+              href="/destinos"
+              className="mt-5 inline-block text-sm text-thread underline underline-offset-4"
+            >
+              Volver a Destinos
+            </Link>
+          </section>
+        ) : (
+          <>
+            <section
+              aria-label="Mensajes de la conversación"
+              aria-live="polite"
+              className="my-4 flex min-h-[280px] flex-1 flex-col gap-3 overflow-y-auto rounded-2xl border border-white/[0.06] bg-black/10 p-3 sm:p-5"
+            >
+              {messages.length === 0 ? (
+                <div className="m-auto max-w-xs py-10 text-center">
+                  <h2 className="font-serif text-xl">Abre el hilo</h2>
+                  <p className="mt-2 text-sm leading-6 text-muted">
+                    Escribe el primer mensaje y empieza la conversación.
+                  </p>
+                </div>
+              ) : (
+                messages.map((message) => {
+                  const mine = message.senderId === me?.id;
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex ${mine ? "justify-end" : "justify-start"}`}
+                    >
+                      <article
+                        className={`max-w-[85%] rounded-2xl px-4 py-3 sm:max-w-[75%] ${
+                          mine
+                            ? "rounded-br-sm bg-thread text-white"
+                            : "rounded-bl-sm border border-white/10 bg-[#171323]"
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-words text-sm leading-6">
+                          {message.text}
+                        </p>
+                        <time className="mt-1 block text-right text-[10px] text-white/70">
+                          {new Date(message.createdAt).toLocaleTimeString(
+                            "es",
+                            { hour: "2-digit", minute: "2-digit" },
+                          )}
+                        </time>
+                      </article>
+                    </div>
+                  );
+                })
+              )}
+            </section>
+
+            <form
+              onSubmit={handleSubmit}
+              className="rounded-2xl border border-white/10 bg-[#12101a] p-2"
+            >
+              <label htmlFor="chat-message" className="sr-only">
+                Escribe un mensaje
+              </label>
+              <div className="flex items-end gap-2">
+                <textarea
+                  id="chat-message"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                  placeholder="Escribe algo bonito..."
+                  rows={1}
+                  maxLength={2000}
+                  className="max-h-32 min-h-11 flex-1 resize-y bg-transparent px-3 py-3 text-sm text-ink outline-none placeholder:text-muted"
+                />
+                <button
+                  type="submit"
+                  disabled={!draft.trim() || busy}
+                  className="glow-thread grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-thread text-lg text-white transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+                  aria-label="Enviar mensaje"
+                >
+                  {busy ? "…" : "➤"}
+                </button>
+              </div>
+              {error && (
+                <p role="alert" className="px-3 pb-2 text-sm text-thread">
+                  {error}
+                </p>
+              )}
+            </form>
+          </>
+        )}
+        {error && !isMatch && (
+          <p role="alert" className="mt-3 text-center text-sm text-thread">
+            {error}
+          </p>
+        )}
       </main>
     </div>
   );
 }
-
-
-
-
-
-

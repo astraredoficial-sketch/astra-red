@@ -2,31 +2,67 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { HiloRojo } from "@/components/HiloRojo";
 import { useSession } from "@/hooks/useSession";
 import { ASPECT_META, PLANET_META } from "@/lib/astro/constants";
 import { computeSynastry } from "@/lib/astro/synastry";
-import { findProfile } from "@/lib/lookup";
+import { supabase } from "@/lib/supabase/client";
 
 export function ConectarUi() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const { ready, me } = useSession();
+  const { ready, store, me, error: sessionError } = useSession();
 
   const other = useMemo(
-    () => (ready ? findProfile(params.id) : undefined),
-    [ready, params.id],
+    () => store?.profiles.find((profile) => profile.id === params.id),
+    [params.id, store],
   );
   const syn = me && other ? computeSynastry(me.chart, other.chart) : null;
+  const [isMatch, setIsMatch] = useState(false);
+  const [matchError, setMatchError] = useState("");
 
   useEffect(() => {
-    if (ready && !me) router.replace("/onboarding");
-  }, [ready, me, router]);
+    if (!ready || sessionError || me) return;
+    router.replace(store?.currentUserId ? "/onboarding" : "/acceso?mode=login");
+  }, [me, ready, router, sessionError, store?.currentUserId]);
+
+  useEffect(() => {
+    if (!me || !other) return;
+    let active = true;
+    const currentUser = me;
+    const currentOther = other;
+    const [userA, userB] = [currentUser.id, currentOther.id].sort();
+
+    async function checkMatch() {
+      const { data, error } = await supabase
+        .from("matches")
+        .select("user_a")
+        .eq("user_a", userA)
+        .eq("user_b", userB)
+        .maybeSingle();
+
+      if (!active) return;
+      if (error) {
+        setMatchError(`No se pudo comprobar la conexión: ${error.message}`);
+        return;
+      }
+      setIsMatch(Boolean(data));
+    }
+
+    void checkMatch();
+    return () => {
+      active = false;
+    };
+  }, [me, other]);
 
   if (!ready || !me) {
-    return <div className="grid flex-1 place-items-center text-muted">Tejiendo aspectosâ€¦</div>;
+    return (
+      <div className="grid flex-1 place-items-center text-muted">
+        {sessionError || "Tejiendo aspectos..."}
+      </div>
+    );
   }
 
   if (!other || !syn) {
@@ -88,12 +124,23 @@ export function ConectarUi() {
           )}
         </ul>
 
-        <Link
-          href={`/mensajes/${other.id}`}
-          className="glow-thread mt-8 block rounded-full bg-thread py-3 text-center text-sm font-medium text-white"
-        >
-          Enviar mensaje
-        </Link>
+        {matchError && (
+          <p role="alert" className="mt-6 text-sm text-rose-300">
+            {matchError}
+          </p>
+        )}
+        {isMatch ? (
+          <Link
+            href={`/mensajes/${other.id}`}
+            className="glow-thread mt-8 block rounded-full bg-thread py-3 text-center text-sm font-medium text-white"
+          >
+            Abrir conversación
+          </Link>
+        ) : (
+          <p className="mt-8 text-center text-sm text-muted">
+            Para chatear, ambos deben indicar que les gusta el perfil.
+          </p>
+        )}
         <Link
           href="/destinos"
           className="mt-3 block rounded-full border border-white/15 py-3 text-center text-sm"
@@ -104,5 +151,3 @@ export function ConectarUi() {
     </div>
   );
 }
-
-

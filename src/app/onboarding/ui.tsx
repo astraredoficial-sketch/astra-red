@@ -1,214 +1,379 @@
 "use client";
 
-import React, { useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { StepWhere, type CityResult } from "@/components/StepWhere";
+import { computeNatalChart } from "@/lib/astro/chart";
+import { supabase } from "@/lib/supabase/client";
+import type { Gender, TargetGender } from "@/lib/types";
 
-function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
-  if (!supabaseUrl || !supabaseAnonKey) return null;
-
-  return createClient(supabaseUrl, supabaseAnonKey);
-}
+const TOTAL_STEPS = 4;
 
 export default function OnboardingUi() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
+  const [authReady, setAuthReady] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [birthTime, setBirthTime] = useState("");
   const [birthTimeUnknown, setBirthTimeUnknown] = useState(false);
+  const [city, setCity] = useState<CityResult | null>(null);
+  const [gender, setGender] = useState<Gender | "">("");
+  const [targetGender, setTargetGender] = useState<TargetGender | "">("");
+  const [error, setError] = useState("");
 
-  const [country, setCountry] = useState("");
-  const [city, setCity] = useState("");
+  useEffect(() => {
+    let active = true;
 
-  const [lookingFor, setLookingFor] = useState("Relación");
-  const [genderPref, setGenderPref] = useState("Mujeres");
+    async function checkSession() {
+      const { data, error: sessionError } = await supabase.auth.getUser();
+      if (!active) return;
 
-  async function handleFinish(e: React.FormEvent) {
-    e.preventDefault();
+      if (sessionError || !data.user) {
+        router.replace("/acceso?mode=signup");
+        return;
+      }
+
+      const metadataName =
+        data.user.user_metadata?.full_name ?? data.user.user_metadata?.name;
+      if (typeof metadataName === "string") setName(metadataName);
+      setAuthReady(true);
+    }
+
+    void checkSession();
+    return () => {
+      active = false;
+    };
+  }, [router]);
+
+  function validateStep() {
+    if (step === 1 && name.trim().length < 2) {
+      setError("Escribe tu nombre para continuar.");
+      return false;
+    }
+    if (step === 2) {
+      if (!birthDate) {
+        setError("Selecciona tu fecha de nacimiento.");
+        return false;
+      }
+      if (Date.parse(`${birthDate}T00:00:00`) > Date.now()) {
+        setError("La fecha de nacimiento no puede estar en el futuro.");
+        return false;
+      }
+      if (!birthTimeUnknown && !birthTime) {
+        setError("Indica tu hora de nacimiento o marca que no la conoces.");
+        return false;
+      }
+    }
+    if (step === 3 && !city) {
+      setError("Selecciona el país y una ciudad de nacimiento.");
+      return false;
+    }
+    if (step === 4 && (!gender || !targetGender)) {
+      setError("Completa tu identidad y a quién deseas conocer.");
+      return false;
+    }
+    setError("");
+    return true;
+  }
+
+  function goNext() {
+    if (validateStep()) setStep((current) => current + 1);
+  }
+
+  async function handleFinish(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!validateStep()) return;
+    if (step < TOTAL_STEPS) {
+      setStep((current) => current + 1);
+      return;
+    }
+
     setLoading(true);
+    setError("");
 
     try {
-      const supabase = getSupabaseClient();
-
-      if (supabase) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (user) {
-          const { error } = await supabase.from("profiles").upsert({
-            id: user.id,
-            name:
-              user.user_metadata?.full_name ||
-              user.user_metadata?.name ||
-              user.email?.split("@")[0] ||
-              "Usuario",
-            birth_date: birthDate,
-            birth_time: birthTimeUnknown ? null : birthTime,
-            birth_time_unknown: birthTimeUnknown,
-            location_country: country,
-            location_city: city,
-            looking_for: lookingFor,
-            target_gender: genderPref,
-            updated_at: new Date().toISOString(),
-          });
-
-          if (error) throw error;
-        }
+      const { data, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      if (!data.user) {
+        throw new Error("Tu sesión expiró. Vuelve a iniciar sesión.");
       }
-    } catch (err) {
-      console.error("Error guardando onboarding:", err);
+      if (!city || !gender || !targetGender) {
+        throw new Error("Faltan datos obligatorios del formulario.");
+      }
+
+      const birth = {
+        date: birthDate,
+        time: birthTimeUnknown ? "12:00" : birthTime,
+        cityId: city.id,
+        timeUnknown: birthTimeUnknown,
+        location: {
+          latitude: city.latitude,
+          longitude: city.longitude,
+          timeZone: city.timeZone,
+        },
+      };
+      const chart = computeNatalChart(birth);
+      const now = new Date().toISOString();
+
+      const { error: birthError } = await supabase.from("birth_details").upsert(
+        {
+          user_id: data.user.id,
+          birth_date: birthDate,
+          birth_time: birthTimeUnknown ? null : birthTime,
+          birth_time_unknown: birthTimeUnknown,
+          city_id: city.id,
+          location_country: city.country,
+          location_city: city.name,
+          birth_latitude: city.latitude,
+          birth_longitude: city.longitude,
+          birth_timezone: city.timeZone,
+          updated_at: now,
+        },
+        { onConflict: "user_id" },
+      );
+      if (birthError) throw birthError;
+
+      const { error: profileError } = await supabase.from("profiles").upsert(
+        {
+          id: data.user.id,
+          name: name.trim(),
+          gender,
+          target_gender: targetGender,
+          location_country: city.country,
+          location_city: city.name,
+          city_id: city.id,
+          chart,
+          updated_at: now,
+        },
+        { onConflict: "id" },
+      );
+      if (profileError) throw profileError;
+
+      router.replace("/carta");
+    } catch (cause) {
+      const detail =
+        cause instanceof Error
+          ? cause.message
+          : "Error desconocido al guardar tus datos.";
+      setError(
+        `No se pudo guardar tu perfil en Supabase. Tus datos siguen en el formulario. ${detail}`,
+      );
     } finally {
-      window.location.href = "/carta";
+      setLoading(false);
     }
   }
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 font-sans">
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-8 max-w-md w-full shadow-2xl space-y-6">
+  if (!authReady) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-slate-950 px-4 text-slate-300">
+        Verificando tu sesión...
+      </main>
+    );
+  }
 
-        <div className="flex items-center justify-between text-xs tracking-widest text-slate-400 font-bold uppercase">
-          <span>PASO {step} DE 3</span>
-          <span className="text-purple-400">ASTRARED ONBOARDING</span>
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-4 font-sans text-slate-100">
+      <form
+        onSubmit={handleFinish}
+        className="w-full max-w-lg space-y-6 rounded-2xl border border-slate-800 bg-slate-900/90 p-6 shadow-2xl sm:p-8"
+      >
+        <header className="flex items-center justify-between text-xs font-bold uppercase tracking-widest text-slate-400">
+          <span>Paso {step} de {TOTAL_STEPS}</span>
+          <span className="text-purple-400">AstraRed</span>
+        </header>
+
+        <div className="h-1.5 overflow-hidden rounded-full bg-slate-800">
+          <div
+            className="h-full rounded-full bg-amber-400 transition-all"
+            style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
+          />
         </div>
 
         {step === 1 && (
-          <>
+          <section className="space-y-4">
             <div>
-              <h1 className="text-2xl font-serif font-bold text-white">
-                Tu nacimiento
+              <h1 className="font-serif text-2xl font-bold text-white">
+                ¿Cómo te llamas?
               </h1>
-              <p className="text-xs text-slate-400">
-                Necesitamos estos datos para calcular tu carta natal.
+              <p className="mt-1 text-sm text-slate-400">
+                Este nombre será visible en tu perfil.
               </p>
             </div>
-
-            <div className="space-y-4">
-              <input
-                type="date"
-                value={birthDate}
-                onChange={(e) => setBirthDate(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3"
-              />
-
-              <input
-                type="time"
-                value={birthTime}
-                disabled={birthTimeUnknown}
-                onChange={(e) => setBirthTime(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3"
-              />
-
-              <label className="flex gap-2 items-center text-sm text-slate-300">
-                <input
-                  type="checkbox"
-                  checked={birthTimeUnknown}
-                  onChange={(e) => setBirthTimeUnknown(e.target.checked)}
-                />
-                No conozco mi hora de nacimiento
-              </label>
-            </div>
-          </>
+            <label
+              htmlFor="profile-name"
+              className="block text-sm text-slate-300"
+            >
+              Nombre
+            </label>
+            <input
+              id="profile-name"
+              autoComplete="name"
+              maxLength={100}
+              required
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
+              placeholder="Tu nombre"
+            />
+          </section>
         )}
 
         {step === 2 && (
-          <>
+          <section className="space-y-4">
             <div>
-              <h1 className="text-2xl font-serif font-bold text-white">
-                Tu ubicación
+              <h1 className="font-serif text-2xl font-bold text-white">
+                Tu nacimiento
               </h1>
-              <p className="text-xs text-slate-400">
-                Lugar de nacimiento para calcular posiciones astrales.
+              <p className="mt-1 text-sm text-slate-400">
+                La hora ayuda a calcular el ascendente y las casas.
               </p>
             </div>
-
-            <div className="space-y-4">
+            <label
+              htmlFor="birth-date"
+              className="block text-sm text-slate-300"
+            >
+              Fecha de nacimiento
+            </label>
+            <input
+              id="birth-date"
+              type="date"
+              required
+              value={birthDate}
+              onChange={(event) => setBirthDate(event.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+            />
+            <label
+              htmlFor="birth-time"
+              className="block text-sm text-slate-300"
+            >
+              Hora de nacimiento
+            </label>
+            <input
+              id="birth-time"
+              type="time"
+              required={!birthTimeUnknown}
+              disabled={birthTimeUnknown}
+              value={birthTime}
+              onChange={(event) => setBirthTime(event.target.value)}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white disabled:opacity-50"
+            />
+            <label className="flex items-center gap-2 text-sm text-slate-300">
               <input
-                placeholder="País"
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3"
+                type="checkbox"
+                checked={birthTimeUnknown}
+                onChange={(event) =>
+                  setBirthTimeUnknown(event.target.checked)
+                }
+                className="accent-amber-400"
               />
-
-              <input
-                placeholder="Ciudad"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3"
-              />
-            </div>
-          </>
+              No conozco mi hora de nacimiento
+            </label>
+          </section>
         )}
 
         {step === 3 && (
-          <>
-            <div>
-              <h1 className="text-2xl font-serif font-bold text-white">
-                Preferencias
-              </h1>
-              <p className="text-xs text-slate-400">
-                Cuéntanos qué tipo de conexión buscas.
-              </p>
-            </div>
-
-            <div className="space-y-4">
-              <select
-                value={lookingFor}
-                onChange={(e) => setLookingFor(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3"
-              >
-                <option>Relación</option>
-                <option>Amistad</option>
-                <option>Conexión Astral</option>
-              </select>
-
-              <select
-                value={genderPref}
-                onChange={(e) => setGenderPref(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3"
-              >
-                <option>Mujeres</option>
-                <option>Hombres</option>
-                <option>Todos</option>
-              </select>
-            </div>
-          </>
+          <StepWhere
+            onSelectCity={(selected) => {
+              setCity(selected);
+              setError("");
+            }}
+          />
         )}
 
-        <div className="pt-4 flex gap-3">
+        {step === 4 && (
+          <section className="space-y-4">
+            <div>
+              <h1 className="font-serif text-2xl font-bold text-white">
+                Preferencias de conexión
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Estas preferencias filtran los perfiles que verás en Destinos.
+              </p>
+            </div>
+            <label
+              htmlFor="profile-gender"
+              className="block text-sm text-slate-300"
+            >
+              ¿Cómo te identificas?
+            </label>
+            <select
+              id="profile-gender"
+              required
+              value={gender}
+              onChange={(event) =>
+                setGender(event.target.value as Gender | "")
+              }
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+            >
+              <option value="">Selecciona una opción</option>
+              <option value="hombre">Hombre</option>
+              <option value="mujer">Mujer</option>
+              <option value="otro">Otro / prefiero no decirlo</option>
+            </select>
+            <label
+              htmlFor="target-gender"
+              className="block text-sm text-slate-300"
+            >
+              ¿A quién deseas conocer?
+            </label>
+            <select
+              id="target-gender"
+              required
+              value={targetGender}
+              onChange={(event) =>
+                setTargetGender(event.target.value as TargetGender | "")
+              }
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
+            >
+              <option value="">Selecciona una opción</option>
+              <option value="hombre">Hombres</option>
+              <option value="mujer">Mujeres</option>
+              <option value="ambos">Ambos</option>
+            </select>
+          </section>
+        )}
+
+        {error && (
+          <p role="alert" className="break-words text-sm leading-6 text-rose-300">
+            {error}
+          </p>
+        )}
+
+        <div className="flex gap-3 pt-2">
           {step > 1 && (
             <button
               type="button"
-              onClick={() => setStep(step - 1)}
-              className="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-xl"
+              disabled={loading}
+              onClick={() => {
+                setError("");
+                setStep((current) => current - 1);
+              }}
+              className="flex-1 rounded-xl bg-slate-800 py-3 text-sm hover:bg-slate-700 disabled:opacity-50"
             >
               Atrás
             </button>
           )}
-
-          {step < 3 ? (
+          {step < TOTAL_STEPS ? (
             <button
               type="button"
-              onClick={() => setStep(step + 1)}
-              className="flex-[2] bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl"
+              onClick={goNext}
+              className="flex-[2] rounded-xl bg-amber-400 py-3 text-sm font-bold text-slate-950 hover:bg-amber-300"
             >
               Siguiente
             </button>
           ) : (
             <button
-              onClick={handleFinish}
+              type="submit"
               disabled={loading}
-              className="flex-[2] bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded-xl"
+              className="flex-[2] rounded-xl bg-amber-400 py-3 text-sm font-bold text-slate-950 hover:bg-amber-300 disabled:cursor-wait disabled:opacity-60"
             >
-              {loading ? "Calculando..." : "Crear mi carta natal"}
+              {loading ? "Guardando y calculando..." : "Crear mi carta natal"}
             </button>
           )}
         </div>
-
-      </div>
-    </div>
+      </form>
+    </main>
   );
 }

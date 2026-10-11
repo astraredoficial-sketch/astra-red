@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AstraRed
 
-## Getting Started
+Aplicación de cartas natales, compatibilidad astrológica y conversaciones entre
+personas con afinidad mutua. Usa Next.js, Supabase Auth, PostgreSQL y Realtime.
 
-First, run the development server:
+## Desarrollo local
+
+Instala dependencias y arranca el servidor:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Crea `.env.local` con la URL y la clave pública (publishable/anon) de tu proyecto
+Supabase:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable-key>
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+No uses la `service_role` key en variables `NEXT_PUBLIC_*` ni en código del
+navegador. En Vercel configura las mismas dos variables para los entornos que
+vayas a desplegar.
 
-## Learn More
+## Preparar Supabase
 
-To learn more about Next.js, take a look at the following resources:
+Aplica [`supabase/migrations/20261011000100_profiles_matches_chat.sql`](./supabase/migrations/20261011000100_profiles_matches_chat.sql)
+en el SQL Editor de Supabase (o mediante Supabase CLI). La migración crea el
+perfil público, los datos privados de nacimiento, los me gusta mutuos y los
+mensajes; activa RLS y agrega las reglas de Realtime para el chat.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+En **Authentication → URL Configuration**, añade las URL locales y de Vercel a
+la lista de redirect URLs permitidas para que funcione la confirmación de correo.
+Después de aplicar la migración, vuelve a intentar el registro: el formulario
+mostrará el error de Supabase si falla la escritura y no te enviará a una carta
+que no se haya guardado.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Verificación
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm test
+npx tsc --noEmit
+npm run lint
+npm run build
+```

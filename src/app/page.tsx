@@ -16,16 +16,16 @@ export default function Home() {
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center px-6 pb-20 pt-10 text-center">
         <p className="rise text-xs uppercase tracking-[0.35em] text-astral">
-          Fase 1 Â· Alpha
+          Fase 1 · Alpha
         </p>
         <h1 className="font-serif rise mt-4 max-w-2xl text-5xl leading-tight md:text-7xl">
           No es magia.
           <br />
-          Es <span className="text-thread">sinastrÃ­a</span>.
+          Es <span className="text-thread">sinastría</span>.
         </h1>
         <p className="rise mt-6 max-w-xl text-lg text-muted">
           AstraRed calcula tu carta natal y te ayuda a descubrir afinidades
-          astrolÃ³gicas: Sol, Luna, Ascendente y el hilo que a veces se enciende.
+          astrológicas: Sol, Luna, Ascendente y el hilo que a veces se enciende.
         </p>
 
         <div className="rise mt-10 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
@@ -33,7 +33,7 @@ export default function Home() {
             href="/acceso?mode=signup"
             className="glow-thread rounded-full bg-thread px-8 py-3.5 text-sm font-medium text-white"
           >
-            Crear usuario gratis
+            Crear cuenta gratis
           </Link>
           <Link
             href="/acceso?mode=login"
@@ -52,9 +52,9 @@ export default function Home() {
 
         <div className="mt-16 grid w-full max-w-3xl gap-4 text-left sm:grid-cols-3">
           {[
-            { k: "01", t: "Carta natal", d: "Fecha, hora y ciudad para conocer tu trÃ­ada." },
+            { k: "01", t: "Carta natal", d: "Fecha, hora y ciudad para conocer tu tríada." },
             { k: "02", t: "Destinos", d: "Descubre perfiles y compara afinidades." },
-            { k: "03", t: "Hilo Rojo", d: "Explora los aspectos astrolÃ³gicos entre dos cartas." },
+            { k: "03", t: "Hilo Rojo", d: "Explora los aspectos astrológicos entre dos cartas." },
           ].map((item) => (
             <div key={item.k} className="rounded-3xl border border-white/10 bg-white/5 p-5">
               <div className="text-xs text-thread">{item.k}</div>
@@ -67,4 +67,3 @@ export default function Home() {
     </div>
   );
 }
-

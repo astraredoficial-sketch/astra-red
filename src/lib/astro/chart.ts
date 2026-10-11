@@ -78,18 +78,26 @@ function placement(id: PlanetId, longitude: number, houses: number[]): Placement
 }
 
 export function computeNatalChart(birth: BirthData): NatalChart {
-  const city = findCity(birth.cityId);
+  const city =
+    birth.location ??
+    findCity(birth.cityId);
   if (!city) throw new Error("Ciudad no encontrada");
 
   const timeStr = birth.timeUnknown ? "12:00" : birth.time;
-  const utc = civilToUtc(birth.date, timeStr, city.tz);
+  const utc = civilToUtc(
+    birth.date,
+    timeStr,
+    "timeZone" in city ? city.timeZone : city.tz,
+  );
   const astroTime = Astronomy.MakeTime(utc);
   const obliquity = 23.4392911 - (46.815 / 3600) * (astroTime.tt / 36525);
 
   const gastHours = Astronomy.SiderealTime(astroTime);
-  const lstHours = ((gastHours + city.lng / 15) % 24 + 24) % 24;
+  const longitude = "longitude" in city ? city.longitude : city.lng;
+  const latitude = "latitude" in city ? city.latitude : city.lat;
+  const lstHours = ((gastHours + longitude / 15) % 24 + 24) % 24;
   const ramc = lstHours * 15;
-  const ascLon = ascendant(ramc, city.lat, obliquity);
+  const ascLon = ascendant(ramc, latitude, obliquity);
   const mcLon = ramcToMc(ramc, obliquity);
   void mcLon;
 
@@ -114,4 +122,3 @@ export function computeNatalChart(birth: BirthData): NatalChart {
     timeUnknown: birth.timeUnknown,
   };
 }
-

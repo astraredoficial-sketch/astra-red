@@ -26,6 +26,7 @@ Module._resolveFilename = function (request, parent, isMain, options) {
 };
 
 const { computeNatalChart } = require("../src/lib/astro/chart.ts");
+const { GET: getLocations } = require("../src/app/api/locations/route.ts");
 
 const birth = {
   date: "2000-01-01",
@@ -107,4 +108,36 @@ test("referencias angulares guardadas del Sol y la Luna", () => {
       `${id}: diferencia ${(angularDifference * 3600).toFixed(3)} segundos de arco`
     );
   }
+});
+
+test("el catálogo expone todos los países y ciudades con coordenadas y zona horaria", async () => {
+  const countriesResponse = await getLocations(
+    new Request("http://localhost/api/locations"),
+  );
+  const countries = await countriesResponse.json();
+  assert.equal(countries.length, 250);
+  assert.ok(countries.some((country) => country.isoCode === "VE"));
+
+  const citiesResponse = await getLocations(
+    new Request("http://localhost/api/locations?country=VE&q=Acarigua"),
+  );
+  const cities = await citiesResponse.json();
+  const city = cities.find((item) => item.name === "Acarigua");
+  assert.ok(city);
+  assert.equal(city.timeZone, "America/Caracas");
+  assert.ok(Number.isFinite(city.latitude));
+  assert.ok(Number.isFinite(city.longitude));
+
+  const chart = computeNatalChart({
+    date: "1990-01-01",
+    time: "12:00",
+    cityId: city.id,
+    timeUnknown: false,
+    location: {
+      latitude: city.latitude,
+      longitude: city.longitude,
+      timeZone: city.timeZone,
+    },
+  });
+  assert.equal(chart.planets.length, 12);
 });

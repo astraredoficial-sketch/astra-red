@@ -46,6 +46,11 @@ export type BirthData = {
   time: string;
   cityId: string;
   timeUnknown: boolean;
+  location?: {
+    latitude: number;
+    longitude: number;
+    timeZone: string;
+  };
 };
 
 // --- NUEVOS TIPOS PARA FILTROS Y REGISTRO ---
@@ -62,14 +67,12 @@ export type PhoneData = {
 export type UserProfile = {
   id: string;
   name: string;
-  bio: string;
   gender: Gender;
   lookingFor: LookingFor;
   targetGender: TargetGender;
-  phone: PhoneData;
-  birth: BirthData;
+  locationCity: string;
+  locationCountry: string;
   chart: NatalChart;
-  seeded?: boolean;
 };
 
 export type SynastryAspect = {
@@ -86,4 +89,3 @@ export type SynastryResult = {
   hasNodalAspect: boolean;
   hiloRojo: boolean;
 };
-

@@ -29,13 +29,12 @@ export function AccesoUi() {
       if (active) setMode(requestedMode);
 
       const { data, error: sessionError } = await supabase.auth.getSession();
-      if (!active || sessionError || !data.session) return;
-
-      // En login, no entrar automáticamente: la persona debe enviar el formulario.
-      // En signup, avisar si ya hay una sesión abierta para evitar mezclar cuentas.
-      if (requestedMode === "signup") {
-        setHasActiveSession(true);
+      if (!active) return;
+      if (sessionError) {
+        setError(sessionError.message);
+        return;
       }
+      setHasActiveSession(Boolean(data.session));
     }
 
     void initialize();
@@ -48,7 +47,7 @@ export function AccesoUi() {
   async function continueForUser(userId: string) {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id, chart, name, birth_date, birth_time, location_city")
+      .select("chart")
       .eq("id", userId)
       .maybeSingle();
 
@@ -108,14 +107,14 @@ export function AccesoUi() {
           email: cleanEmail,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/acceso`,
+            emailRedirectTo: `${window.location.origin}/acceso?mode=login`,
           },
         });
 
         if (signupError) throw signupError;
 
         if (data.session && data.user) {
-          await continueForUser(data.user.id);
+          router.replace("/onboarding");
         } else {
           setNotice(
             "Cuenta creada. Revisa tu correo y confirma la dirección antes de iniciar sesión."
@@ -260,6 +259,4 @@ export function AccesoUi() {
     </main>
   );
 }
-
-
 

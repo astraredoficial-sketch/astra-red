@@ -20,9 +20,9 @@ export function validateBirthData(data: Partial<BirthData>): BirthData {
   };
 }
 
-export function normalizeTargetGender(gender: string): any {
-  if (gender === "todos" || gender === "otro" || gender === "hombre" || gender === "mujer") {
+export function normalizeTargetGender(gender: string): TargetGender {
+  if (gender === "ambos" || gender === "hombre" || gender === "mujer") {
     return gender;
   }
-  return "todos";
+  return "ambos";
 }

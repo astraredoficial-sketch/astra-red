@@ -1,126 +1,212 @@
-﻿"use client";
+"use client";
 
-import React, { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/hooks/useSession";
 import { AppNav } from "@/components/AppNav";
-import { SEED_PROFILES } from "@/lib/profiles";
-import { markSwipe } from "@/lib/storage";
+import { useSession } from "@/hooks/useSession";
+import { computeSynastry } from "@/lib/astro/synastry";
+import { filterProfilesForUser } from "@/lib/filters";
+import { supabase } from "@/lib/supabase/client";
 
 export function DestinosUi() {
   const router = useRouter();
-  const { me } = useSession();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [matchAnimation, setMatchAnimation] = useState(false);
+  const { ready, store, me, error: sessionError } = useSession();
+  const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
-  // Lista de perfiles a explorar
-  const availableProfiles = SEED_PROFILES.filter((p) => p.id !== me?.id);
-  const currentProfile = availableProfiles[currentIndex];
-
-  const handleSwipe = (action: "like" | "pass") => {
-    if (!currentProfile) return;
-
-    markSwipe(currentProfile.id, action);
-
-    if (action === "like") {
-      setMatchAnimation(true);
-      // Redirige al chat del usuario de forma inmediata tras mostrar la sincronía cósmica
-      setTimeout(() => {
-        setMatchAnimation(false);
-        router.push("/mensajes/" + currentProfile.id);
-      }, 1000);
-    } else {
-      setCurrentIndex((prev) => prev + 1);
+  useEffect(() => {
+    if (!ready || sessionError) return;
+    if (!me) {
+      router.replace(
+        store?.currentUserId ? "/onboarding" : "/acceso?mode=login",
+      );
     }
-  };
+  }, [me, ready, router, sessionError, store?.currentUserId]);
+
+  useEffect(() => {
+    if (!me) return;
+    let active = true;
+    const currentUser = me;
+
+    async function loadLikes() {
+      const { data, error: likesError } = await supabase
+        .from("profile_likes")
+        .select("liked_id")
+        .eq("liker_id", currentUser.id);
+
+      if (!active) return;
+      if (likesError) {
+        setError(`No se pudieron cargar tus destinos guardados: ${likesError.message}`);
+        return;
+      }
+      setSeenIds(new Set(data.map((item) => item.liked_id)));
+    }
+
+    void loadLikes();
+    return () => {
+      active = false;
+    };
+  }, [me]);
+
+  const availableProfiles = useMemo(() => {
+    if (!me || !store) return [];
+    return filterProfilesForUser(
+      me,
+      store.profiles.filter((profile) => !seenIds.has(profile.id)),
+    )
+      .map((profile) => ({
+        profile,
+        compatibility: computeSynastry(me.chart, profile.chart),
+      }))
+      .sort((a, b) => b.compatibility.percent - a.compatibility.percent);
+  }, [me, seenIds, store]);
+
+  const current = availableProfiles[0];
+
+  async function handleSwipe(action: "like" | "pass") {
+    if (!me || !current || busy) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+
+    if (action === "pass") {
+      setSeenIds((previous) => new Set(previous).add(current.profile.id));
+      setBusy(false);
+      return;
+    }
+
+    const { data: matched, error: likeError } = await supabase.rpc(
+      "like_profile",
+      { target_user_id: current.profile.id },
+    );
+    setBusy(false);
+
+    if (likeError) {
+      setError(`No se pudo guardar tu me gusta: ${likeError.message}`);
+      return;
+    }
+
+    setSeenIds((previous) => new Set(previous).add(current.profile.id));
+    if (matched) {
+      router.push(`/mensajes/${current.profile.id}`);
+    } else {
+      setNotice("Me gusta guardado. Te avisaremos cuando haya una conexión mutua.");
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      {/* Navegación Superior Global */}
+    <div className="flex min-h-screen flex-col bg-slate-950 text-white">
       <AppNav active="destinos" />
 
-      <main className="max-w-md mx-auto p-4 flex-1 flex flex-col items-center justify-center w-full">
-        {currentProfile ? (
-          <div className="w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl relative space-y-6">
-            {/* Indicador de Afinidad Astrológica */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-widest text-purple-400 font-semibold">
-                Destinos Astrales
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center p-4">
+        {!ready || (!me && !sessionError) ? (
+          <p className="text-sm text-slate-400">Cargando tus destinos astrales...</p>
+        ) : sessionError ? (
+          <p role="alert" className="max-w-lg text-center text-sm text-rose-300">
+            {sessionError}
+          </p>
+        ) : current ? (
+          <article className="relative w-full space-y-6 rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-semibold uppercase tracking-widest text-purple-300">
+                Destinos astrales
               </span>
-              <span className="bg-rose-950/60 border border-rose-500/30 text-rose-300 text-xs px-3 py-1 rounded-full font-bold">
-                88% Afinidad
+              <span className="rounded-full border border-rose-500/30 bg-rose-950/60 px-3 py-1 text-xs font-bold text-rose-300">
+                {current.compatibility.percent}% afinidad
               </span>
             </div>
 
-            {/* Datos del Perfil */}
             <div>
-              <h2 className="text-3xl font-bold font-serif text-white">{currentProfile.name}</h2>
-              <p className="text-xs text-slate-400 mt-1">
-                {currentProfile.birth?.date} · Caracas, Venezuela
+              <h1 className="font-serif text-3xl font-bold">
+                {current.profile.name}
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                {current.profile.locationCity},{" "}
+                {current.profile.locationCountry}
               </p>
-              <p className="text-sm text-slate-300 mt-3 italic">"{currentProfile.bio}"</p>
+              <p className="mt-3 text-sm text-slate-300">
+                Sol en {current.profile.chart.triad.sun.sign} · Luna en{" "}
+                {current.profile.chart.triad.moon.sign} · Ascendente en{" "}
+                {current.profile.chart.triad.asc.sign}
+              </p>
             </div>
 
-            {/* Tríada del Perfil */}
-            <div className="grid grid-cols-3 gap-2 text-center bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3">
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-semibold">Sol</span>
-                <span className="text-xs font-bold text-rose-400">{currentProfile.chart?.triad?.sun?.sign || "Aries"}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-semibold">Luna</span>
-                <span className="text-xs font-bold text-purple-400">{currentProfile.chart?.triad?.moon?.sign || "Leo"}</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-slate-500 uppercase block font-semibold">Ascendente</span>
-                <span className="text-xs font-bold text-rose-300">{currentProfile.chart?.triad?.asc?.sign || "Escorpio"}</span>
-              </div>
+            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-800 bg-slate-950/60 p-3 text-center">
+              {[
+                ["Sol", current.profile.chart.triad.sun.sign],
+                ["Luna", current.profile.chart.triad.moon.sign],
+                ["Ascendente", current.profile.chart.triad.asc.sign],
+              ].map(([label, sign]) => (
+                <div key={label}>
+                  <span className="block text-[10px] font-semibold uppercase text-slate-500">
+                    {label}
+                  </span>
+                  <span className="text-xs font-bold text-rose-300">{sign}</span>
+                </div>
+              ))}
             </div>
 
-            {/* Botones de Swipe / Interacción */}
-            <div className="flex items-center justify-center gap-6 pt-2">
+            <div className="flex items-center justify-center gap-6">
               <button
-                onClick={() => handleSwipe("pass")}
-                className="w-14 h-14 rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:text-rose-400 text-xl font-bold flex items-center justify-center transition active:scale-90 shadow-lg cursor-pointer"
+                type="button"
+                disabled={busy}
+                onClick={() => void handleSwipe("pass")}
+                aria-label="Pasar perfil"
+                className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-xl font-bold text-slate-300 transition hover:text-rose-400 disabled:opacity-50"
               >
-                ✕
+                ×
               </button>
               <button
-                onClick={() => handleSwipe("like")}
-                className="w-14 h-14 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xl font-bold flex items-center justify-center transition active:scale-90 shadow-lg cursor-pointer"
+                type="button"
+                disabled={busy}
+                onClick={() => void handleSwipe("like")}
+                aria-label="Me gusta este perfil"
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-600 text-xl font-bold text-white transition hover:bg-rose-500 disabled:opacity-50"
               >
                 ♥
               </button>
             </div>
 
-            {/* Animación de Match y Redirección */}
-            {matchAnimation && (
-              <div className="absolute inset-0 bg-rose-950/90 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center text-center p-6 space-y-2 animate-in fade-in zoom-in-95 duration-200">
-                <span className="text-4xl">✨</span>
-                <h3 className="text-2xl font-bold font-serif text-white">¡Sincronía Cósmica!</h3>
-                <p className="text-xs text-rose-200">
-                  Redirigiendo al chat con {currentProfile.name}...
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-center space-y-4">
-            <span className="text-4xl">🌌</span>
-            <h3 className="text-xl font-bold font-serif text-white">Has visto todas las almas disponibles</h3>
-            <p className="text-xs text-slate-400">
-              Vuelve más tarde para descubrir nuevas conexiones astrales.
-            </p>
-            <button
-              onClick={() => setCurrentIndex(0)}
-              className="px-4 py-2 bg-slate-800 border border-slate-700 text-xs text-slate-300 rounded-xl hover:bg-slate-700 transition cursor-pointer"
+            <Link
+              href={`/conectar/${current.profile.id}`}
+              className="block text-center text-sm text-purple-300 underline underline-offset-4"
             >
-              Reiniciar exploración
-            </button>
-          </div>
+              Ver compatibilidad detallada
+            </Link>
+          </article>
+        ) : (
+          <section className="space-y-4 text-center">
+            <span className="text-4xl" aria-hidden="true">🌌</span>
+            <h1 className="font-serif text-2xl font-bold">
+              No hay más perfiles compatibles por ahora
+            </h1>
+            <p className="mx-auto max-w-md text-sm leading-6 text-slate-400">
+              Mostramos perfiles reales que coinciden con tus preferencias y
+              tienen una carta natal completa. Vuelve cuando haya nuevas
+              personas.
+            </p>
+            {notice && (
+              <p role="status" className="text-sm text-emerald-300">
+                {notice}
+              </p>
+            )}
+          </section>
+        )}
+
+        {notice && current && (
+          <p role="status" className="mt-4 text-center text-sm text-emerald-300">
+            {notice}
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="mt-4 max-w-lg text-center text-sm text-rose-300">
+            {error}
+          </p>
         )}
       </main>
     </div>
   );
 }
-

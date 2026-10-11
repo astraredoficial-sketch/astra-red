@@ -1,288 +1,142 @@
-﻿"use client";
+"use client";
 
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/AppNav";
-import { VipPaywall } from "@/components/VipPaywall";
-import { getAllAccounts, saveAccounts, Account } from "@/lib/userStore";
+import { useSession } from "@/hooks/useSession";
+import { supabase } from "@/lib/supabase/client";
 
 export function CuentaUi() {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [showSwitchModal, setShowSwitchModal] = useState(false);
-  const [showVipModal, setShowVipModal] = useState(false);
+  const router = useRouter();
+  const { ready, store, me, error: sessionError } = useSession();
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setAccounts(getAllAccounts());
+    if (!ready || sessionError || me) return;
+    router.replace(store?.currentUserId ? "/onboarding" : "/acceso?mode=login");
+  }, [me, ready, router, sessionError, store?.currentUserId]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadEmail() {
+      const { data, error: userError } = await supabase.auth.getUser();
+      if (!active) return;
+      if (userError) {
+        setError(`No se pudo cargar tu cuenta: ${userError.message}`);
+        return;
+      }
+      setEmail(data.user?.email ?? "");
+    }
+
+    void loadEmail();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const currentAccount = accounts.find((a) => a.isCurrent) || accounts[0] || {
-    id: "acc-1",
-    name: "Cargando...",
-    email: "",
-    avatar: "🧙‍♂️",
-    location: "",
-    membership: "free" as const,
-    joinedDate: "",
-    isCurrent: true
-  };
+  async function handleSignOut() {
+    setBusy(true);
+    setError("");
 
-  const handleSwitchAccount = (id: string) => {
-    const updated = accounts.map((acc) => ({
-      ...acc,
-      isCurrent: acc.id === id,
-    }));
-    setAccounts(updated);
-    saveAccounts(updated);
-    setShowSwitchModal(false);
-  };
-
-  const handleUpgradeToVip = () => {
-    const updated = accounts.map((acc) =>
-      acc.isCurrent ? { ...acc, membership: "vip" as const } : acc
-    );
-    setAccounts(updated);
-    saveAccounts(updated);
-    setShowVipModal(false);
-    alert("¡Felicidades " + currentAccount.name + "! Has activado Astra Red VIP ($4.99/mes).");
-  };
-
-  const handleLogout = () => {
-    if (confirm("¿Deseas cerrar sesión? Se requerirá tu correo y contraseña para ingresar de nuevo.")) {
-      const resetAccounts = accounts.map((acc) => ({ ...acc, isCurrent: false }));
-      saveAccounts(resetAccounts);
-      window.location.href = "/";
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) {
+      setError(`No se pudo cerrar la sesión: ${signOutError.message}`);
+      setBusy(false);
+      return;
     }
-  };
 
-  // ELIMINAR CUENTA Y BORRAR TODOS LOS DATOS
-  const handleDeleteAccount = () => {
-    const confirmation = confirm(
-      "¿ESTÁS COMPLETAMENTE SEGURO/A?\n\nEsta acción borrará permanentemente tu cuenta (" +
-        currentAccount.name +
-        "), tus correos, cartas astrales y configuraciones. Tendrás que inscribirte nuevamente desde cero."
+    router.replace("/");
+    router.refresh();
+  }
+
+  if (!ready || (!me && !sessionError)) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-slate-950 text-slate-300">
+        Cargando tu cuenta...
+      </div>
     );
-
-    if (!confirmation) return;
-
-    // Filtrar y remover la cuenta activa
-    const remaining = accounts.filter((a) => a.id !== currentAccount.id);
-
-    if (remaining.length > 0) {
-      // Activar la primera cuenta restante
-      remaining[0].isCurrent = true;
-      setAccounts(remaining);
-      saveAccounts(remaining);
-      alert("✅ Cuenta eliminada con éxito. Se ha cambiado a tu otra cuenta guardada.");
-    } else {
-      // Borrar completamente el almacenamiento local y redirigir al registro desde cero
-      if (typeof window !== "undefined") {
-        localStorage.clear();
-      }
-      alert("🗑️ Tu cuenta y todos tus datos astrales han sido eliminados de forma definitiva.");
-      window.location.href = "/onboarding";
-    }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col relative">
+    <div className="flex min-h-screen flex-col bg-slate-950 text-white">
       <AppNav active="cuenta" />
+      <main className="mx-auto w-full max-w-3xl flex-1 space-y-6 px-4 py-8 sm:px-6">
+        <header>
+          <p className="text-xs uppercase tracking-[0.25em] text-astral">
+            Tu universo privado
+          </p>
+          <h1 className="mt-2 font-serif text-3xl">Mi cuenta</h1>
+        </header>
 
-      {/* MODAL PAYWALL VIP */}
-      {showVipModal && <VipPaywall name={currentAccount.name} onUpgrade={handleUpgradeToVip} onClose={() => setShowVipModal(false)} />}
-
-      <main className="max-w-4xl mx-auto p-4 sm:p-6 space-y-6 w-full flex-1">
-        {/* ENCABEZADO DE CUENTA */}
-        <div className="bg-gradient-to-r from-slate-900 via-purple-950/40 to-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="w-16 h-16 bg-slate-800 border-2 border-amber-500/50 rounded-2xl flex items-center justify-center text-3xl shadow-lg">
-              {currentAccount.avatar}
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-center sm:justify-start gap-2">
-                <h1 className="text-xl font-bold font-serif text-white">{currentAccount.name}</h1>
-                <span
-                  className={
-                    "text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase " +
-                    (currentAccount.membership === "vip"
-                      ? "bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 shadow-md"
-                      : "bg-slate-800 text-slate-300 border border-slate-700")
-                  }
-                >
-                  {currentAccount.membership === "vip" ? "ASTRA VIP" : "✨ PLAN FREE"}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">{currentAccount.email}</p>
-              <p className="text-[11px] text-amber-300 font-mono">
-                📍 {currentAccount.location} · Miembro desde {currentAccount.joinedDate}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {currentAccount.membership === "free" ? (
-              <button
-                onClick={() => setShowVipModal(true)}
-                className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 text-xs font-black rounded-xl transition cursor-pointer shadow-lg uppercase tracking-wider"
-              >
-                ⭐ Cambiar a VIP
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  const updated = accounts.map((acc) =>
-                    acc.isCurrent ? { ...acc, membership: "free" as const } : acc
-                  );
-                  setAccounts(updated);
-                  saveAccounts(updated);
-                }}
-                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-bold rounded-xl transition cursor-pointer"
-              >
-                Cambiar a Free
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-4">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
-              <h3 className="text-xs font-bold font-serif text-amber-400 uppercase tracking-widest flex items-center gap-2">
-                <span>💎</span> DETALLES DE TU MEMBRESÍA
-              </h3>
-              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2 text-xs">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Usuario activo:</span>
-                  <span className="font-bold text-white">{currentAccount.name}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Tipo de plan actual:</span>
-                  <span className="font-bold text-amber-300 uppercase">
-                    {currentAccount.membership === "vip" ? "Astra Red VIP (Ilimitado)" : "Astra Red Free"}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-400">Motor Astronómico:</span>
-                  <span className="text-emerald-400 font-bold">Activo (SunCalc & Efemérides)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
-              <h3 className="text-xs font-bold font-serif text-slate-300 uppercase tracking-widest flex items-center gap-2">
-                <span>👤</span> INFORMACIÓN PERSONAL
-              </h3>
-              <div className="space-y-3 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-400 mb-1">Nombre Completo</label>
-                    <input
-                      type="text"
-                      key={currentAccount.id + "-name"}
-                      defaultValue={currentAccount.name}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500 font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-400 mb-1">Correo Electrónico</label>
-                    <input
-                      type="email"
-                      key={currentAccount.id + "-email"}
-                      defaultValue={currentAccount.email}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-500 font-medium"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 md:col-span-1">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-3">
-              <h3 className="text-xs font-bold font-serif text-slate-400 uppercase tracking-widest">
-                SESIÓN Y ACCESOS
-              </h3>
-
-              <div className="space-y-2 text-xs">
-                <Link
-                  href="/"
-                  className="w-full py-3 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                >
-                  <span>🏠</span> Salir a Inicio (Home)
-                </Link>
-
-                <button
-                  onClick={() => setShowSwitchModal(true)}
-                  className="w-full py-3 bg-purple-950/40 hover:bg-purple-900/40 border border-purple-500/30 text-purple-300 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                >
-                  <span>🔄</span> Cambiar de Cuenta
-                </button>
-
-                <button
-                  onClick={handleLogout}
-                  className="w-full py-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 text-amber-300 font-bold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                >
-                  <span>🚪</span> Cerrar Sesión
-                </button>
-
-                {/* BOTÓN ELIMINAR CUENTA */}
-                <button
-                  onClick={handleDeleteAccount}
-                  className="w-full py-3 bg-rose-950/60 hover:bg-rose-900 border border-rose-500/50 text-rose-300 font-extrabold rounded-2xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
-                >
-                  <span>🗑️</span> Eliminar Cuenta
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* MODAL CAMBIAR DE CUENTA */}
-        {showSwitchModal && (
-          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
-            <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl">
-              <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h3 className="text-sm font-bold font-serif text-white">Cambiar de Cuenta</h3>
-                <button
-                  onClick={() => setShowSwitchModal(false)}
-                  className="text-slate-400 hover:text-white cursor-pointer text-sm font-bold"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                {accounts.map((acc) => (
-                  <div
-                    key={acc.id}
-                    onClick={() => handleSwitchAccount(acc.id)}
-                    className={
-                      "p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition " +
-                      (acc.isCurrent
-                        ? "bg-amber-500/10 border-amber-500/40 text-white"
-                        : "bg-slate-950 border-slate-800 text-slate-300 hover:border-slate-700")
-                    }
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{acc.avatar}</span>
-                      <div>
-                        <h4 className="font-bold text-xs">{acc.name}</h4>
-                        <p className="text-[10px] text-slate-400">{acc.email}</p>
-                      </div>
-                    </div>
-                    {acc.isCurrent && (
-                      <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full">
-                        Activa
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+        {sessionError && (
+          <p role="alert" className="text-sm text-rose-300">
+            {sessionError}
+          </p>
         )}
+        {error && (
+          <p role="alert" className="text-sm text-rose-300">
+            {error}
+          </p>
+        )}
+
+        {me && (
+          <>
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-semibold text-amber-300">
+                    Plan gratuito
+                  </span>
+                  <h2 className="mt-4 font-serif text-2xl">{me.name}</h2>
+                  <p className="mt-1 text-sm text-slate-400">{email}</p>
+                  <p className="mt-3 text-sm text-slate-300">
+                    {me.locationCity}, {me.locationCountry}
+                  </p>
+                </div>
+                <span className="text-3xl" aria-hidden="true">✨</span>
+              </div>
+            </section>
+
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/60 p-6">
+              <h2 className="font-serif text-xl">Preferencias de conexión</h2>
+              <p className="mt-3 text-sm text-slate-300">
+                Identidad: {me.gender} · Desea conocer: {me.targetGender}
+              </p>
+              <p className="mt-1 text-sm text-slate-400">
+                Tus datos de nacimiento se mantienen privados y se usan para
+                calcular la carta y la compatibilidad.
+              </p>
+            </section>
+          </>
+        )}
+
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/carta"
+            className="flex-1 rounded-full border border-white/15 px-5 py-3 text-center text-sm hover:bg-white/5"
+          >
+            Ver mi carta natal
+          </Link>
+          <Link
+            href="/onboarding"
+            className="flex-1 rounded-full border border-white/15 px-5 py-3 text-center text-sm hover:bg-white/5"
+          >
+            Actualizar datos y carta
+          </Link>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void handleSignOut()}
+            className="flex-1 rounded-full bg-thread px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {busy ? "Cerrando sesión..." : "Cerrar sesión"}
+          </button>
+        </div>
       </main>
     </div>
   );
 }
-
-
