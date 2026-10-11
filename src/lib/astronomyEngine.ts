@@ -137,9 +137,16 @@ export function findOptimalAstralDates(
     for (let day = 1; day <= daysInMonth; day += 1) {
       const date = new Date(Date.UTC(year, month - 1, day, 12));
       const result = calculateForDate(date, activity);
-      const isWaxing = result.phaseValue < 0.5;
+      const phaseIsWaxing =
+        result.phaseValue >= 0.03 && result.phaseValue < 0.5;
+      const phaseIsWaning =
+        result.phaseValue > 0.5 && result.phaseValue < 0.97;
 
-      if (waxingPreference === null || isWaxing === waxingPreference) {
+      if (
+        waxingPreference === null ||
+        (waxingPreference && phaseIsWaxing) ||
+        (!waxingPreference && phaseIsWaning)
+      ) {
         matchingDates.push(result);
       }
     }

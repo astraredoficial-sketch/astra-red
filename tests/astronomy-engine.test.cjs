@@ -34,7 +34,9 @@ test("las recomendaciones de fase creciente solo incluyen fechas crecientes", ()
   const dates = findOptimalAstralDates("hair-growth", 2027, 3, 3);
 
   assert.ok(dates.length > 0 && dates.length <= 3);
-  assert.ok(dates.every((date) => date.phaseValue < 0.5));
+  assert.ok(
+    dates.every((date) => date.phaseValue >= 0.03 && date.phaseValue < 0.5),
+  );
   assert.equal(new Set(dates.map((date) => date.date)).size, dates.length);
 });
 
@@ -42,7 +44,9 @@ test("las recomendaciones de fase menguante solo incluyen fechas menguantes", ()
   const dates = findOptimalAstralDates("pruning-harvest", 2027, 3, 3);
 
   assert.ok(dates.length > 0 && dates.length <= 3);
-  assert.ok(dates.every((date) => date.phaseValue >= 0.5));
+  assert.ok(
+    dates.every((date) => date.phaseValue > 0.5 && date.phaseValue < 0.97),
+  );
 });
 
 test("las fechas se calculan sin desplazamiento de día por zona horaria", () => {
