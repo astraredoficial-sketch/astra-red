@@ -307,7 +307,7 @@ grant select on public.matches to authenticated;
 revoke all on public.chat_messages from public, anon, authenticated;
 grant select, insert on public.chat_messages to authenticated;
 grant update (
-  name, gender, target_gender, looking_for, location_country,
+  id, name, gender, target_gender, looking_for, location_country,
   location_city, city_id, chart, updated_at
 ) on public.profiles to authenticated;
 

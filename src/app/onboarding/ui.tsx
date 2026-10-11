@@ -92,6 +92,7 @@ export default function OnboardingUi() {
 
     setLoading(true);
     setError("");
+    let saveStage = "la carta natal";
 
     try {
       const { data, error: userError } = await supabase.auth.getUser();
@@ -117,6 +118,7 @@ export default function OnboardingUi() {
       const chart = computeNatalChart(birth);
       const now = new Date().toISOString();
 
+      saveStage = "los datos de nacimiento";
       const { error: birthError } = await supabase.from("birth_details").upsert(
         {
           user_id: data.user.id,
@@ -135,6 +137,7 @@ export default function OnboardingUi() {
       );
       if (birthError) throw birthError;
 
+      saveStage = "el perfil";
       const { error: profileError } = await supabase.from("profiles").upsert(
         {
           id: data.user.id,
@@ -156,9 +159,14 @@ export default function OnboardingUi() {
       const detail =
         cause instanceof Error
           ? cause.message
-          : "Error desconocido al guardar tus datos.";
+          : typeof cause === "object" &&
+              cause !== null &&
+              "message" in cause &&
+              typeof cause.message === "string"
+            ? cause.message
+            : "Error desconocido al guardar tus datos.";
       setError(
-        `No se pudo guardar tu perfil en Supabase. Tus datos siguen en el formulario. ${detail}`,
+        `No se pudo guardar ${saveStage} en Supabase. Tus datos siguen en el formulario. ${detail}`,
       );
     } finally {
       setLoading(false);
