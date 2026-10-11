@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 
 function getSupabaseClient() {
@@ -12,10 +11,9 @@ function getSupabaseClient() {
 }
 
 export default function OnboardingUi() {
-  const router = useRouter();
   const [step, setStep] = useState(3);
   const [loading, setLoading] = useState(false);
-  const [lookingFor, setLookingFor] = useState("Amistad");
+  const [lookingFor, setLookingFor] = useState("Relación");
   const [genderPref, setGenderPref] = useState("Mujeres");
 
   const handleFinish = async (e: React.FormEvent) => {
@@ -38,9 +36,8 @@ export default function OnboardingUi() {
     } catch (err) {
       console.error("Error guardando onboarding:", err);
     } finally {
-      setLoading(false);
-      // Redirección directa y garantizada a la Carta Natal
-      router.push("/carta");
+      // Redirección infalible a Carta Natal
+      window.location.href = "/carta";
     }
   };
 
@@ -65,8 +62,8 @@ export default function OnboardingUi() {
               onChange={(e) => setLookingFor(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500"
             >
+              <option value="Relación">Relación</option>
               <option value="Amistad">Amistad</option>
-              <option value="Amor">Amor</option>
               <option value="Conexión Astral">Conexión Astral</option>
             </select>
           </div>
@@ -87,7 +84,7 @@ export default function OnboardingUi() {
           <div className="pt-4 flex items-center gap-3">
             <button
               type="button"
-              onClick={() => router.back()}
+              onClick={() => window.history.back()}
               className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold py-3 rounded-xl transition"
             >
               Atrás
@@ -95,7 +92,7 @@ export default function OnboardingUi() {
             <button
               type="submit"
               disabled={loading}
-              className="flex-[2] bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold py-3 rounded-xl transition shadow-lg disabled:opacity-50"
+              className="flex-[2] bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold py-3 rounded-xl transition shadow-lg disabled:opacity-50 cursor-pointer"
             >
               {loading ? "Calculando..." : "Crear mi carta natal"}
             </button>
