@@ -48,12 +48,12 @@ export function AccesoUi() {
   async function continueForUser(userId: string) {
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, chart, name, birth_date, birth_time, location_city")
       .eq("id", userId)
       .maybeSingle();
 
     if (profileError) throw profileError;
-    router.replace(profile ? "/carta" : "/onboarding");
+    router.replace(profile?.chart ? "/carta" : "/onboarding");
   }
 
   async function signOutToCreateAccount() {
@@ -260,3 +260,6 @@ export function AccesoUi() {
     </main>
   );
 }
+
+
+

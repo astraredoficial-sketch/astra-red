@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 function getSupabaseClient() {
@@ -11,6 +11,28 @@ function getSupabaseClient() {
 }
 
 export default function OnboardingUi() {
+  useEffect(() => {
+    async function checkProfile() {
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
+
+      const { data } = await supabase.auth.getUser();
+
+      if (!data.user) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, chart")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (profile?.chart) {
+        window.location.href = "/carta";
+      }
+    }
+
+    void checkProfile();
+  }, []);
   const [step, setStep] = useState(3);
   const [loading, setLoading] = useState(false);
   const [lookingFor, setLookingFor] = useState("Relación");
@@ -25,12 +47,14 @@ export default function OnboardingUi() {
       if (supabase) {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          await supabase.from("profiles").upsert({
+          const { error } = await supabase.from("profiles").upsert({
             id: user.id,
+            name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split("@")[0] || "Usuario",
             looking_for: lookingFor,
-            gender_preference: genderPref,
+            target_gender: genderPref,
             updated_at: new Date().toISOString()
           });
+          if (error) throw error;
         }
       }
     } catch (err) {
@@ -102,3 +126,9 @@ export default function OnboardingUi() {
     </div>
   );
 }
+
+
+
+
+
+

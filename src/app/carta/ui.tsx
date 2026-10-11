@@ -40,12 +40,13 @@ export default function CartaUi() {
   }, []);
 
   // Extraer nombre real del usuario autenticado actual
-  const userName = 
-    profile?.name || 
-    profile?.full_name || 
-    authUser?.user_metadata?.full_name || 
-    authUser?.user_metadata?.name || 
-    (authUser?.email ? authUser.email.split("@")[0] : "Explorador Astral");
+  const userName =
+    profile?.name ||
+    profile?.full_name ||
+    authUser?.user_metadata?.full_name ||
+    authUser?.user_metadata?.name ||
+    authUser?.email?.split("@")[0] ||
+    "Usuario Astral";
 
   const chartData = profile?.chart || {};
   const triad = chartData?.triad || {};
@@ -204,3 +205,4 @@ export default function CartaUi() {
     </div>
   );
 }
+
