@@ -1,44 +1,45 @@
-"use client";
+﻿"use client";
 
 import { Country, City } from 'country-state-city';
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getAllAccounts, saveAccounts } from "@/lib/userStore";
+import { supabase } from "@/lib/supabase/client";
 
-const CITIES_LIST = [
-  // Venezuela
-  { name: "Barinas, Barinas, Venezuela", coords: "8.6226° N, 70.2075° W" },
-  { name: "Caracas, Distrito Capital, Venezuela", coords: "10.4806° N, 66.9036° W" },
-  { name: "Mérida, Mérida, Venezuela", coords: "8.5983° N, 71.1450° W" },
-  { name: "Maracaibo, Zulia, Venezuela", coords: "10.6427° N, 71.6125° W" },
-  { name: "Valencia, Carabobo, Venezuela", coords: "10.1621° N, 68.0077° W" },
-  { name: "Barquisimeto, Lara, Venezuela", coords: "10.0678° N, 69.3474° W" },
-  { name: "San Cristóbal, Táchira, Venezuela", coords: "7.7669° N, 72.2250° W" },
-  { name: "Puerto La Cruz, Anzoátegui, Venezuela", coords: "10.2117° N, 64.6322° W" },
-  { name: "Maturín, Monagas, Venezuela", coords: "9.7456° N, 63.1832° W" },
-  { name: "Ciudad Bolívar, Bolívar, Venezuela", coords: "8.1256° N, 63.5453° W" },
-  // Internacionales
-  { name: "Bogotá, Colombia", coords: "4.7110° N, 74.0721° W" },
-  { name: "Madrid, España", coords: "40.4168° N, 3.7038° W" },
-  { name: "Buenos Aires, Argentina", coords: "34.6037° S, 58.3816° W" },
-  { name: "Ciudad de México, México", coords: "19.4326° N, 99.1332° W" },
-  { name: "Miami, Estados Unidos", coords: "25.7617° N, 80.1918° W" },
-  { name: "Santiago, Chile", coords: "33.4489° S, 70.6693° W" },
-  { name: "Lima, Perú", coords: "12.0464° S, 77.0428° W" }
-];
+
 
 export function OnboardingUi() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("Barinas, Barinas, Venezuela");
-  const [searchTerm, setSearchTerm] = useState("");
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [availableCities, setAvailableCities] = useState<Array<{ name: string; countryCode?: string; stateCode?: string }>>([]);
+  const [selectedCity, setSelectedCity] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [birthTime, setBirthTime] = useState("");
+  const [birthTimeUnknown, setBirthTimeUnknown] = useState(false);
+  const [lookingFor, setLookingFor] = useState("");
+  const [targetGender, setTargetGender] = useState("");
 
-  const filteredCities = CITIES_LIST.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    async function loadUser() {
+      const { data } = await supabase.auth.getSession();
+      setAuthUserId(data.session?.user.id ?? null);
+    }
 
-  const handleFinish = (e: React.FormEvent) => {
+    void loadUser();
+  }, []);
+
+  const countries = Country.getAllCountries();
+  function handleCountryChange(countryCode: string) {
+    setSelectedCountry(countryCode);
+    const cities = City.getCitiesOfCountry(countryCode) || [];
+    setAvailableCities(cities);
+    setSelectedCity("");
+  }
+
+  const handleFinish = async (e: React.FormEvent) => {
     e.preventDefault();
     const accounts = getAllAccounts();
 
@@ -52,7 +53,13 @@ export function OnboardingUi() {
           name: name.trim() || acc.name,
           email: email.trim() || acc.email,
           password: password || acc.password,
-          location: selectedLocation,
+          location_country: selectedCountry,
+          location_city: selectedCity,
+          birth_date: birthDate,
+          birth_time: birthTime,
+          birth_time_unknown: birthTimeUnknown,
+          looking_for: lookingFor,
+          target_gender: targetGender,
           isComplete: true, // ¡Registro completado con éxito!
         };
       }
@@ -60,6 +67,23 @@ export function OnboardingUi() {
     });
 
     saveAccounts(updated);
+
+    if (authUserId) {
+      await supabase
+        .from("profiles")
+        .upsert({
+          id: authUserId,
+          name: name.trim() || currentAcc.name,
+          location_country: selectedCountry,
+          location_city: selectedCity,
+          birth_date: birthDate,
+          birth_time: birthTime,
+          birth_time_unknown: birthTimeUnknown,
+          looking_for: lookingFor,
+          target_gender: targetGender,
+        });
+    }
+
     window.location.href = "/cuenta";
   };
 
@@ -83,7 +107,7 @@ export function OnboardingUi() {
               <input
                 type="text"
                 required
-                placeholder="Ej. Aaron Montilla"
+                placeholder="Ej. Juan Pacheco"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
@@ -100,36 +124,76 @@ export function OnboardingUi() {
           </div>
         )}
 
-        {step === 2 && (
-          <div className="space-y-4 animate-in fade-in">
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white">Credenciales de acceso</h1>
-            <p className="text-xs text-slate-400">Configura tu correo y contraseña segura.</p>
+    {step === 2 && (
+          <form onSubmit={handleFinish} className="space-y-4 animate-in fade-in">
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white">¿Dónde naciste?</h1>
+            <p className="text-xs text-slate-400">Selecciona tu ciudad natal para calcular efemérides y carta natal con precisión.</p>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-300">Correo electrónico</label>
+            <div className="space-y-2">
+              <label className="block text-xs text-slate-300">Fecha de nacimiento:</label>
               <input
-                type="email"
-                required
-                placeholder="tu@correo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white"
               />
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-slate-300">Contraseña</label>
+            <div className="space-y-2">
+              <label className="block text-xs text-slate-300">Hora de nacimiento:</label>
               <input
-                type="password"
-                required
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
+                type="time"
+                value={birthTime}
+                disabled={birthTimeUnknown}
+                onChange={(e) => setBirthTime(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white"
               />
             </div>
 
-            <div className="flex gap-3">
+            <label className="flex items-center gap-2 text-xs text-slate-300">
+              <input
+                type="checkbox"
+                checked={birthTimeUnknown}
+                onChange={(e) => setBirthTimeUnknown(e.target.checked)}
+              />
+              No conozco mi hora de nacimiento
+            </label>
+            <div className="space-y-2">
+              <label className="block text-xs text-slate-300">País:</label>
+              <select
+                value={selectedCountry}
+                onChange={(e) => handleCountryChange(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white"
+              >
+                <option value="">Selecciona un país</option>
+                {countries.map((country) => (
+                  <option key={country.isoCode} value={country.isoCode}>
+                    {country.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs text-slate-300">Ciudad:</label>
+              <select
+                value={selectedCity}
+                onChange={(e) => {
+                  setSelectedCity(e.target.value);
+                }}
+                disabled={!selectedCountry}
+                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white"
+              >
+                <option value="">Selecciona una ciudad</option>
+                {availableCities.map((city) => (
+                  <option key={city.name} value={city.name}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setStep(1)}
@@ -138,72 +202,115 @@ export function OnboardingUi() {
                 Atrás
               </button>
               <button
-                type="button"
-                onClick={() => { if(email && password) setStep(3); else alert("Completa correo y contraseña."); }}
-                className="w-2/3 py-3 bg-gradient-to-r from-rose-500 to-rose-600 text-white font-extrabold rounded-2xl transition text-xs shadow-xl"
+                  type="button"
+                onClick={() => setStep(3)}
               >
-                Siguiente
-              </button>
-            </div>
-          </div>
-        )}
-
-        {step === 3 && (
-          <form onSubmit={handleFinish} className="space-y-4 animate-in fade-in">
-            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white">¿Dónde naciste?</h1>
-            <p className="text-xs text-slate-400">Selecciona tu ciudad natal para calcular efemérides y carta natal con precisión.</p>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-300">Buscar ciudad o país:</label>
-              <input
-                type="text"
-                placeholder="Escribe para filtrar (ej. Barinas, Caracas...)"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-rose-500 transition"
-              />
-            </div>
-
-            <div className="max-h-48 overflow-y-auto space-y-1 bg-slate-950/60 border border-slate-800 rounded-2xl p-2">
-              {filteredCities.map((city, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setSelectedLocation(city.name)}
-                  className="p-2.5 rounded-xl text-xs cursor-pointer transition flex justify-between items-center"
-                >
-                  <span>{city.name}</span>
-                  <span className="text-[10px] text-purple-400 font-mono">{city.coords}</span>
-                </div>
-              ))}
-              {filteredCities.length === 0 && (
-                <p className="text-xs text-slate-500 text-center py-3">No se encontraron ciudades con ese nombre.</p>
-              )}
-            </div>
-
-            <div className="p-3 bg-purple-950/40 border border-purple-500/30 rounded-2xl text-xs text-purple-200">
-              ?? Ubicación seleccionada: <strong className="text-white">{selectedLocation}</strong>
-            </div>
-
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setStep(2)}
-                className="w-1/3 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl transition text-xs"
-              >
-                Atrás
-              </button>
-              <button
-                type="submit"
-                className="w-2/3 py-3.5 bg-gradient-to-r from-amber-400 via-amber-500 to-rose-500 text-slate-950 font-black rounded-2xl transition text-xs shadow-xl uppercase tracking-wider cursor-pointer"
-              >
-                Generar mi carta natal
+                  Siguiente
               </button>
             </div>
           </form>
         )}
 
+        {step === 3 && (
+          <form onSubmit={handleFinish} className="space-y-4 animate-in fade-in">
+            <h1 className="text-2xl sm:text-3xl font-serif font-bold text-white">Preferencias</h1>
+            <p className="text-xs text-slate-400">Cuéntanos qué tipo de conexión buscas.</p>
+        <div className="space-y-2">
+          <label className="block text-xs text-slate-300">¿Qué buscas?</label>
+          <select
+            value={lookingFor}
+            onChange={(e) => setLookingFor(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white"
+          >
+            <option value="">Selecciona una opción</option>
+            <option value="amistad">Amistad</option>
+            <option value="relacion">Relación</option>
+          </select>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-xs text-slate-300">¿Con quién te interesa conectar?</label>
+          <select
+            value={targetGender}
+            onChange={(e) => setTargetGender(e.target.value)}
+            className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3 text-sm text-white"
+          >
+            <option value="">Selecciona una opción</option>
+            <option value="hombres">Hombres</option>
+            <option value="mujeres">Mujeres</option>
+            <option value="ambos">Ambos</option>
+          </select>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setStep(2)}
+            className="w-1/3 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-2xl transition text-xs"
+          >
+            Atrás
+          </button>
+
+            <button
+              type="submit"
+          >
+            Finalizar registro
+          </button>
+        </div>
+      </form>
+    )}
       </div>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
