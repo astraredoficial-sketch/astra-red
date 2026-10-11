@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { AppNav } from "@/components/AppNav";
 import { createClient } from "@supabase/supabase-js";
 
@@ -11,7 +10,6 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function CartaPage() {
   const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchProfile() {
@@ -24,7 +22,6 @@ export default function CartaPage() {
           .single();
         if (data) setProfile(data);
       }
-      setLoading(false);
     }
     fetchProfile();
   }, []);
@@ -86,7 +83,7 @@ export default function CartaPage() {
           </p>
         </div>
 
-        {/* Tríada Astral (Sol, Luna, Ascendente) */}
+        {/* Tríada Astral */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 space-y-2 hover:border-amber-500/30 transition shadow-lg">
             <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
@@ -119,7 +116,7 @@ export default function CartaPage() {
           </div>
         </div>
 
-        {/* SECCIÓN: RESUMEN DE VIDA E INTERPRETACIONES */}
+        {/* Resumen de Vida */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl">
           <div className="text-center space-y-1 pb-4 border-b border-slate-800">
             <h2 className="text-xl font-serif font-bold text-amber-300 tracking-wide">
@@ -131,7 +128,6 @@ export default function CartaPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Perfil & Vocación */}
             <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 space-y-3">
               <h3 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
                 <span>🔮</span> Perfil & Vocación
@@ -143,7 +139,6 @@ export default function CartaPage() {
               </ul>
             </div>
 
-            {/* Reto de Vida */}
             <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 space-y-3">
               <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider flex items-center gap-2">
                 <span>⚡</span> Reto de Vida
@@ -154,7 +149,6 @@ export default function CartaPage() {
               </ul>
             </div>
 
-            {/* Destino y Vocación */}
             <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 space-y-3">
               <h3 className="text-sm font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
                 <span>🌟</span> Destino & Vocación
@@ -164,7 +158,6 @@ export default function CartaPage() {
               </p>
             </div>
 
-            {/* Amor & Relaciones */}
             <div className="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6 space-y-3">
               <h3 className="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
                 <span>💖</span> Amor & Relaciones
