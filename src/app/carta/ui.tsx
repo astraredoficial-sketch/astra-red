@@ -4,15 +4,21 @@ import React, { useEffect, useState } from "react";
 import { AppNav } from "@/components/AppNav";
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  return createClient(supabaseUrl, supabaseAnonKey);
+}
 
-export default function CartaPage() {
+export default function CartaUi() {
   const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     async function fetchProfile() {
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
+
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data } = await supabase
