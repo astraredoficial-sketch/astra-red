@@ -105,21 +105,21 @@ export function CuentaUi() {
               <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
                 <div>
                   <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-950">
-                    AstraRed VIP
+                    Calendario en beta
                   </span>
                   <h2 className="mt-3 font-serif text-2xl">
-                    Tu calendario astral, sin límites
+                    Explora el ritmo de la Luna
                   </h2>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
-                    Explora el Calendario VIP y elige el plan mensual o anual
-                    que prefieras.
+                    Prueba gratis las fases lunares, planifica fechas y guarda
+                    tus intenciones. Sin cobros durante la beta.
                   </p>
                 </div>
                 <Link
                   href="/calendario"
                   className="shrink-0 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-rose-400 px-6 py-3 text-center text-sm font-extrabold text-slate-950 shadow-lg shadow-amber-950/30 transition hover:scale-[1.02] hover:brightness-110"
                 >
-                  ✨ Hazte VIP
+                  ✨ Probar calendario
                 </Link>
               </div>
             </section>

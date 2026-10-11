@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/astro-chart.test.cjs"
+    "test": "node --test tests/astro-chart.test.cjs tests/astronomy-engine.test.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",

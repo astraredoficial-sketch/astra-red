@@ -1,48 +1,123 @@
-﻿"use client";
+"use client";
 
-import React, { useState, useEffect } from "react";
+import React, { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { io } from "next/cache";
 import { AppNav } from "@/components/AppNav";
-import { VipPaywall } from "@/components/VipPaywall";
-import { findOptimalAstralDates, AstralCalculationResult } from "@/lib/astronomyEngine";
+import {
+  ASTRAL_ACTIVITIES,
+  type AstralActivity,
+  type AstralCalendarDay,
+  type AstralCalculationResult,
+  findOptimalAstralDates,
+  getAstralCalendarDays,
+} from "@/lib/astronomyEngine";
 import { useSession } from "@/hooks/useSession";
+import { supabase } from "@/lib/supabase/client";
 
 interface AstralEvent {
   id: string;
   title: string;
-  category: string;
-  date: string;
+  activity: AstralActivity;
+  eventDate: string;
   lunarPhase: string;
-  bestTime: string;
-  note: string;
-  status: "programada" | "notificada";
+  illumination: number;
+  recommendation: string;
+}
+
+const ACTIVITY_LABELS: Record<AstralActivity, string> = {
+  "hair-growth": "Corte de cabello · favorecer crecimiento",
+  "hair-maintenance": "Corte de cabello · conservar la forma",
+  planting: "Siembra",
+  "pruning-harvest": "Poda y cosecha",
+  "moon-observation": "Observación lunar",
+};
+
+const EVENT_COLUMNS =
+  "id, user_id, title, activity, event_date, lunar_phase, illumination, recommendation";
+
+const WEEKDAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+const ASTRAL_ACTIVITY_SET = new Set<string>(ASTRAL_ACTIVITIES);
+
+function isAstralActivity(value: unknown): value is AstralActivity {
+  return typeof value === "string" && ASTRAL_ACTIVITY_SET.has(value);
+}
+
+function toAstralEvent(value: unknown): AstralEvent | null {
+  if (value === null || typeof value !== "object") return null;
+
+  const row = value as Record<string, unknown>;
+  if (
+    typeof row.id !== "string" ||
+    typeof row.title !== "string" ||
+    !isAstralActivity(row.activity) ||
+    typeof row.event_date !== "string" ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(row.event_date) ||
+    typeof row.lunar_phase !== "string" ||
+    typeof row.illumination !== "number" ||
+    !Number.isInteger(row.illumination) ||
+    row.illumination < 0 ||
+    row.illumination > 100 ||
+    typeof row.recommendation !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    title: row.title,
+    activity: row.activity,
+    eventDate: row.event_date,
+    lunarPhase: row.lunar_phase,
+    illumination: row.illumination,
+    recommendation: row.recommendation,
+  };
+}
+
+function formatAstralDate(date: string, options?: Intl.DateTimeFormatOptions) {
+  return new Intl.DateTimeFormat("es", {
+    timeZone: "UTC",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    ...options,
+  }).format(new Date(`${date}T12:00:00Z`));
+}
+
+function getMoonSymbol(phaseName: string): string {
+  if (phaseName === "Luna nueva") return "🌑";
+  if (phaseName === "Luna creciente") return "🌒";
+  if (phaseName === "Cuarto creciente") return "🌓";
+  if (phaseName === "Luna gibosa creciente") return "🌔";
+  if (phaseName === "Luna llena") return "🌕";
+  if (phaseName === "Luna gibosa menguante") return "🌖";
+  if (phaseName === "Cuarto menguante") return "🌗";
+  return "🌘";
+}
+
+function isMonthValue(value: string): boolean {
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
 }
 
 export function CalendarioUi() {
+  use(io());
   const router = useRouter();
   const { ready, me, store, error: sessionError } = useSession();
-
-  const [activeTab, setActiveTab] = useState<"ia" | "sinastria">("ia");
-  const [iaQuery, setIaQuery] = useState("");
-  const [isProcessingIa, setIsProcessingIa] = useState(false);
-  const [iaSuggestions, setIaSuggestions] = useState<AstralCalculationResult[]>([]);
-
-  const [appNotifications, setAppNotifications] = useState<Array<{ id: string; msg: string; time: string }>>([
-    { id: "n1", msg: "?? Sistema conectado a Efemérides Astronómicas Reales (SunCalc).", time: "Ahora" },
-  ]);
-
-  const [savedEvents, setSavedEvents] = useState<AstralEvent[]>([
-    {
-      id: "ev-1",
-      title: "Corte de cabello para crecimiento rápido",
-      category: "cabello",
-      date: "2026-10-15",
-      lunarPhase: "Luna Creciente ??",
-      bestTime: "10:00 AM - 02:00 PM",
-      note: "Cálculo matemático verificado con posición celeste.",
-      status: "programada",
-    },
-  ]);
+  const [monthValue, setMonthValue] = useState(() =>
+    new Date().toISOString().slice(0, 7),
+  );
+  const [selectedDate, setSelectedDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [activity, setActivity] = useState<AstralActivity>("hair-growth");
+  const [savedEvents, setSavedEvents] = useState<AstralEvent[]>([]);
+  const [eventsOwnerId, setEventsOwnerId] = useState("");
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [savingDate, setSavingDate] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [calendarError, setCalendarError] = useState("");
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     if (!ready || sessionError || me) return;
@@ -51,59 +126,162 @@ export function CalendarioUi() {
     );
   }, [me, ready, router, sessionError, store?.currentUserId]);
 
-  const handleIaSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!iaQuery.trim()) return;
+  const userId = me?.id;
+  useEffect(() => {
+    if (!userId) return;
+    const authenticatedUserId = userId;
+    let active = true;
 
-    setIsProcessingIa(true);
-    setIaSuggestions([]);
+    async function loadEvents() {
+      setEventsLoading(true);
+      setCalendarError("");
 
-    setTimeout(() => {
-      const q = iaQuery.toLowerCase();
-      let targetYear = 2026;
-      let startM = 10;
-      let endM = 12;
+      const { data, error } = await supabase
+        .from("astral_events")
+        .select(EVENT_COLUMNS)
+        .eq("user_id", authenticatedUserId)
+        .order("event_date", { ascending: true });
 
-      if (q.includes("2027")) {
-        targetYear = 2027;
-        startM = 1;
-        endM = 12;
-      } else if (q.includes("diciembre")) {
-        targetYear = 2026;
-        startM = 12;
-        endM = 12;
+      if (!active) return;
+      if (error) {
+        setEventsOwnerId(authenticatedUserId);
+        setCalendarError(
+          `No se pudieron cargar tus fechas guardadas: ${error.message}`,
+        );
+        setEventsLoading(false);
+        return;
       }
 
-      const results = findOptimalAstralDates(iaQuery, targetYear, startM, endM);
-      setIaSuggestions(results);
-      setIsProcessingIa(false);
-    }, 600);
-  };
+      const events = (data ?? [])
+        .map(toAstralEvent)
+        .filter((event): event is AstralEvent => event !== null);
+      setSavedEvents(events);
+      setEventsOwnerId(authenticatedUserId);
+      if (events.length !== (data ?? []).length) {
+        setCalendarError(
+          "Algunas fechas guardadas tienen datos inválidos y no se pudieron mostrar.",
+        );
+      }
+      setEventsLoading(false);
+    }
 
-  const handleSelectIaSuggestion = (sug: AstralCalculationResult) => {
-    const created: AstralEvent = {
-      id: Date.now().toString(),
-      title: iaQuery || "Actividad Astronómica",
-      category: "ia",
-      date: sug.date,
-      lunarPhase: sug.phaseName,
-      bestTime: sug.bestTime,
-      note: sug.recommendation,
-      status: "programada",
+    void loadEvents();
+    return () => {
+      active = false;
     };
+  }, [userId]);
 
-    setSavedEvents([created, ...savedEvents]);
+  const monthIsValid = isMonthValue(monthValue);
+  const [year, month] = monthIsValid
+    ? monthValue.split("-").map(Number)
+    : [0, 0];
 
-    const notifMsg = "?? Alerta en la App: Te notificaremos el " + sug.date + " para \"" + iaQuery + "\" con base en el cálculo celeste real.";
-    setAppNotifications([{ id: Date.now().toString(), msg: notifMsg, time: "Ahora mismo" }, ...appNotifications]);
-    alert("¡Alerta guardada! Efeméride astronómica programada para el " + sug.date + ".");
-  };
+  const monthDate = monthIsValid
+    ? new Date(`${monthValue}-01T12:00:00Z`)
+    : null;
+  const monthTitle = monthDate
+    ? new Intl.DateTimeFormat("es", {
+        month: "long",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(monthDate)
+    : "";
 
-  const handleDeleteEvent = (id: string) => {
-    setSavedEvents(savedEvents.filter((ev) => ev.id !== id));
-  };
+  const calendarDays = useMemo(
+    () => (monthIsValid ? getAstralCalendarDays(year, month) : []),
+    [monthIsValid, month, year],
+  );
 
-  const isFree = Boolean(me);
+  const recommendations = useMemo(
+    () =>
+      monthIsValid
+        ? findOptimalAstralDates(activity, year, month, month)
+        : [],
+    [activity, monthIsValid, month, year],
+  );
+
+  const selectedDay = calendarDays.find(
+    (day) => `${monthValue}-${String(day.day).padStart(2, "0")}` === selectedDate,
+  );
+  const eventsAreForCurrentUser = eventsOwnerId === me?.id;
+
+  function changeMonth(amount: number) {
+    if (!monthIsValid) return;
+    const nextMonth = new Date(`${monthValue}-01T12:00:00Z`);
+    nextMonth.setUTCMonth(nextMonth.getUTCMonth() + amount);
+    const nextValue = nextMonth.toISOString().slice(0, 7);
+    setMonthValue(nextValue);
+    setSelectedDate(`${nextValue}-01`);
+  }
+
+  async function saveAstralDate(result: AstralCalculationResult) {
+    if (!me) return;
+    setSavingDate(result.date);
+    setActionError("");
+
+    const title = ACTIVITY_LABELS[activity];
+    const { data, error } = await supabase
+      .from("astral_events")
+      .insert({
+        user_id: me.id,
+        title,
+        activity,
+        event_date: result.date,
+        lunar_phase: result.phaseName,
+        illumination: result.illumination,
+        recommendation: result.recommendation,
+      })
+      .select(EVENT_COLUMNS)
+      .single();
+
+    setSavingDate(null);
+    if (error) {
+      setActionError(
+        error.code === "23505"
+          ? "Ya guardaste esta actividad para ese día."
+          : `No se pudo guardar la fecha: ${error.message}`,
+      );
+      return;
+    }
+
+    const savedEvent = toAstralEvent(data);
+    if (!savedEvent) {
+      setActionError("Supabase devolvió una fecha guardada con datos inválidos.");
+      return;
+    }
+
+    setSavedEvents((current) =>
+      [...current, savedEvent].sort((a, b) =>
+        a.eventDate.localeCompare(b.eventDate),
+      ),
+    );
+  }
+
+  async function deleteAstralDate(id: string) {
+    if (!me) return;
+    setDeletingId(id);
+    setActionError("");
+
+    const { data, error } = await supabase
+      .from("astral_events")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", me.id)
+      .select("id")
+      .maybeSingle();
+
+    setDeletingId(null);
+    if (error) {
+      setActionError(`No se pudo eliminar la fecha: ${error.message}`);
+      return;
+    }
+    if (!data) {
+      setActionError("La fecha ya no existe en tu agenda. Actualiza la página.");
+      return;
+    }
+
+    setSavedEvents((current) => current.filter((event) => event.id !== id));
+  }
 
   if (!ready || (!me && !sessionError)) {
     return (
@@ -113,201 +291,359 @@ export function CalendarioUi() {
     );
   }
 
+  if (sessionError) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-slate-950 px-4 text-center text-rose-200">
+        <p role="alert">{sessionError}</p>
+      </div>
+    );
+  }
+
+  if (!me) return null;
+
+  const calendarOffset =
+    monthIsValid
+      ? new Date(Date.UTC(year, month - 1, 1)).getUTCDay()
+      : 0;
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col relative overflow-x-hidden">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-slate-950 text-white">
       <AppNav active="calendario" />
 
-      {sessionError && (
-        <p role="alert" className="mx-auto mt-6 w-full max-w-3xl px-4 text-sm text-rose-300">
-          {sessionError}
-        </p>
-      )}
-      {me && isFree && <VipPaywall name={me.name} />}
-
-      <main className={"max-w-5xl mx-auto p-4 sm:p-6 space-y-6 w-full flex-1 transition " + (isFree ? "blur-md pointer-events-none select-none opacity-30" : "")}>
-        {/* ENCABEZADO */}
-        <div className="bg-gradient-to-r from-amber-950/60 via-purple-950/40 to-slate-900 border border-amber-500/30 rounded-3xl p-6 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                MOTOR CIENTÍFICO 100% REAL ?
+      <main className="mx-auto w-full max-w-6xl flex-1 space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+        <section className="relative isolate overflow-hidden rounded-[2rem] border border-amber-300/25 bg-gradient-to-br from-indigo-950 via-slate-900 to-amber-950/70 p-6 shadow-2xl shadow-indigo-950/40 sm:p-9">
+          <div
+            aria-hidden="true"
+            className="absolute -right-16 -top-24 -z-10 size-72 rounded-full bg-amber-300/10 blur-3xl"
+          />
+          <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+            <div className="max-w-2xl space-y-4">
+              <span className="inline-flex items-center gap-2 rounded-full border border-amber-200/25 bg-slate-950/40 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] text-amber-200">
+                <span aria-hidden="true">✦</span> Calendario astral
               </span>
-              <span className="text-xs text-amber-300 font-medium">Cálculos Lunares Activos</span>
+              <h1 className="font-serif text-3xl leading-tight text-white sm:text-5xl">
+                Sigue el ritmo de la Luna
+              </h1>
+              <p className="max-w-xl text-sm leading-6 text-slate-300 sm:text-base">
+                Explora cada fase, encuentra fechas que conecten con tus
+                intenciones y guárdalas en tu agenda personal.
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold font-serif text-white">Calendario de Efemérides Reales</h1>
-            <p className="text-xs text-slate-300">
-              Cálculos matemáticos exactos basados en la posición celeste y fases lunares científicas.
+            <div className="shrink-0 rounded-2xl border border-amber-200/20 bg-slate-950/40 px-5 py-4 sm:text-right">
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">
+                Tu espacio
+              </p>
+              <p className="mt-1 font-serif text-xl text-amber-200">
+                {me.name}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                {savedEvents.length}{" "}
+                {savedEvents.length === 1 ? "fecha guardada" : "fechas guardadas"}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <div className="flex flex-col gap-3 rounded-2xl border border-emerald-300/20 bg-emerald-950/25 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-6 text-emerald-100">
+            <span className="font-bold">Beta gratuita:</span> disfruta y prueba
+            el calendario. No hay cobros ni se activa una membresía VIP.
+          </p>
+          <span className="shrink-0 rounded-full border border-emerald-300/20 px-3 py-1 text-xs font-semibold text-emerald-200">
+            Vista previa activa
+          </span>
+        </div>
+
+        <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <div className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-4 shadow-xl sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
+                  Fases lunares
+                </p>
+                <h2 className="mt-1 font-serif text-2xl capitalize text-white">
+                  {monthTitle}
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Mes anterior"
+                  onClick={() => changeMonth(-1)}
+                  className="grid size-10 place-items-center rounded-xl border border-slate-700 text-slate-200 transition hover:border-amber-300/60 hover:text-amber-200"
+                >
+                  ←
+                </button>
+                <input
+                  aria-label="Elegir mes"
+                  type="month"
+                  value={monthValue}
+                  onChange={(event) => {
+                    const nextValue = event.target.value;
+                    if (isMonthValue(nextValue)) {
+                      setMonthValue(nextValue);
+                      setSelectedDate(`${nextValue}-01`);
+                    }
+                  }}
+                  className="min-h-10 min-w-0 rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white [color-scheme:dark]"
+                />
+                <button
+                  type="button"
+                  aria-label="Mes siguiente"
+                  onClick={() => changeMonth(1)}
+                  className="grid size-10 place-items-center rounded-xl border border-slate-700 text-slate-200 transition hover:border-amber-300/60 hover:text-amber-200"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2" aria-label={`Calendario lunar de ${monthTitle}`}>
+              {WEEKDAYS.map((weekday) => (
+                <div
+                  key={weekday}
+                  className="py-2 text-center text-[10px] font-bold uppercase tracking-wide text-slate-500 sm:text-xs"
+                >
+                  {weekday}
+                </div>
+              ))}
+              {Array.from({ length: calendarOffset }, (_, index) => (
+                <div key={`empty-${index}`} aria-hidden="true" />
+              ))}
+              {calendarDays.map((day: AstralCalendarDay) => {
+                const isoDate = `${monthValue}-${String(day.day).padStart(2, "0")}`;
+                const isSelected = selectedDate === isoDate;
+                return (
+                  <button
+                    key={isoDate}
+                    type="button"
+                    aria-label={`${formatAstralDate(isoDate)}: ${day.phaseName}, ${day.illumination}% iluminada`}
+                    aria-pressed={isSelected}
+                    onClick={() => setSelectedDate(isoDate)}
+                    className={`flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border text-xs transition sm:min-h-[4.5rem] ${
+                      isSelected
+                        ? "border-amber-300 bg-amber-300/15 text-amber-100 shadow-lg shadow-amber-950/30"
+                        : "border-transparent bg-slate-950/60 text-slate-200 hover:border-slate-700 hover:bg-slate-950"
+                    }`}
+                  >
+                    <span className="font-bold">{day.day}</span>
+                    <span aria-hidden="true" className="text-base leading-none">
+                      {getMoonSymbol(day.phaseName)}
+                    </span>
+                    <span className="text-[9px] text-slate-500">
+                      {day.illumination}%
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex flex-wrap gap-x-4 gap-y-2 border-t border-slate-800 pt-4 text-[11px] text-slate-400">
+              <span>🌑 Nueva</span>
+              <span>🌓 Creciente</span>
+              <span>🌕 Llena</span>
+              <span>🌗 Menguante</span>
+              <span className="basis-full text-slate-500">
+                Fase estimada para el mediodía UTC.
+              </span>
+            </div>
+
+            {selectedDay && (
+              <div className="rounded-2xl border border-indigo-300/15 bg-indigo-950/35 p-4">
+                <p className="text-xs font-semibold uppercase tracking-widest text-indigo-200">
+                  Día seleccionado
+                </p>
+                <div className="mt-2 flex items-center gap-3">
+                  <span className="text-3xl" aria-hidden="true">
+                    {getMoonSymbol(selectedDay.phaseName)}
+                  </span>
+                  <div>
+                    <p className="font-serif text-lg capitalize text-white">
+                      {formatAstralDate(selectedDate)}
+                    </p>
+                    <p className="text-sm text-slate-300">
+                      {selectedDay.phaseName} · {selectedDay.illumination}% de
+                      iluminación
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-5 rounded-3xl border border-amber-300/15 bg-gradient-to-b from-slate-900 to-slate-950 p-5 shadow-xl sm:p-6">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-amber-300">
+                Planificador lunar
+              </p>
+              <h2 className="mt-1 font-serif text-2xl text-white">
+                Elige tu intención
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Las sugerencias siguen asociaciones de la tradición astrológica
+                lunar; no son predicciones ni recomendaciones científicas.
+              </p>
+            </div>
+
+            <label className="block space-y-2 text-sm font-semibold text-slate-200">
+              ¿Qué quieres planificar?
+              <select
+                value={activity}
+                onChange={(event) => {
+                  const nextActivity = event.target.value;
+                  if (isAstralActivity(nextActivity)) setActivity(nextActivity);
+                }}
+                className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/20"
+              >
+                {ASTRAL_ACTIVITIES.map((value) => (
+                  <option key={value} value={value}>
+                    {ACTIVITY_LABELS[value]}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-300">
+                  Fechas sugeridas
+                </h3>
+                <span className="text-xs text-slate-500">{monthTitle}</span>
+              </div>
+
+              {recommendations.length > 0 ? (
+                recommendations.map((result) => {
+                  const alreadySaved = savedEvents.some(
+                    (event) =>
+                      event.eventDate === result.date &&
+                      event.activity === activity,
+                  );
+                  return (
+                    <article
+                      key={result.date}
+                      className="rounded-2xl border border-slate-700/80 bg-slate-950/80 p-4 transition hover:border-amber-300/40"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl" aria-hidden="true">
+                            {getMoonSymbol(result.phaseName)}
+                          </span>
+                          <div>
+                            <p className="font-semibold capitalize text-white">
+                              {formatAstralDate(result.date, {
+                                weekday: undefined,
+                                year: undefined,
+                              })}
+                            </p>
+                            <p className="text-xs capitalize text-amber-200">
+                              {result.phaseName} · {result.illumination}%
+                              iluminada
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={
+                            alreadySaved ||
+                            savingDate !== null ||
+                            eventsLoading ||
+                            !eventsAreForCurrentUser
+                          }
+                          onClick={() => void saveAstralDate(result)}
+                          className="shrink-0 rounded-xl bg-amber-300 px-3 py-2 text-xs font-extrabold text-slate-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {alreadySaved
+                            ? "Guardada"
+                            : savingDate === result.date
+                              ? "Guardando..."
+                              : "Guardar"}
+                        </button>
+                      </div>
+                      <p className="mt-3 text-xs leading-5 text-slate-400">
+                        {result.recommendation}
+                      </p>
+                    </article>
+                  );
+                })
+              ) : (
+                <p className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4 text-sm text-slate-400">
+                  No hay fechas disponibles para este período.
+                </p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl sm:p-6">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-indigo-200">
+                Tu agenda
+              </p>
+              <h2 className="mt-1 font-serif text-2xl text-white">
+                Fechas que guardaste
+              </h2>
+            </div>
+            <p className="max-w-md text-xs leading-5 text-slate-400">
+              Se guardan de forma privada en tu cuenta. En esta beta todavía no
+              enviamos notificaciones automáticas.
             </p>
           </div>
 
-          <div className="flex bg-slate-900/90 border border-slate-800 p-1.5 rounded-2xl gap-1">
-            <button
-              onClick={() => setActiveTab("ia")}
-              className={"px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer " + (activeTab === "ia" ? "bg-amber-500 text-slate-950 shadow-md font-bold" : "text-slate-400 hover:text-white")}
-            >
-              ?? Motor Científico
-            </button>
-            <button
-              onClick={() => setActiveTab("sinastria")}
-              className={"px-4 py-2 rounded-xl text-xs font-semibold transition cursor-pointer " + (activeTab === "sinastria" ? "bg-amber-500 text-slate-950 shadow-md font-bold" : "text-slate-400 hover:text-white")}
-            >
-              ?? Sinastría VIP
-            </button>
-          </div>
-        </div>
+          {calendarError && (
+            <p role="alert" className="rounded-xl bg-rose-950/50 p-3 text-sm text-rose-200">
+              {calendarError}
+            </p>
+          )}
+          {actionError && (
+            <p role="alert" className="rounded-xl bg-rose-950/50 p-3 text-sm text-rose-200">
+              {actionError}
+            </p>
+          )}
 
-        {/* NOTIFICACIONES DE LA APP */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold font-serif text-amber-300 uppercase tracking-widest flex items-center gap-2">
-              <span>??</span> NOTIFICACIONES DE LA APP
-            </h3>
-            <span className="bg-rose-950 text-rose-300 text-[10px] px-2 py-0.5 rounded-full border border-rose-500/30 font-bold">
-              {appNotifications.length} Activas
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            {appNotifications.map((n) => (
-              <div key={n.id} className="bg-slate-950 border border-slate-800/80 p-2.5 rounded-xl flex items-start justify-between gap-2">
-                <span className="text-slate-200">{n.msg}</span>
-                <span className="text-[9px] text-slate-500 whitespace-nowrap font-mono">{n.time}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {activeTab === "ia" && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-1 bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
-              <h3 className="text-xs font-bold font-serif text-amber-300 uppercase tracking-widest flex items-center gap-2">
-                <span>??</span> CONSULTA MATEMÁTICA
-              </h3>
-
-              <form onSubmit={handleIaSearch} className="space-y-3 text-xs">
-                <div>
-                  <label className="block text-slate-400 mb-1 font-medium">¿Qué deseas calcular para el 2026 o 2027?</label>
-                  <textarea
-                    rows={3}
-                    placeholder="Ej: 'quiero cortarme el cabello en el 2027' o 'cosechar maíz en 2027'"
-                    value={iaQuery}
-                    onChange={(e) => setIaQuery(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-white focus:outline-none focus:border-amber-500 transition resize-none leading-relaxed font-medium"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isProcessingIa}
-                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-rose-500 hover:opacity-90 text-slate-950 font-extrabold rounded-2xl transition shadow-xl uppercase tracking-wider cursor-pointer"
+          {eventsLoading || !eventsAreForCurrentUser ? (
+            <p className="text-sm text-slate-400">Cargando tu agenda...</p>
+          ) : savedEvents.length > 0 ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              {savedEvents.map((event) => (
+                <article
+                  key={event.id}
+                  className="flex items-start justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 p-4"
                 >
-                  {isProcessingIa ? "Calculando Coordenadas..." : "?? Calcular con Motor Real"}
-                </button>
-              </form>
-
-              <div className="space-y-1.5 pt-2 border-t border-slate-800">
-                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">Pruebas recomendadas:</span>
-                <div className="flex flex-col gap-1 text-[11px]">
-                  <button onClick={() => setIaQuery("quiero cortarme el cabello en el 2027")} className="text-left text-rose-300 hover:underline cursor-pointer">
-                    ?? "quiero cortarme el cabello en el 2027"
-                  </button>
-                  <button onClick={() => setIaQuery("cosechar maíz en 2027")} className="text-left text-amber-300 hover:underline cursor-pointer">
-                    ?? "cosechar maíz en 2027"
-                  </button>
-                  <button onClick={() => setIaQuery("podar plantas en diciembre")} className="text-left text-emerald-300 hover:underline cursor-pointer">
-                    ?? "podar plantas en diciembre"
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="md:col-span-2 space-y-4">
-              <h3 className="text-xs font-bold font-serif text-slate-300 uppercase tracking-widest">
-                RESULTADOS DE EFEMÉRIDES CELESTES
-              </h3>
-
-              {iaSuggestions.length > 0 ? (
-                <div className="space-y-3">
-                  {iaSuggestions.map((sug, idx) => (
-                    <div key={idx} className="bg-slate-900 border border-amber-500/30 hover:border-amber-400 rounded-3xl p-5 shadow-xl space-y-3 transition">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
-                        <div>
-                          <span className="bg-amber-950/80 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
-                            {sug.phaseName}
-                          </span>
-                          <h4 className="text-base font-bold text-white mt-1 capitalize">{iaQuery} (Ventana {idx + 1})</h4>
-                        </div>
-                        <div className="text-left sm:text-right">
-                          <span className="text-xs text-amber-400 font-bold block">{sug.date}</span>
-                          <span className="text-[10px] text-rose-300 font-mono font-bold">? {sug.bestTime}</span>
-                        </div>
-                      </div>
-
-                      <p className="text-xs text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-2xl border border-slate-800">
-                        {sug.recommendation}
+                  <div className="flex gap-3">
+                    <span className="mt-0.5 text-2xl" aria-hidden="true">
+                      {getMoonSymbol(event.lunarPhase)}
+                    </span>
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold capitalize text-amber-200">
+                        {formatAstralDate(event.eventDate)}
                       </p>
-
-                      <button
-                        onClick={() => handleSelectIaSuggestion(sug)}
-                        className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-2xl transition shadow-lg uppercase tracking-wider cursor-pointer"
-                      >
-                        ?? Guardar Alerta en la App para esta fecha real
-                      </button>
+                      <h3 className="text-sm font-semibold text-white">
+                        {event.title}
+                      </h3>
+                      <p className="text-xs capitalize text-slate-400">
+                        {event.lunarPhase} · {event.illumination}% iluminada
+                      </p>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-slate-900/60 border border-dashed border-slate-800 rounded-3xl p-8 text-center space-y-3">
-                  <span className="text-4xl">??</span>
-                  <h4 className="text-sm font-bold text-slate-300">Escribe tu consulta en el panel izquierdo</h4>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                    El motor matemático procesará las efemérides celestes reales de forma inmediata.
-                  </p>
-                </div>
-              )}
-
-              <div className="pt-4 space-y-3">
-                <h4 className="text-xs font-bold font-serif text-slate-400 uppercase tracking-widest">
-                  MIS ALERTAS GUARDADAS EN LA APP
-                </h4>
-
-                <div className="space-y-2">
-                  {savedEvents.length > 0 ? (
-                    savedEvents.map((ev) => (
-                      <div key={ev.id} className="bg-slate-900/80 border border-slate-800/90 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
-                        <div className="space-y-1">
-                          <span className="text-amber-400 font-bold text-xs">{ev.date} · {ev.lunarPhase}</span>
-                          <h5 className="text-sm font-bold text-white">{ev.title}</h5>
-                          <p className="text-xs text-slate-400">{ev.note}</p>
-                        </div>
-                        <div className="flex items-center gap-2 self-end sm:self-center">
-                          <span className="bg-emerald-950 text-emerald-300 text-[10px] px-2.5 py-1 rounded-full border border-emerald-500/30 font-semibold">
-                            Notificaciones Activas
-                          </span>
-                          <button
-                            onClick={() => handleDeleteEvent(ev.id)}
-                            className="px-3 py-1 bg-rose-950/80 hover:bg-rose-900 border border-rose-500/40 text-rose-300 text-xs font-bold rounded-xl transition cursor-pointer"
-                          >
-                            ??? Eliminar
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-xs text-slate-500 italic">No tienes alertas guardadas actualmente.</p>
-                  )}
-                </div>
-              </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={deletingId === event.id}
+                    onClick={() => void deleteAstralDate(event.id)}
+                    aria-label={`Eliminar ${event.title} del ${event.eventDate}`}
+                    className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-400 transition hover:bg-rose-950/60 hover:text-rose-200 disabled:opacity-50"
+                  >
+                    {deletingId === event.id ? "..." : "Eliminar"}
+                  </button>
+                </article>
+              ))}
             </div>
-          </div>
-        )}
-
-        {activeTab === "sinastria" && (
-          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-6">
-            <h3 className="text-xl font-bold font-serif text-white">Análisis de Sinastría Cósmica</h3>
-            <p className="text-xs text-slate-400">Cálculo de compatibilidad basado en aspectos planetarios reales.</p>
-          </div>
-        )}
+          ) : (
+            <p className="rounded-2xl border border-dashed border-slate-700 p-6 text-center text-sm text-slate-400">
+              Tu agenda está lista. Guarda una fecha sugerida y aparecerá aquí.
+            </p>
+          )}
+        </section>
       </main>
     </div>
   );

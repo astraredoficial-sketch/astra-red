@@ -1,89 +1,160 @@
-﻿import * as SunCalc from "suncalc";
+import * as SunCalc from "suncalc";
+
+export const ASTRAL_ACTIVITIES = [
+  "hair-growth",
+  "hair-maintenance",
+  "planting",
+  "pruning-harvest",
+  "moon-observation",
+] as const;
+
+export type AstralActivity = (typeof ASTRAL_ACTIVITIES)[number];
 
 export interface AstralCalculationResult {
   date: string;
   phaseName: string;
+  phaseValue: number;
   illumination: number;
   recommendation: string;
-  bestTime: string;
 }
 
-export function calculateRealAstralData(targetDate: Date, activityType: string): AstralCalculationResult {
-  const illum = SunCalc.getMoonIllumination(targetDate);
-  const illumPercent = Math.round(illum.fraction * 100);
-  const phaseVal = illum.phase; // 0 = Luna Nueva, 0.25 = Cuarto Creciente, 0.5 = Luna Llena, 0.75 = Cuarto Menguante
-  
-  let phaseName = "Luna Nueva 🌑";
-  if (phaseVal > 0.03 && phaseVal < 0.24) phaseName = "Luna Creciente 🌒";
-  else if (phaseVal >= 0.24 && phaseVal <= 0.26) phaseName = "Cuarto Creciente 🌓";
-  else if (phaseVal > 0.26 && phaseVal < 0.48) phaseName = "Luna Gibosa Creciente 🌔";
-  else if (phaseVal >= 0.48 && phaseVal <= 0.52) phaseName = "Luna Llena 🌕";
-  else if (phaseVal > 0.52 && phaseVal < 0.74) phaseName = "Luna Gibosa Menguante 🌖";
-  else if (phaseVal >= 0.74 && phaseVal <= 0.76) phaseName = "Cuarto Menguante 🌗";
-  else if (phaseVal > 0.76 && phaseVal < 0.97) phaseName = "Luna Menguante 🌘";
+export interface AstralCalendarDay extends AstralCalculationResult {
+  day: number;
+}
 
-  const dateStr = targetDate.toISOString().split("T")[0];
+function toIsoDate(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
 
-  let recommendation = `Cálculo astronómico de efemérides: Fase ${phaseName} con ${illumPercent}% de iluminación del disco lunar. `;
-  let bestTime = "07:00 AM - 11:00 AM";
-
-  const q = activityType.toLowerCase();
-  if (q.includes("cosechar") || q.includes("maiz") || q.includes("maíz") || q.includes("podar") || q.includes("mata") || q.includes("siembra")) {
-    if (phaseVal >= 0.50 && phaseVal <= 0.95) {
-      recommendation += "Fase menguante científica ideal: menor concentración de agua en tejidos vegetales, savia descendente, excelente para evitar plagas en almacenamiento y poda de raíces.";
-      bestTime = "06:00 AM - 10:00 AM";
-    } else {
-      recommendation += "Fase ascendente: mayor actividad de savia en la parte aérea de la planta.";
-    }
-  } else if (q.includes("cabello") || q.includes("pelo") || q.includes("cortar")) {
-    if (phaseVal >= 0.05 && phaseVal <= 0.50) {
-      recommendation += "Fase creciente activa: estimula el vigor del folículo y un crecimiento capilar más rápido y fuerte.";
-      bestTime = "10:00 AM - 03:00 PM";
-    } else {
-      recommendation += "Fase menguante: ideal si prefieres que el corte de cabello mantenga su forma y tarde más en crecer.";
-    }
-  } else {
-    recommendation += "Tránsito celeste verificado para alinear tus actividades con los ciclos naturales.";
+function activityIsWaxing(activity: AstralActivity): boolean | null {
+  if (activity === "hair-growth" || activity === "planting") return true;
+  if (activity === "hair-maintenance" || activity === "pruning-harvest") {
+    return false;
   }
+  return null;
+}
+
+function getPhaseName(phase: number): string {
+  if (phase < 0.03 || phase >= 0.97) return "Luna nueva";
+  if (phase < 0.22) return "Luna creciente";
+  if (phase < 0.28) return "Cuarto creciente";
+  if (phase < 0.47) return "Luna gibosa creciente";
+  if (phase < 0.53) return "Luna llena";
+  if (phase < 0.72) return "Luna gibosa menguante";
+  if (phase < 0.78) return "Cuarto menguante";
+  return "Luna menguante";
+}
+
+function getRecommendation(activity: AstralActivity): string {
+  switch (activity) {
+    case "hair-growth":
+      return "La tradición astrológica lunar asocia la fase creciente con el crecimiento. Es una guía simbólica, no una garantía científica.";
+    case "hair-maintenance":
+    case "pruning-harvest":
+      return "La tradición astrológica lunar asocia la fase menguante con el mantenimiento, la poda y la cosecha. Es una guía simbólica, no una garantía científica.";
+    case "planting":
+      return "La tradición astrológica lunar asocia la fase creciente con la siembra. El resultado real también depende de la especie, el clima y el suelo.";
+    case "moon-observation":
+      return "Una referencia para planificar la observación lunar. La visibilidad depende del clima, el horizonte y la contaminación lumínica.";
+  }
+}
+
+function assertMonthRange(
+  year: number,
+  startMonth: number,
+  endMonth: number,
+): void {
+  if (!Number.isInteger(year) || year < 1 || year > 9999) {
+    throw new RangeError("El año debe ser un entero entre 1 y 9999.");
+  }
+  if (
+    !Number.isInteger(startMonth) ||
+    !Number.isInteger(endMonth) ||
+    startMonth < 1 ||
+    endMonth > 12 ||
+    startMonth > endMonth
+  ) {
+    throw new RangeError("Indica un rango de meses válido entre 1 y 12.");
+  }
+}
+
+function calculateForDate(
+  targetDate: Date,
+  activity: AstralActivity,
+): AstralCalculationResult {
+  const illumination = SunCalc.getMoonIllumination(targetDate);
 
   return {
-    date: dateStr,
-    phaseName,
-    illumination: illumPercent,
-    recommendation,
-    bestTime,
+    date: toIsoDate(targetDate),
+    phaseName: getPhaseName(illumination.phase),
+    phaseValue: illumination.phase,
+    illumination: Math.round(illumination.fraction * 100),
+    recommendation: getRecommendation(activity),
   };
 }
 
-export function findOptimalAstralDates(query: string, year: number, startMonth: number, endMonth: number): AstralCalculationResult[] {
+export function calculateRealAstralData(
+  targetDate: Date,
+  activity: AstralActivity,
+): AstralCalculationResult {
+  if (!Number.isFinite(targetDate.getTime())) {
+    throw new RangeError("La fecha seleccionada no es válida.");
+  }
+  return calculateForDate(targetDate, activity);
+}
+
+export function getAstralCalendarDays(
+  year: number,
+  month: number,
+): AstralCalendarDay[] {
+  assertMonthRange(year, month, month);
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+  return Array.from({ length: daysInMonth }, (_, index) => {
+    const day = index + 1;
+    const result = calculateForDate(
+      new Date(Date.UTC(year, month - 1, day, 12)),
+      "moon-observation",
+    );
+    return { ...result, day };
+  });
+}
+
+export function findOptimalAstralDates(
+  activity: AstralActivity,
+  year: number,
+  startMonth: number,
+  endMonth: number,
+): AstralCalculationResult[] {
+  assertMonthRange(year, startMonth, endMonth);
+  const waxingPreference = activityIsWaxing(activity);
   const results: AstralCalculationResult[] = [];
-  
-  for (let m = startMonth; m <= endMonth; m++) {
-    for (let d = 1; d <= 28; d += 4) {
-      const testDate = new Date(year, m - 1, d);
-      const calc = calculateRealAstralData(testDate, query);
-      
-      const illum = SunCalc.getMoonIllumination(testDate);
-      const q = query.toLowerCase();
-      const isHarvestOrGarden = q.includes("cosechar") || q.includes("maiz") || q.includes("maíz") || q.includes("podar") || q.includes("mata");
-      const isHair = q.includes("cabello") || q.includes("pelo");
 
-      let keep = false;
-      if (isHarvestOrGarden && illum.phase >= 0.55 && illum.phase <= 0.90) keep = true; // Menguante
-      else if (isHair && illum.phase >= 0.05 && illum.phase <= 0.45) keep = true; // Creciente
-      else if (!isHarvestOrGarden && !isHair) keep = true;
+  for (let month = startMonth; month <= endMonth; month += 1) {
+    const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const matchingDates: AstralCalculationResult[] = [];
 
-      if (keep && !results.some(r => r.date.substring(0, 7) === calc.date.substring(0, 7)) && results.length < 3) {
-        results.push(calc);
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const date = new Date(Date.UTC(year, month - 1, day, 12));
+      const result = calculateForDate(date, activity);
+      const isWaxing = result.phaseValue < 0.5;
+
+      if (waxingPreference === null || isWaxing === waxingPreference) {
+        matchingDates.push(result);
       }
     }
-  }
 
-  if (results.length === 0) {
-    results.push(calculateRealAstralData(new Date(year, startMonth - 1, 15), query));
+    const numberToSelect = Math.min(3, matchingDates.length);
+    for (let index = 0; index < numberToSelect; index += 1) {
+      const position =
+        numberToSelect === 1
+          ? Math.floor((matchingDates.length - 1) / 2)
+          : Math.round(
+              (index * (matchingDates.length - 1)) / (numberToSelect - 1),
+            );
+      results.push(matchingDates[position]);
+    }
   }
 
   return results;
 }
-
-
