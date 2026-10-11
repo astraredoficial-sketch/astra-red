@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+﻿import { Suspense } from "react";
 import { OnboardingUi } from "./ui";
 
 export const instant = false;
@@ -10,3 +10,4 @@ export default function OnboardingPage() {
     </Suspense>
   );
 }
+

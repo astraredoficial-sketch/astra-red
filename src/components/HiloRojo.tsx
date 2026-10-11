@@ -1,4 +1,4 @@
-export function HiloRojo({ show }: { show: boolean }) {
+﻿export function HiloRojo({ show }: { show: boolean }) {
   if (!show) return null;
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -18,3 +18,4 @@ export function HiloRojo({ show }: { show: boolean }) {
     </div>
   );
 }
+

@@ -86,3 +86,4 @@ export type SynastryResult = {
   hasNodalAspect: boolean;
   hiloRojo: boolean;
 };
+

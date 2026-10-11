@@ -1,4 +1,4 @@
-import type { AspectName, PlanetId } from "@/lib/types";
+﻿import type { AspectName, PlanetId } from "@/lib/types";
 
 export const SIGNS = [
   "Aries",
@@ -70,3 +70,4 @@ export function angleDelta(a: number, b: number): number {
   const d = Math.abs(a - b) % 360;
   return d > 180 ? 360 - d : d;
 }
+

@@ -80,3 +80,4 @@ export function resetSwipes(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(SWIPES_KEY);
 }
+

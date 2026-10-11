@@ -1,4 +1,4 @@
-import * as Astronomy from "astronomy-engine";
+﻿import * as Astronomy from "astronomy-engine";
 import { findCity } from "@/lib/cities";
 import type { BirthData, NatalChart, Placement, PlanetId } from "@/lib/types";
 import { signFromLongitude } from "./constants";
@@ -114,3 +114,4 @@ export function computeNatalChart(birth: BirthData): NatalChart {
     timeUnknown: birth.timeUnknown,
   };
 }
+

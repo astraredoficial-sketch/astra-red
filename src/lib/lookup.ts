@@ -9,3 +9,4 @@ export function findProfile(id: string): UserProfile | undefined {
 
   return SEED_PROFILES.find((p) => p.id === id);
 }
+

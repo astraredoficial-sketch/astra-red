@@ -1,4 +1,4 @@
-import { formatDegree, PLANET_META } from "@/lib/astro/constants";
+﻿import { formatDegree, PLANET_META } from "@/lib/astro/constants";
 import type { NatalChart } from "@/lib/types";
 
 export function Triad({ chart }: { chart: NatalChart }) {
@@ -26,3 +26,4 @@ export function Triad({ chart }: { chart: NatalChart }) {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 
 import React from "react";
 import Link from "next/link";
@@ -29,14 +29,14 @@ export function VipPaywallModal({
             Hola {userName}, Desbloquea tu VIP
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
-            Tu cuenta actualmente está en el <span className="text-rose-400 font-bold">Plan Free</span>. Suscríbete a Astra Red VIP para calcular efemérides astronómicas exactas.
+            Tu cuenta actualmente estï¿½ en el <span className="text-rose-400 font-bold">Plan Free</span>. Suscrï¿½bete a Astra Red VIP para calcular efemï¿½rides astronï¿½micas exactas.
           </p>
         </div>
 
         <div className="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-left text-xs space-y-2.5">
           <div className="flex items-center gap-2 text-slate-200">
             <span className="text-amber-400 font-bold">?</span>
-            <span>Motor de Búsqueda Científico de Efemérides Celestiales.</span>
+            <span>Motor de Bï¿½squeda Cientï¿½fico de Efemï¿½rides Celestiales.</span>
           </div>
           <div className="flex items-center gap-2 text-slate-200">
             <span className="text-amber-400 font-bold">?</span>
@@ -44,7 +44,7 @@ export function VipPaywallModal({
           </div>
           <div className="flex items-center gap-2 text-slate-200">
             <span className="text-amber-400 font-bold">?</span>
-            <span>Análisis ilimitado de Sinastría Cósmica VIP.</span>
+            <span>Anï¿½lisis ilimitado de Sinastrï¿½a Cï¿½smica VIP.</span>
           </div>
         </div>
 
@@ -62,7 +62,7 @@ export function VipPaywallModal({
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-3.5 flex flex-col justify-between text-left opacity-80 hover:opacity-100 transition">
             <div>
               <span className="text-slate-400 text-[10px] uppercase font-bold block">Plan Anual</span>
-              <span className="text-2xl font-black font-serif text-white">$39$4.99 <span className="text-xs font-normal text-slate-400">/ año</span></span>
+              <span className="text-2xl font-black font-serif text-white">$39$4.99 <span className="text-xs font-normal text-slate-400">/ aï¿½o</span></span>
             </div>
           </div>
         </div>
@@ -80,7 +80,7 @@ export function VipPaywallModal({
               href="/cuenta"
               className="block w-full py-2.5 text-slate-400 hover:text-white text-xs font-semibold transition"
             >
-              Volver a la sección Cuenta
+              Volver a la secciï¿½n Cuenta
             </Link>
           ) : (
             onClose && (
@@ -97,3 +97,4 @@ export function VipPaywallModal({
     </div>
   );
 }
+

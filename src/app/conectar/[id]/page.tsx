@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+﻿import { Suspense } from "react";
 import { ConectarUi } from "./ui";
 
 export const instant = false;
@@ -14,3 +14,4 @@ export default function ConectarPage() {
     </Suspense>
   );
 }
+

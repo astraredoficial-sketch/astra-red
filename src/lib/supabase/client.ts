@@ -8,3 +8,4 @@ if (!url || !publishableKey) {
 }
 
 export const supabase = createClient(url, publishableKey);
+

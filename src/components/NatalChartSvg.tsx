@@ -164,3 +164,4 @@ export function NatalChartSvg({ chart, size = 420 }: Props) {
     </div>
   );
 }
+

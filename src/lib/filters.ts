@@ -26,3 +26,4 @@ export function filterProfilesForUser(me: UserProfile, candidates: UserProfile[]
     return true;
   });
 }
+

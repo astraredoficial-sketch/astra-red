@@ -3,3 +3,4 @@
 export default function CuentaPage() {
   return <CuentaUi />;
 }
+

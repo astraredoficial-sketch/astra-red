@@ -1,4 +1,4 @@
-export function BrandMark({ size = "md" }: { size?: "sm" | "md" }) {
+﻿export function BrandMark({ size = "md" }: { size?: "sm" | "md" }) {
   const text = size === "sm" ? "text-lg" : "text-2xl";
   return (
     <div className="flex items-center gap-2">
@@ -12,3 +12,4 @@ export function BrandMark({ size = "md" }: { size?: "sm" | "md" }) {
     </div>
   );
 }
+

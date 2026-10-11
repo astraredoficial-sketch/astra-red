@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AspectName,
   NatalChart,
   PlanetId,
@@ -100,3 +100,4 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryResult {
     hiloRojo: percent > 90 && hasNodalAspect,
   };
 }
+

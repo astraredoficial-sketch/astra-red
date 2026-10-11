@@ -1,4 +1,4 @@
-export type City = {
+﻿export type City = {
   id: string;
   name: string;
   country: string;
@@ -61,3 +61,4 @@ export function searchCities(query: string): City[] {
       c.country.toLowerCase().includes(q),
   ).slice(0, 10);
 }
+

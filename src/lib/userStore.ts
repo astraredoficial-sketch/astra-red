@@ -9,6 +9,13 @@
   joinedDate: string;
   isCurrent: boolean;
   isComplete: boolean; // Controla si terminó el onboarding (ubicación y carta natal)
+  birth_date?: string;
+  birth_time?: string;
+  birth_time_unknown?: boolean;
+  location_country?: string;
+  location_city?: string;
+  chart?: any;
+
 }
 
 export const INITIAL_ACCOUNTS: Account[] = [
@@ -50,3 +57,5 @@ export function getCurrentAccount(): Account | null {
   const accounts = getAllAccounts();
   return accounts.find((a) => a.isCurrent) || null;
 }
+
+

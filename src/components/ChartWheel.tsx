@@ -1,4 +1,4 @@
-import { PLANET_META, SIGN_GLYPHS } from "@/lib/astro/constants";
+﻿import { PLANET_META, SIGN_GLYPHS } from "@/lib/astro/constants";
 import type { NatalChart, PlanetId } from "@/lib/types";
 
 const RING_PLANETS: PlanetId[] = [
@@ -99,3 +99,4 @@ export function ChartWheel({ chart, className = "" }: { chart: NatalChart; class
     </svg>
   );
 }
+

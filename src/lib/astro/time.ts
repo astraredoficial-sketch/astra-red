@@ -1,4 +1,4 @@
-export function civilToUtc(
+﻿export function civilToUtc(
   date: string,
   time: string,
   timeZone: string,
@@ -40,3 +40,4 @@ export function civilToUtc(
   if (second !== first) instant = desired - second;
   return new Date(instant);
 }
+

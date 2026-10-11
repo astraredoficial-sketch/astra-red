@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { searchCities, type City } from "@/lib/cities";
@@ -52,3 +52,4 @@ export function CitySearch({
     </div>
   );
 }
+

@@ -4,6 +4,7 @@ import { Country, City } from 'country-state-city';
 import React, { useEffect, useState } from "react";
 import { getAllAccounts, saveAccounts } from "@/lib/userStore";
 import { supabase } from "@/lib/supabase/client";
+import { computeNatalChart } from "@/lib/astro/chart";
 
 
 
@@ -46,6 +47,14 @@ export function OnboardingUi() {
     // Si hay una cuenta actual o creamos una nueva
     const currentAcc = accounts.find(a => a.isCurrent) || accounts[0];
 
+    const natalChart = computeNatalChart({
+      date: birthDate,
+      time: birthTime,
+      cityId: selectedCity,
+      timeUnknown: birthTimeUnknown,
+    });
+
+
     const updated = accounts.map(acc => {
       if (acc.id === currentAcc.id) {
         return {
@@ -60,6 +69,7 @@ export function OnboardingUi() {
           birth_time_unknown: birthTimeUnknown,
           looking_for: lookingFor,
           target_gender: targetGender,
+          chart: natalChart,
           isComplete: true, // ¡Registro completado con éxito!
         };
       }
@@ -81,6 +91,7 @@ export function OnboardingUi() {
           birth_time_unknown: birthTimeUnknown,
           looking_for: lookingFor,
           target_gender: targetGender,
+          chart: natalChart,
         });
     }
 
@@ -265,6 +276,14 @@ export function OnboardingUi() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
 
 
 
