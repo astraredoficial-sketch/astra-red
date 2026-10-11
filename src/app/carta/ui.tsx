@@ -13,14 +13,20 @@ function getSupabaseClient() {
 
 export default function CartaUi() {
   const [profile, setProfile] = useState<any>(null);
+  const [authUser, setAuthUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchProfile() {
       const supabase = getSupabaseClient();
-      if (!supabase) return;
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
 
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setAuthUser(user);
         const { data } = await supabase
           .from("profiles")
           .select("*")
@@ -28,27 +34,47 @@ export default function CartaUi() {
           .single();
         if (data) setProfile(data);
       }
+      setLoading(false);
     }
     fetchProfile();
   }, []);
 
+  // Extraer nombre real del usuario autenticado actual
+  const userName = 
+    profile?.name || 
+    profile?.full_name || 
+    authUser?.user_metadata?.full_name || 
+    authUser?.user_metadata?.name || 
+    (authUser?.email ? authUser.email.split("@")[0] : "Explorador Astral");
+
   const chartData = profile?.chart || {};
   const triad = chartData?.triad || {};
 
-  const sunSign = triad?.sun?.sign || chartData?.sun || "Sagitario";
-  const moonSign = triad?.moon?.sign || chartData?.moon || "Acuario";
-  const ascSign = triad?.asc?.sign || chartData?.asc || "Capricornio";
+  const sunSign = triad?.sun?.sign || chartData?.sun || "Pendiente";
+  const moonSign = triad?.moon?.sign || chartData?.moon || "Pendiente";
+  const ascSign = triad?.asc?.sign || chartData?.asc || "Pendiente";
 
   const locationText = [profile?.location_city, profile?.location_country]
     .filter(Boolean)
-    .join(", ") || "Barinas, Venezuela";
+    .join(", ") || "Universo Sincronizado";
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+        <AppNav active="carta" />
+        <main className="flex-1 flex items-center justify-center">
+          <p className="text-amber-400 animate-pulse font-serif text-lg">✦ Consultando tu firmamento... ✦</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       <AppNav active="carta" />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-8 space-y-8">
-        {/* Banner de perfil */}
+        {/* Banner de perfil dinámico del usuario actual */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex items-center justify-between shadow-xl">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-3xl shadow-inner">
@@ -56,8 +82,8 @@ export default function CartaUi() {
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-serif font-bold text-white tracking-wide">
-                  {profile?.name || "Aaron Montilla"}
+                <h1 className="text-2xl font-serif font-bold text-white tracking-wide capitalize">
+                  {userName}
                 </h1>
                 <span className="bg-slate-800 border border-slate-700 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
                   🌱 PLAN FREE
@@ -85,7 +111,7 @@ export default function CartaUi() {
           </div>
 
           <p className="text-xs text-slate-400 max-w-md">
-            Carta Natal calculada con base en los registros astrológicos de <strong className="text-white">{profile?.name || "Aaron Montilla"}</strong>.
+            Carta Natal calculada con base en los registros astrológicos de <strong className="text-white capitalize">{userName}</strong>.
           </p>
         </div>
 
@@ -140,8 +166,8 @@ export default function CartaUi() {
               </h3>
               <ul className="text-xs text-slate-300 space-y-2 leading-relaxed">
                 <li><strong className="text-white">Sol en {sunSign}:</strong> Liderazgo natural, enfoque expansivo y búsqueda constante de conocimiento.</li>
-                <li><strong className="text-white">Luna en {moonSign}:</strong> Profundidad intelectual, originalidad y necesidad de libertad emocional.</li>
-                <li><strong className="text-white">Ascendente {ascSign}:</strong> Disciplina, estructura y una sólida ética de trabajo que proyectas al mundo.</li>
+                <li><strong className="text-white">Luna en {moonSign}:</strong> Profundidad emocional, originalidad y necesidad de libertad interior.</li>
+                <li><strong className="text-white">Ascendente {ascSign}:</strong> Disciplina, estructura y proyección única hacia el exterior.</li>
               </ul>
             </div>
 
@@ -150,8 +176,8 @@ export default function CartaUi() {
                 <span>⚡</span> Reto de Vida
               </h3>
               <ul className="text-xs text-slate-300 space-y-2 leading-relaxed">
-                <li><strong className="text-white">Saturno en Tránsito:</strong> Encontrar el equilibrio perfecto entre la flexibilidad creativa y la alta exigencia profesional.</li>
-                <li><strong className="text-white">Lecciones Clave:</strong> Autenticidad, resiliencia ante los cambios técnicos y consolidación de proyectos a largo plazo.</li>
+                <li><strong className="text-white">Tránsitos Activos:</strong> Encontrar el equilibrio perfecto entre la flexibilidad creativa y la alta exigencia.</li>
+                <li><strong className="text-white">Lecciones Clave:</strong> Autenticidad, resiliencia y consolidación de proyectos a largo plazo.</li>
               </ul>
             </div>
 
@@ -160,7 +186,7 @@ export default function CartaUi() {
                 <span>🌟</span> Destino & Vocación
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Estabilidad orientada hacia la tecnología, la música y el desarrollo de sistemas con propósito. Tu camino une la ingeniería con el arte sonoro.
+                Camino enfocado en integrar la técnica, el arte y la guía personal con un propósito elevado y transformador.
               </p>
             </div>
 
@@ -169,7 +195,7 @@ export default function CartaUi() {
                 <span>💖</span> Amor & Relaciones
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Vínculos basados en la lealtad, la complicidad intelectual y el respeto mutuo por los espacios de creación y crecimiento personal.
+                Vínculos basados en la lealtad, la complicidad intelectual y el respeto mutuo por los espacios de crecimiento.
               </p>
             </div>
           </div>
