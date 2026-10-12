@@ -453,11 +453,34 @@ export function CuentaUi() {
                     Calendario en beta
                   </span>
                   <h2 className="mt-3 font-serif text-2xl">
-                    Explora el ritmo de la Luna
+                    Tu universo astral, más cerca
                   </h2>
                   <p className="mt-2 max-w-xl text-sm leading-6 text-slate-300">
-                    Prueba gratis las fases lunares, planifica fechas y guarda
-                    tus intenciones. Sin cobros durante la beta.
+                    Explora las fases lunares y encuentra fechas alineadas con
+                    tus planes: hogar, vehículos, viajes, amor y proyectos.
+                  </p>
+                  <ul className="mt-4 max-w-2xl space-y-2 text-sm leading-6 text-slate-300">
+                    <li>
+                      <span className="mr-2 font-bold text-amber-300" aria-hidden="true">✦</span>
+                      Planifica momentos importantes con recomendaciones
+                      astrológicas.
+                    </li>
+                    <li>
+                      <span className="mr-2 font-bold text-amber-300" aria-hidden="true">✦</span>
+                      Crea alertas automáticas para recordar las fechas que
+                      elijas.
+                    </li>
+                    <li>
+                      <span className="mr-2 font-bold text-amber-300" aria-hidden="true">✦</span>
+                      Descubre el Hilo Rojo: recibe una alerta especial cuando
+                      tú y otra persona con membresía VIP alcancen 100% de
+                      compatibilidad astral.
+                    </li>
+                  </ul>
+                  <p className="mt-3 text-xs text-slate-400">
+                    Las alertas del Hilo Rojo requieren que ambos perfiles
+                    tengan membresía VIP. Prueba el calendario gratis durante
+                    la beta, sin cobros.
                   </p>
                 </div>
                 <Link
