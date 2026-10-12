@@ -13,6 +13,7 @@ type MessageRow = {
   recipient_id: string;
   body: string;
   created_at: string;
+  read_at: string | null;
 };
 
 type ChatMessage = {
@@ -91,7 +92,7 @@ export function ConversacionUi() {
       setIsMatch(true);
       const { data, error: messagesError } = await supabase
         .from("chat_messages")
-        .select("id, sender_id, recipient_id, body, created_at")
+        .select("id, sender_id, recipient_id, body, created_at, read_at")
         .or(messageFilter)
         .order("created_at", { ascending: true });
 
@@ -101,8 +102,26 @@ export function ConversacionUi() {
         setLoading(false);
         return;
       }
-      setMessages((data as MessageRow[]).map(toMessage));
+      const rows = data as MessageRow[];
+      setMessages(rows.map(toMessage));
       setLoading(false);
+
+      const unreadIds = rows
+        .filter(
+          (row) => row.recipient_id === currentUser.id && row.read_at === null,
+        )
+        .map((row) => row.id);
+      if (unreadIds.length > 0) {
+        const { error: readError } = await supabase
+          .from("chat_messages")
+          .update({ read_at: new Date().toISOString() })
+          .in("id", unreadIds)
+          .eq("recipient_id", currentUser.id)
+          .is("read_at", null);
+        if (readError && active) {
+          setError(`No se pudieron marcar los mensajes como leídos: ${readError.message}`);
+        }
+      }
 
       const channel = supabase
         .channel(`conversation:${userA}:${userB}`)
@@ -124,6 +143,25 @@ export function ConversacionUi() {
                 ? current
                 : [...current, incoming],
             );
+
+            if (
+              row.recipient_id === currentUser.id &&
+              row.read_at === null
+            ) {
+              void supabase
+                .from("chat_messages")
+                .update({ read_at: new Date().toISOString() })
+                .eq("id", row.id)
+                .eq("recipient_id", currentUser.id)
+                .is("read_at", null)
+                .then(({ error: readError }) => {
+                  if (readError && active) {
+                    setError(
+                      `No se pudo marcar el mensaje como leído: ${readError.message}`,
+                    );
+                  }
+                });
+            }
           },
         )
         .subscribe((status, channelError) => {
@@ -175,7 +213,7 @@ export function ConversacionUi() {
           recipient_id: currentOther.id,
           body,
         })
-        .select("id, sender_id, recipient_id, body, created_at")
+        .select("id, sender_id, recipient_id, body, created_at, read_at")
         .single();
 
       if (sendError) throw sendError;
@@ -186,6 +224,15 @@ export function ConversacionUi() {
           : [...current, sent],
       );
       setDraft("");
+      const { error: notificationError } = await supabase.functions.invoke(
+        "notify-new-message",
+        { body: { event: "message", messageId: sent.id } },
+      );
+      if (notificationError) {
+        setError(
+          `El mensaje se envió, pero no se pudo enviar el aviso por correo: ${notificationError.message}`,
+        );
+      }
     } catch (cause) {
       setError(
         `No se pudo enviar el mensaje: ${
