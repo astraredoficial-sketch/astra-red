@@ -110,24 +110,26 @@ export function AppNav({ active }: Props) {
 
   return (
     <header className="bg-slate-950/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 w-full shadow-lg">
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div className="mx-auto flex h-16 w-full max-w-7xl min-w-0 items-center px-3 sm:h-20 sm:justify-between sm:px-6">
         <Link 
           href="/carta" 
-          className="flex items-center gap-3 cursor-pointer group transition transform hover:scale-105"
+          className="hidden shrink-0 cursor-pointer items-center gap-3 transition group hover:scale-105 sm:flex"
           aria-label="AstraRed, ir a Carta Natal"
         >
           <BrandMark size="sm" />
         </Link>
 
-        <nav className="flex items-center gap-3 sm:gap-4">
+        <nav aria-label="Navegación principal" className="flex w-full min-w-0 items-center justify-between gap-1 sm:w-auto sm:gap-3 md:gap-4">
           {navItems.map((item) => {
             const isActive = active === item.id;
             return (
               <Link
                 key={item.id}
                 href={item.href}
+                aria-label={item.label}
+                title={item.label}
                 className={
-                  "px-4 py-2.5 rounded-xl text-sm font-semibold transition flex items-center gap-2 cursor-pointer shadow-sm " +
+                  "flex min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl px-2 py-2.5 text-sm font-semibold shadow-sm transition sm:flex-none sm:gap-2 sm:px-3 md:px-4 " +
                   (isActive
                     ? "bg-rose-600 text-white shadow-md shadow-rose-950/60"
                     : "text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800/60")
@@ -144,7 +146,7 @@ export function AppNav({ active }: Props) {
                     </span>
                   )}
                 </span>
-                <span>{item.label}</span>
+                <span className="sr-only sm:not-sr-only">{item.label}</span>
                 {item.id === "mensajes" && (
                   <span className="sr-only" role="status" aria-live="polite">
                     {unreadError ||

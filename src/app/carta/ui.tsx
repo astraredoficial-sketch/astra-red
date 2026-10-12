@@ -40,11 +40,11 @@ export default function CartaUi() {
   const readings = generatePlanetReadings(chart);
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#080d1b] text-slate-100">
+    <div className="flex min-h-screen w-full min-w-0 flex-col bg-[#080d1b] text-slate-100">
       <AppNav active="carta" />
 
-      <main className="mx-auto w-full max-w-7xl flex-1 space-y-8 px-4 py-8 sm:px-6 lg:py-12">
-        <article className="relative overflow-hidden rounded-[2rem] bg-[#efe4c7] p-2 text-[#18243a] shadow-[0_30px_100px_rgba(0,0,0,0.4)] sm:p-3">
+      <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 space-y-8 px-4 py-8 sm:px-6 lg:py-12">
+        <article className="relative w-full min-w-0 overflow-hidden rounded-[2rem] bg-[#efe4c7] p-2 text-[#18243a] shadow-[0_30px_100px_rgba(0,0,0,0.4)] sm:p-3">
           <div className="pointer-events-none absolute inset-2 rounded-[1.55rem] border border-[#a88648]/70 sm:inset-3" />
           <div className="pointer-events-none absolute inset-4 rounded-[1.35rem] border border-[#a88648]/25 sm:inset-5" />
 
