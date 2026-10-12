@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { BrandMark } from "@/components/BrandMark";
 import { supabase } from "@/lib/supabase/client";
 
 interface Props {
@@ -113,11 +114,9 @@ export function AppNav({ active }: Props) {
         <Link 
           href="/carta" 
           className="flex items-center gap-3 cursor-pointer group transition transform hover:scale-105"
+          aria-label="AstraRed, ir a Carta Natal"
         >
-          <span className="text-3xl transition group-hover:rotate-12">✨</span>
-          <span className="font-serif font-bold text-2xl text-white tracking-wide">
-            Astra<span className="text-rose-500 group-hover:text-rose-400 transition">Red</span>
-          </span>
+          <BrandMark size="sm" />
         </Link>
 
         <nav className="flex items-center gap-3 sm:gap-4">
