@@ -16,6 +16,7 @@ require.extensions[".ts"] = function (module, filename) {
 };
 
 const {
+  ASTRAL_ACTIVITIES,
   calculateRealAstralData,
   findOptimalAstralDates,
   getAstralCalendarDays,
@@ -56,6 +57,49 @@ test("las fechas se calculan sin desplazamiento de día por zona horaria", () =>
   );
 
   assert.equal(result.date, "2027-01-01");
+});
+
+test("el calendario ofrece intenciones de hogar, vehículos, relaciones y trabajo", () => {
+  for (const activity of [
+    "home-purchase",
+    "vehicle-purchase",
+    "wedding",
+    "business-launch",
+    "job-interview",
+    "travel",
+    "contract-signing",
+  ]) {
+    assert.ok(ASTRAL_ACTIVITIES.includes(activity));
+  }
+});
+
+test("las sugerencias incluyen signo lunar, índice y criterios de la intención", () => {
+  const dates = findOptimalAstralDates("home-purchase", 2027, 3, 3);
+
+  assert.equal(dates.length, 3);
+  assert.ok(
+    dates.every(
+      (date) =>
+        typeof date.moonSign === "string" &&
+        date.score >= 0 &&
+        date.score <= 100 &&
+        date.recommendation.includes("Mercurio") &&
+        date.recommendation.includes("Luna en"),
+    ),
+  );
+});
+
+test("las recomendaciones de boda consideran a Venus y el signo lunar", () => {
+  const dates = findOptimalAstralDates("wedding", 2027, 6, 6);
+
+  assert.ok(dates.length > 0 && dates.length <= 3);
+  assert.ok(
+    dates.every(
+      (date) =>
+        date.recommendation.includes("Venus") &&
+        date.recommendation.includes("Luna en"),
+    ),
+  );
 });
 
 test("el motor rechaza rangos de calendario inválidos", () => {

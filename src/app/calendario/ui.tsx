@@ -31,7 +31,50 @@ const ACTIVITY_LABELS: Record<AstralActivity, string> = {
   planting: "Siembra",
   "pruning-harvest": "Poda y cosecha",
   "moon-observation": "Observación lunar",
+  "home-search": "Buscar casa o apartamento",
+  "home-purchase": "Comprar o firmar por una vivienda",
+  "home-move": "Mudanza o estreno del hogar",
+  "vehicle-purchase": "Comprar carro o moto",
+  "vehicle-first-drive": "Primer viaje en carro o moto",
+  engagement: "Compromiso",
+  wedding: "Casamiento",
+  "business-launch": "Iniciar un negocio o proyecto",
+  "job-interview": "Entrevista o inicio de empleo",
+  travel: "Iniciar un viaje",
+  "contract-signing": "Firmar un contrato o acuerdo",
 };
+
+const ACTIVITY_GROUPS: {
+  label: string;
+  activities: AstralActivity[];
+}[] = [
+  {
+    label: "Hogar y compras importantes",
+    activities: ["home-search", "home-purchase", "home-move"],
+  },
+  {
+    label: "Vehículos y viajes",
+    activities: ["vehicle-purchase", "vehicle-first-drive", "travel"],
+  },
+  {
+    label: "Amor y relaciones",
+    activities: ["engagement", "wedding"],
+  },
+  {
+    label: "Trabajo y proyectos",
+    activities: ["business-launch", "job-interview", "contract-signing"],
+  },
+  {
+    label: "Cuidado personal y naturaleza",
+    activities: [
+      "hair-growth",
+      "hair-maintenance",
+      "planting",
+      "pruning-harvest",
+      "moon-observation",
+    ],
+  },
+];
 
 const EVENT_COLUMNS =
   "id, user_id, title, activity, event_date, lunar_phase, illumination, recommendation";
@@ -444,7 +487,7 @@ export function CalendarioUi() {
               <span>🌕 Llena</span>
               <span>🌗 Menguante</span>
               <span className="basis-full text-slate-500">
-                Fase estimada para el mediodía UTC.
+                Fase, signo lunar y tránsitos estimados para el mediodía UTC.
               </span>
             </div>
 
@@ -480,8 +523,9 @@ export function CalendarioUi() {
                 Elige tu intención
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Las sugerencias siguen asociaciones de la tradición astrológica
-                lunar; no son predicciones ni recomendaciones científicas.
+                Cada fecha combina fase y signo lunar con el movimiento de
+                Mercurio o Venus cuando son relevantes para tu intención. Son
+                criterios de la tradición astrológica, no garantías.
               </p>
             </div>
 
@@ -495,10 +539,14 @@ export function CalendarioUi() {
                 }}
                 className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white focus:border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-300/20"
               >
-                {ASTRAL_ACTIVITIES.map((value) => (
-                  <option key={value} value={value}>
-                    {ACTIVITY_LABELS[value]}
-                  </option>
+                {ACTIVITY_GROUPS.map((group) => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.activities.map((value) => (
+                      <option key={value} value={value}>
+                        {ACTIVITY_LABELS[value]}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </label>
@@ -535,9 +583,9 @@ export function CalendarioUi() {
                                 year: undefined,
                               })}
                             </p>
-                            <p className="text-xs capitalize text-amber-200">
-                              {result.phaseName} · {result.illumination}%
-                              iluminada
+                            <p className="text-xs text-amber-200">
+                              {result.phaseName} · Luna en {result.moonSign} ·{" "}
+                              {result.illumination}% iluminada
                             </p>
                           </div>
                         </div>
@@ -561,6 +609,9 @@ export function CalendarioUi() {
                       </div>
                       <p className="mt-3 text-xs leading-5 text-slate-400">
                         {result.recommendation}
+                      </p>
+                      <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                        Índice astrológico orientativo: {result.score}/100
                       </p>
                     </article>
                   );
