@@ -33,6 +33,37 @@ body {
     radial-gradient(circle at 20% 80%, rgba(138, 43, 226, 0.08), transparent 40%);
 }
 
+.starfield {
+  position: relative;
+  background-color: #07060c;
+}
+
+.starfield::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 10% 20%, rgba(255,255,255,0.9) 0, transparent 100%),
+    radial-gradient(2px 2px at 25% 35%, rgba(255,255,255,0.7) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 18%, rgba(255,255,255,0.8) 0, transparent 100%),
+    radial-gradient(2px 2px at 72% 26%, rgba(255,255,255,0.75) 0, transparent 100%),
+    radial-gradient(1.8px 1.8px at 82% 58%, rgba(255,255,255,0.8) 0, transparent 100%),
+    radial-gradient(1.5px 1.5px at 35% 70%, rgba(255,255,255,0.7) 0, transparent 100%),
+    radial-gradient(2px 2px at 60% 72%, rgba(255,255,255,0.85) 0, transparent 100%),
+    radial-gradient(2px 2px at 85% 80%, rgba(255,255,255,0.8) 0, transparent 100%);
+  opacity: 0.9;
+}
+
+.starfield::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(255, 42, 95, 0.2), transparent 26%),
+    radial-gradient(circle at 60% 68%, rgba(138, 43, 226, 0.18), transparent 32%);
+  pointer-events: none;
+}
+
 ::selection {
   background: rgba(255, 42, 95, 0.35);
 }
@@ -43,6 +74,49 @@ body {
 
 .glow-thread {
   box-shadow: 0 0 24px rgba(255, 42, 95, 0.45);
+}
+
+.orbital-ring {
+  position: relative;
+  min-height: 660px;
+}
+
+.orbital-ring::before {
+  content: "";
+  position: absolute;
+  inset: 3% 10% 8%;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 9999px;
+  box-shadow: inset 0 0 80px rgba(255,255,255,0.02);
+}
+
+.orbital-ring::after {
+  content: "";
+  position: absolute;
+  inset: 7% 14% 13%;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 9999px;
+}
+
+.feature-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.calendar-preview {
+  background:
+    radial-gradient(ellipse at 12% 50%, rgba(255, 42, 95, 0.08), transparent 55%),
+    linear-gradient(135deg, rgba(255,255,255,0.035), rgba(255,255,255,0.015));
+}
+
+.calendar-window {
+  background-image: linear-gradient(145deg, rgba(138, 43, 226, 0.08), transparent 55%);
+}
+
+@media (max-width: 639px) {
+  .orbital-ring {
+    min-height: 540px;
+  }
 }
 
 .glow-astral {
