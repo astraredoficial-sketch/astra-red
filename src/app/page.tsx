@@ -27,22 +27,27 @@ export default function Home() {
           <div className="absolute inset-10 rounded-full border border-white/10" />
 
           <div className="relative z-10 flex max-w-[620px] flex-col items-center px-4 text-center">
-            <p className="rise text-[10px] uppercase tracking-[0.45em] text-astral/90 sm:text-xs">
-              FASE 1 · ALPHA
-            </p>
-
-            <h1 className="font-serif rise mt-5 text-[4.2rem] leading-[0.9] tracking-[-0.04em] text-white sm:text-[6rem] md:text-[7.2rem]">
+            <h1 className="font-serif rise text-[4.2rem] leading-[0.9] tracking-[-0.04em] text-white sm:text-[6rem] md:text-[7.2rem]">
               No es magia.
               <br />
               Es <span className="text-thread">sinastría</span>.
             </h1>
 
-            <p className="rise mt-6 max-w-[700px] text-sm leading-7 text-[#c9bfd3] sm:text-lg">
-              AstraRed calcula tu carta natal y te ayuda a descubrir afinidades de
-              nacimiento: Sol, Luna, Ascendente y el hilo que a veces se enciende.
+            <p className="rise mt-7 max-w-[650px] text-sm leading-7 text-[#d2c8dc] sm:text-lg sm:leading-8">
+              Descubre lo que tu carta natal revela de ti, conecta con personas
+              afines y consulta tu calendario astral para encontrar el momento
+              propicio para cada intención.
             </p>
 
-            <div className="rise mt-8 flex w-full max-w-[420px] flex-col items-center">
+            <div className="rise mt-5 flex max-w-[590px] flex-col items-center">
+              <span aria-hidden="true" className="mb-4 h-px w-12 bg-gradient-to-r from-transparent via-thread/80 to-transparent" />
+              <p className="font-serif text-xl italic leading-7 text-[#f0d9e2] sm:text-2xl sm:leading-8">
+                Hay conexiones que parecen escritas en las estrellas. Descubre
+                quién podría estar al otro lado de tu hilo rojo.
+              </p>
+            </div>
+
+            <div className="rise mt-7 flex w-full max-w-[420px] flex-col items-center">
               <Link
                 href="/acceso?mode=signup"
                 className="glow-thread inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#ff476f] to-[#ff2b7d] px-7 py-4 text-base font-medium text-white shadow-[0_0_24px_rgba(255,42,95,0.45)] transition hover:scale-[1.01]"
