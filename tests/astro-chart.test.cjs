@@ -26,6 +26,7 @@ Module._resolveFilename = function (request, parent, isMain, options) {
 };
 
 const { computeNatalChart } = require("../src/lib/astro/chart.ts");
+const { computeSynastry } = require("../src/lib/astro/synastry.ts");
 const { GET: getLocations } = require("../src/app/api/locations/route.ts");
 
 const birth = {
@@ -85,6 +86,15 @@ test("la tríada coincide con los planetas correspondientes", () => {
   assert.ok(Number.isFinite(chart.julianDay));
 });
 
+test("la compatibilidad puede alcanzar el 100 por ciento", () => {
+  const chart = computeNatalChart(birth);
+  const alignedChart = {
+    ...chart,
+    planets: chart.planets.map((planet) => ({ ...planet, longitude: 180 })),
+  };
+
+  assert.equal(computeSynastry(alignedChart, alignedChart).percent, 100);
+});
 
 test("referencias angulares guardadas del Sol y la Luna", () => {
   const chart = computeNatalChart(birth);

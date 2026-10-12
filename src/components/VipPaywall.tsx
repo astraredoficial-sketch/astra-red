@@ -55,6 +55,13 @@ export function VipPaywall({ name, onClose }: VipPaywallProps) {
             <span className="mr-2 font-bold text-amber-400" aria-hidden="true">
               ✓
             </span>
+            Alertas de Hilo Rojo al encontrar compatibilidad del 100% entre dos
+            perfiles VIP.
+          </p>
+          <p>
+            <span className="mr-2 font-bold text-amber-400" aria-hidden="true">
+              ✓
+            </span>
             Acceso a las herramientas astrales VIP.
           </p>
         </div>

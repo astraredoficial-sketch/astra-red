@@ -11,11 +11,95 @@ import { supabase } from "@/lib/supabase/client";
 const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+function clearLocalAccountData(userId: string) {
+  try {
+    const rawProfiles = localStorage.getItem("astrared:profiles:v2");
+    if (rawProfiles) {
+      const profiles: unknown = JSON.parse(rawProfiles);
+      if (Array.isArray(profiles)) {
+        localStorage.setItem(
+          "astrared:profiles:v2",
+          JSON.stringify(
+            profiles.filter(
+              (profile) =>
+                profile &&
+                typeof profile === "object" &&
+                !("id" in profile && profile.id === userId),
+            ),
+          ),
+        );
+      } else if (profiles && typeof profiles === "object") {
+        const store = profiles as Record<string, unknown>;
+        if (Array.isArray(store.profiles)) {
+          store.profiles = store.profiles.filter(
+            (profile) =>
+              profile &&
+              typeof profile === "object" &&
+              !("id" in profile && profile.id === userId),
+          );
+        }
+        if (store.currentUserId === userId) delete store.currentUserId;
+        localStorage.setItem("astrared:profiles:v2", JSON.stringify(store));
+      }
+    }
+
+    localStorage.removeItem("astrared:swipes:v1");
+
+    const rawMessages = localStorage.getItem("astrared:chat:v1");
+    if (rawMessages) {
+      const messages: unknown = JSON.parse(rawMessages);
+      if (Array.isArray(messages)) {
+        localStorage.setItem(
+          "astrared:chat:v1",
+          JSON.stringify(
+            messages.filter(
+              (message) =>
+                message &&
+                typeof message === "object" &&
+                !(
+                  "senderId" in message &&
+                  message.senderId === userId
+                ) &&
+                !(
+                  "recipientId" in message &&
+                  message.recipientId === userId
+                ),
+            ),
+          ),
+        );
+      }
+    }
+
+    const rawAccounts = localStorage.getItem("astra_accounts");
+    if (rawAccounts) {
+      const accounts: unknown = JSON.parse(rawAccounts);
+      if (Array.isArray(accounts)) {
+        localStorage.setItem(
+          "astra_accounts",
+          JSON.stringify(
+            accounts
+              .filter(
+                (account) =>
+                  account &&
+                  typeof account === "object" &&
+                  !("id" in account && account.id === userId),
+              )
+              .map((account) => ({ ...account, isCurrent: false })),
+          ),
+        );
+      }
+    }
+  } catch (cause) {
+    console.error("No se pudieron limpiar todos los datos locales de la cuenta:", cause);
+  }
+}
+
 export function CuentaUi() {
   const router = useRouter();
   const { ready, store, me, error: sessionError } = useSession();
   const [email, setEmail] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [updatedAvatar, setUpdatedAvatar] = useState<{
     profileId: string;
@@ -24,6 +108,8 @@ export function CuentaUi() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -204,17 +290,50 @@ export function CuentaUi() {
   }
 
   async function handleSignOut() {
-    setBusy(true);
+    setSigningOut(true);
     setError("");
 
     const { error: signOutError } = await supabase.auth.signOut();
     if (signOutError) {
       setError(`No se pudo cerrar la sesión: ${signOutError.message}`);
-      setBusy(false);
+      setSigningOut(false);
       return;
     }
 
     router.replace("/");
+    router.refresh();
+  }
+
+  async function handleDeleteAccount() {
+    if (!me || deleteConfirmation !== "ELIMINAR" || deletingAccount) return;
+
+    setDeletingAccount(true);
+    setError("");
+    setNotice("");
+
+    const { data, error: deleteError } = await supabase.functions.invoke(
+      "delete-account",
+    );
+    if (deleteError) {
+      setError(`No se pudo eliminar la cuenta: ${deleteError.message}`);
+      setDeletingAccount(false);
+      return;
+    }
+    if (data?.success !== true) {
+      setError("No se confirmó la eliminación de la cuenta. Inténtalo de nuevo.");
+      setDeletingAccount(false);
+      return;
+    }
+
+    setDeleteDialogOpen(false);
+    clearLocalAccountData(me.id);
+    const { error: signOutError } = await supabase.auth.signOut({
+      scope: "local",
+    });
+    if (signOutError) {
+      console.error("La cuenta se eliminó, pero no se limpió la sesión local:", signOutError);
+    }
+    router.replace("/acceso?mode=login");
     router.refresh();
   }
 
@@ -366,26 +485,101 @@ export function CuentaUi() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link
             href="/carta"
-            className="flex-1 rounded-full border border-white/15 px-5 py-3 text-center text-sm hover:bg-white/5"
+            className="flex-1 rounded-full border border-white/15 px-5 py-3 text-center text-sm hover:bg-white/5 sm:flex-initial"
           >
             Ver mi carta natal
           </Link>
           <Link
             href="/onboarding"
-            className="flex-1 rounded-full border border-white/15 px-5 py-3 text-center text-sm hover:bg-white/5"
+            className="flex-1 rounded-full border border-white/15 px-5 py-3 text-center text-sm hover:bg-white/5 sm:flex-initial"
           >
             Actualizar datos y carta
           </Link>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void handleSignOut()}
-            className="flex-1 rounded-full bg-thread px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {busy ? "Cerrando sesión..." : "Cerrar sesión"}
-          </button>
+          <div className="flex flex-1 gap-3">
+            <button
+              type="button"
+              disabled={signingOut}
+              onClick={() => void handleSignOut()}
+              className="flex-1 rounded-full bg-thread px-5 py-3 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {signingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+            </button>
+            <button
+              type="button"
+              disabled={deletingAccount}
+              onClick={() => {
+                setError("");
+                setDeleteConfirmation("");
+                setDeleteDialogOpen(true);
+              }}
+              className="flex-1 rounded-full border border-rose-500/60 px-5 py-3 text-sm font-medium text-rose-200 transition hover:bg-rose-950/50 disabled:opacity-50"
+            >
+              Eliminar Cuenta
+            </button>
+          </div>
         </div>
       </main>
+      {deleteDialogOpen && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/90 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-account-title"
+        >
+          <section className="w-full max-w-lg space-y-5 rounded-3xl border border-rose-500/40 bg-slate-900 p-6 shadow-2xl sm:p-8">
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-300">
+                Acción permanente
+              </p>
+              <h2
+                id="delete-account-title"
+                className="font-serif text-2xl font-bold text-white"
+              >
+                ¿Eliminar definitivamente tu cuenta?
+              </h2>
+              <p className="text-sm leading-6 text-slate-300">
+                Se borrarán tu perfil, carta natal, datos de nacimiento,
+                conexiones, mensajes, calendario astral, membresía VIP y fotos.
+                No se puede deshacer. Para volver a usar AstraRed tendrás que
+                registrarte de nuevo.
+              </p>
+            </div>
+            <label className="block space-y-2 text-sm text-slate-200">
+              Escribe <strong className="text-rose-200">ELIMINAR</strong> para
+              confirmar
+              <input
+                autoComplete="off"
+                value={deleteConfirmation}
+                onChange={(event) => setDeleteConfirmation(event.target.value)}
+                disabled={deletingAccount}
+                className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none focus:border-rose-400"
+              />
+            </label>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={deletingAccount}
+                onClick={() => setDeleteDialogOpen(false)}
+                className="rounded-full border border-white/15 px-5 py-3 text-sm text-slate-200 hover:bg-white/5 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={
+                  deletingAccount || deleteConfirmation !== "ELIMINAR"
+                }
+                onClick={() => void handleDeleteAccount()}
+                className="rounded-full bg-rose-700 px-5 py-3 text-sm font-bold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deletingAccount
+                  ? "Eliminando cuenta..."
+                  : "Eliminar permanentemente"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       {cameraStream && (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-slate-950/90 p-4 backdrop-blur-sm"

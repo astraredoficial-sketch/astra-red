@@ -81,7 +81,7 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryResult {
   }
 
   const ratio = max > 0 ? scored / max : 0;
-  const percent = Math.round(Math.min(99, Math.max(18, 28 + ratio * 95)));
+  const percent = Math.round(Math.min(100, Math.max(18, 28 + ratio * 95)));
 
   const hasNodalAspect = aspects.some((asp) => {
     const nodal = asp.a === "node" || asp.b === "node";
@@ -100,4 +100,3 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryResult {
     hiloRojo: percent > 90 && hasNodalAspect,
   };
 }
-

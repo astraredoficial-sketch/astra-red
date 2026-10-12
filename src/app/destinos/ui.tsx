@@ -5,10 +5,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/AppNav";
+import { VipConnectionAlert } from "@/components/VipConnectionAlert";
 import { useSession } from "@/hooks/useSession";
 import { computeSynastry } from "@/lib/astro/synastry";
 import { filterProfilesForUser } from "@/lib/filters";
 import { supabase } from "@/lib/supabase/client";
+import type { UserProfile } from "@/lib/types";
 
 export function DestinosUi() {
   const router = useRouter();
@@ -17,6 +19,13 @@ export function DestinosUi() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [vipAlertProfile, setVipAlertProfile] = useState<UserProfile | null>(
+    null,
+  );
+  const [vipCheckError, setVipCheckError] = useState<{
+    profileId: string;
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!ready || sessionError) return;
@@ -67,6 +76,37 @@ export function DestinosUi() {
 
   const current = availableProfiles[0];
 
+  useEffect(() => {
+    if (!me || !current || current.compatibility.percent !== 100) return;
+
+    let active = true;
+    const targetProfile = current.profile;
+
+    async function checkVipMemberships() {
+      const { data, error: vipError } = await supabase.rpc(
+        "are_both_users_vip",
+        { target_user_id: targetProfile.id },
+      );
+
+      if (!active) return;
+      if (vipError) {
+        console.error("No se pudo comprobar la membresía VIP:", vipError);
+        setVipCheckError({
+          profileId: targetProfile.id,
+          message: `No se pudo comprobar la membresía VIP: ${vipError.message}`,
+        });
+        return;
+      }
+      setVipCheckError(null);
+      if (data === true) setVipAlertProfile(targetProfile);
+    }
+
+    void checkVipMemberships();
+    return () => {
+      active = false;
+    };
+  }, [current, me]);
+
   async function handleSwipe(action: "like" | "pass") {
     if (!me || !current || busy) return;
     setBusy(true);
@@ -92,6 +132,15 @@ export function DestinosUi() {
 
     setSeenIds((previous) => new Set(previous).add(current.profile.id));
     if (matched) {
+      const { error: notificationError } = await supabase.functions.invoke(
+        "notify-new-message",
+        {
+          body: { event: "match", otherUserId: current.profile.id },
+        },
+      );
+      if (notificationError) {
+        console.error("No se pudo enviar el aviso de conexión mutua:", notificationError);
+      }
       router.push(`/mensajes/${current.profile.id}`);
     } else {
       setNotice("Me gusta guardado. Te avisaremos cuando haya una conexión mutua.");
@@ -222,7 +271,19 @@ export function DestinosUi() {
             {error}
           </p>
         )}
+        {vipCheckError && vipCheckError.profileId === current?.profile.id && (
+          <p role="alert" className="mt-4 max-w-lg text-center text-sm text-rose-300">
+            {vipCheckError.message}
+          </p>
+        )}
       </main>
+      {me && vipAlertProfile && (
+        <VipConnectionAlert
+          me={me}
+          other={vipAlertProfile}
+          onClose={() => setVipAlertProfile(null)}
+        />
+      )}
     </div>
   );
 }
