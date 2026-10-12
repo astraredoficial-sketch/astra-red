@@ -72,6 +72,7 @@ export type UserProfile = {
   targetGender: TargetGender;
   locationCity: string;
   locationCountry: string;
+  avatarUrl: string | null;
   chart: NatalChart;
 };
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/AppNav";
 import { useSession } from "@/hooks/useSession";
@@ -117,6 +118,21 @@ export function DestinosUi() {
               <span className="rounded-full border border-rose-500/30 bg-rose-950/60 px-3 py-1 text-xs font-bold text-rose-300">
                 {current.compatibility.percent}% afinidad
               </span>
+            </div>
+
+            <div className="mx-auto grid size-40 place-items-center overflow-hidden rounded-3xl border border-amber-300/30 bg-slate-950/70 text-5xl font-serif text-amber-200 shadow-lg shadow-black/20">
+              {current.profile.avatarUrl ? (
+                <Image
+                  src={current.profile.avatarUrl}
+                  alt={`Foto de perfil de ${current.profile.name}`}
+                  width={160}
+                  height={160}
+                  unoptimized
+                  className="size-40 object-cover"
+                />
+              ) : (
+                current.profile.name.trim().charAt(0).toUpperCase() || "✦"
+              )}
             </div>
 
             <div>

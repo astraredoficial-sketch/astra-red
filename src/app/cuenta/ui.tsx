@@ -1,18 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/AppNav";
 import { useSession } from "@/hooks/useSession";
 import { supabase } from "@/lib/supabase/client";
+
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export function CuentaUi() {
   const router = useRouter();
   const { ready, store, me, error: sessionError } = useSession();
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [updatedAvatar, setUpdatedAvatar] = useState<{
+    profileId: string;
+    url: string;
+  } | null>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const profileId = me?.id;
+  const avatarUrl =
+    updatedAvatar && updatedAvatar.profileId === profileId
+      ? updatedAvatar.url
+      : me?.avatarUrl ?? null;
 
   useEffect(() => {
     if (!ready || sessionError || me) return;
@@ -37,6 +56,152 @@ export function CuentaUi() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!cameraStream || !video) return;
+
+    video.srcObject = cameraStream;
+    void video.play().catch((cause: unknown) => {
+      setError(
+        `No se pudo iniciar la vista de cámara: ${
+          cause instanceof Error ? cause.message : "error desconocido"
+        }`,
+      );
+    });
+
+    return () => {
+      cameraStream.getTracks().forEach((track) => track.stop());
+      video.srcObject = null;
+    };
+  }, [cameraStream]);
+
+  function closeCamera() {
+    setCameraStream(null);
+  }
+
+  async function uploadPhoto(file: File) {
+    setError("");
+    setNotice("");
+
+    if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+      setError("Elige una imagen JPG, PNG o WebP.");
+      return;
+    }
+    if (file.size > MAX_PHOTO_SIZE) {
+      setError("La imagen no puede superar los 5 MB.");
+      return;
+    }
+
+    setUploadingPhoto(true);
+    let uploadedPath: string | null = null;
+
+    try {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      if (!user || user.id !== profileId) {
+        throw new Error("Tu sesión ha cambiado. Vuelve a iniciar sesión.");
+      }
+
+      const extension =
+        file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+      uploadedPath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("profile-photos")
+        .upload(uploadedPath, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from("profile-photos").getPublicUrl(uploadedPath);
+      const { data: updatedProfile, error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: data.publicUrl, updated_at: new Date().toISOString() })
+        .eq("id", user.id)
+        .select("id")
+        .maybeSingle();
+      if (updateError) throw updateError;
+      if (!updatedProfile) throw new Error("No se pudo actualizar tu perfil.");
+
+      setUpdatedAvatar({ profileId: user.id, url: data.publicUrl });
+      setNotice("Foto de perfil actualizada.");
+    } catch (cause) {
+      let message =
+        cause instanceof Error ? cause.message : "No se pudo guardar la foto de perfil.";
+      if (uploadedPath) {
+        const { error: cleanupError } = await supabase.storage
+          .from("profile-photos")
+          .remove([uploadedPath]);
+        if (cleanupError) {
+          message += ` Además, no se pudo limpiar la imagen temporal: ${cleanupError.message}`;
+        }
+      }
+      setError(message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  }
+
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) void uploadPhoto(file);
+  }
+
+  async function startCamera() {
+    setError("");
+    setNotice("");
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      cameraInputRef.current?.click();
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: "user" } },
+      });
+      setCameraStream(stream);
+    } catch (cause) {
+      setError(
+        `No se pudo acceder a la cámara: ${
+          cause instanceof Error ? cause.message : "revisa los permisos del navegador"
+        }`,
+      );
+    }
+  }
+
+  function capturePhoto() {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      setError("La cámara aún no está lista. Espera un momento e inténtalo de nuevo.");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext("2d");
+    if (!context) {
+      setError("No se pudo preparar la foto. Inténtalo de nuevo.");
+      return;
+    }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        setError("No se pudo crear la foto. Inténtalo de nuevo.");
+        return;
+      }
+      closeCamera();
+      void uploadPhoto(new File([blob], "foto-perfil.jpg", { type: "image/jpeg" }));
+    }, "image/jpeg", 0.9);
+  }
 
   async function handleSignOut() {
     setBusy(true);
@@ -82,22 +247,83 @@ export function CuentaUi() {
             {error}
           </p>
         )}
+        {notice && (
+          <p role="status" className="text-sm text-emerald-300">
+            {notice}
+          </p>
+        )}
 
         {me && (
           <>
             <section className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-semibold text-amber-300">
-                    Plan gratuito
-                  </span>
-                  <h2 className="mt-4 font-serif text-2xl">{me.name}</h2>
-                  <p className="mt-1 text-sm text-slate-400">{email}</p>
-                  <p className="mt-3 text-sm text-slate-300">
-                    {me.locationCity}, {me.locationCountry}
-                  </p>
+                <div className="flex min-w-0 items-center gap-4">
+                  <div className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-full border border-amber-300/50 bg-slate-800 text-2xl text-amber-200">
+                    {avatarUrl ? (
+                      <Image
+                        src={avatarUrl}
+                        alt={`Foto de perfil de ${me.name}`}
+                        width={80}
+                        height={80}
+                        unoptimized
+                        className="size-20 object-cover"
+                      />
+                    ) : (
+                      me.name.trim().charAt(0).toUpperCase() || "✦"
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs font-semibold text-amber-300">
+                      Plan gratuito
+                    </span>
+                    <h2 className="mt-4 font-serif text-2xl">{me.name}</h2>
+                    <p className="mt-1 text-sm text-slate-400">{email}</p>
+                    <p className="mt-3 text-sm text-slate-300">
+                      {me.locationCity}, {me.locationCountry}
+                    </p>
+                  </div>
                 </div>
                 <span className="text-3xl" aria-hidden="true">✨</span>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={uploadingPhoto}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="rounded-full border border-white/15 px-5 py-2.5 text-sm font-medium transition hover:bg-white/5 disabled:cursor-wait disabled:opacity-50"
+                >
+                  {uploadingPhoto ? "Subiendo foto..." : "Elegir foto"}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  disabled={uploadingPhoto}
+                  onChange={handleFileChange}
+                  className="sr-only"
+                  aria-label="Elegir foto desde tus archivos"
+                />
+                <button
+                  type="button"
+                  disabled={uploadingPhoto}
+                  onClick={() => void startCamera()}
+                  className="rounded-full border border-amber-300/40 bg-amber-300/10 px-5 py-2.5 text-sm font-medium text-amber-200 transition hover:bg-amber-300/20 disabled:cursor-wait disabled:opacity-50"
+                >
+                  Tomar una foto
+                </button>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  disabled={uploadingPhoto}
+                  onChange={handleFileChange}
+                  className="sr-only"
+                  aria-label="Tomar foto con la cámara del dispositivo"
+                />
+                <p className="self-center text-xs text-slate-400">
+                  JPG, PNG o WebP · máximo 5 MB. Visible para otros usuarios en AstraRed.
+                </p>
               </div>
             </section>
 
@@ -160,6 +386,43 @@ export function CuentaUi() {
           </button>
         </div>
       </main>
+      {cameraStream && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-slate-950/90 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="camera-title"
+        >
+          <div className="w-full max-w-lg rounded-3xl border border-amber-300/30 bg-slate-900 p-5 shadow-2xl">
+            <h2 id="camera-title" className="font-serif text-2xl text-amber-100">
+              Toma tu foto de perfil
+            </h2>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="mt-4 aspect-[4/3] w-full rounded-2xl bg-black object-cover"
+            />
+            <div className="mt-4 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={closeCamera}
+                className="rounded-full border border-white/15 px-5 py-2.5 text-sm hover:bg-white/5"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={capturePhoto}
+                className="rounded-full bg-thread px-5 py-2.5 text-sm font-semibold text-white"
+              >
+                Capturar y guardar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

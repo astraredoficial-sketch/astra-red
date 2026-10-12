@@ -29,6 +29,7 @@ type ProfileRow = {
   looking_for: string;
   location_city: string;
   location_country: string;
+  avatar_url: string | null;
   chart: unknown;
 };
 
@@ -130,6 +131,7 @@ function toUserProfile(row: ProfileRow): UserProfile | null {
     lookingFor: row.looking_for as UserProfile["lookingFor"],
     locationCity: row.location_city,
     locationCountry: row.location_country,
+    avatarUrl: typeof row.avatar_url === "string" ? row.avatar_url : null,
     chart: row.chart,
   };
 }
@@ -158,7 +160,7 @@ export function useSession() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id, name, gender, target_gender, looking_for, location_city, location_country, chart",
+          "id, name, gender, target_gender, looking_for, location_city, location_country, avatar_url, chart",
         );
 
       if (!active) return;
