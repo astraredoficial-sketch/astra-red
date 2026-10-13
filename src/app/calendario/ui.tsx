@@ -4,6 +4,7 @@ import React, { use, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { io } from "next/cache";
 import { AppNav } from "@/components/AppNav";
+import { SynastryTool } from "./SynastryTool";
 import {
   ASTRAL_ACTIVITIES,
   type AstralActivity,
@@ -624,6 +625,8 @@ export function CalendarioUi() {
             </div>
           </div>
         </section>
+
+        <SynastryTool me={me} />
 
         <section className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl sm:p-6">
           <div className="flex flex-wrap items-end justify-between gap-3">
