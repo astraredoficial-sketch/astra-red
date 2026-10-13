@@ -35,14 +35,6 @@ function meanNorthNode(time: Astronomy.AstroTime): number {
   return norm(125.04452 - 1934.136261 * T + 0.0020708 * T * T + T ** 3 / 450000);
 }
 
-function ramcToMc(ramcDeg: number, obliquityDeg: number): number {
-  const ramc = (ramcDeg * Math.PI) / 180;
-  const eps = (obliquityDeg * Math.PI) / 180;
-  return norm(
-    (Math.atan2(Math.sin(ramc), Math.cos(ramc) * Math.cos(eps)) * 180) / Math.PI,
-  );
-}
-
 function ascendant(ramcDeg: number, latDeg: number, obliquityDeg: number): number {
   const ramc = (ramcDeg * Math.PI) / 180;
   const lat = (latDeg * Math.PI) / 180;
@@ -98,8 +90,6 @@ export function computeNatalChart(birth: BirthData): NatalChart {
   const lstHours = ((gastHours + longitude / 15) % 24 + 24) % 24;
   const ramc = lstHours * 15;
   const ascLon = ascendant(ramc, latitude, obliquity);
-  const mcLon = ramcToMc(ramc, obliquity);
-  void mcLon;
 
   const houses = Array.from({ length: 12 }, (_, i) => norm(ascLon + i * 30));
 

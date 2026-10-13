@@ -5,7 +5,6 @@ import React, { useState } from "react";
 
 export function PerfilUI() {
   const [activeTab, setActiveTab] = useState<string>("perfil");
-  const [value, setValue] = useState<string>("");
 
   return (
     <div className="p-4 space-y-4">

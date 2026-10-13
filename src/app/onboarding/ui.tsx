@@ -35,9 +35,6 @@ export default function OnboardingUi() {
         return;
       }
 
-      const metadataName =
-        data.user.user_metadata?.full_name ?? data.user.user_metadata?.name;
-      if (typeof metadataName === "string") setName(metadataName);
       setAuthReady(true);
     }
 
@@ -144,9 +141,6 @@ export default function OnboardingUi() {
           name: name.trim(),
           gender,
           target_gender: targetGender,
-          location_country: city.country,
-          location_city: city.name,
-          city_id: city.id,
           chart,
           updated_at: now,
         },
@@ -166,7 +160,7 @@ export default function OnboardingUi() {
             ? cause.message
             : "Error desconocido al guardar tus datos.";
       setError(
-        `No se pudo guardar ${saveStage} en Supabase. Tus datos siguen en el formulario. ${detail}`,
+        `No se pudo completar el registro durante ${saveStage}. Tus datos siguen en el formulario. ${detail}`,
       );
     } finally {
       setLoading(false);
@@ -203,17 +197,18 @@ export default function OnboardingUi() {
           <section className="space-y-4">
             <div>
               <h1 className="font-serif text-2xl font-bold text-white">
-                ¿Cómo te llamas?
+                ¿Qué nombre o apodo quieres usar?
               </h1>
               <p className="mt-1 text-sm text-slate-400">
-                Este nombre será visible en tu perfil.
+                Usa el nombre con el que te gustaría aparecer. No hace falta que
+                compartas tu nombre legal.
               </p>
             </div>
             <label
               htmlFor="profile-name"
               className="block text-sm text-slate-300"
             >
-              Nombre
+              Nombre o apodo
             </label>
             <input
               id="profile-name"
@@ -223,7 +218,7 @@ export default function OnboardingUi() {
               value={name}
               onChange={(event) => setName(event.target.value)}
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white focus:border-amber-500 focus:outline-none"
-              placeholder="Tu nombre"
+              placeholder="El nombre que verán los demás"
             />
           </section>
         )}

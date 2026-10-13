@@ -62,7 +62,17 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryResult {
 
   for (const pa of a.planets) {
     for (const pb of b.planets) {
-      if (pa.id === "asc" && pb.id !== "asc" && !PERSONAL.includes(pb.id)) continue;
+      if (
+        (a.timeUnknown || b.timeUnknown) &&
+        (pa.id === "asc" ||
+          pa.id === "moon" ||
+          pb.id === "asc" ||
+          pb.id === "moon")
+      ) {
+        continue;
+      }
+      if (pa.id === "asc" && !PERSONAL.includes(pb.id)) continue;
+      if (pb.id === "asc" && !PERSONAL.includes(pa.id)) continue;
       const weight = pairWeight(pa.id, pb.id);
       max += weight;
       const delta = angleDelta(pa.longitude, pb.longitude);
@@ -81,7 +91,7 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryResult {
   }
 
   const ratio = max > 0 ? scored / max : 0;
-  const percent = Math.round(Math.min(100, Math.max(18, 28 + ratio * 95)));
+  const percent = Math.round(Math.min(100, Math.max(18, 18 + ratio * 250)));
 
   const hasNodalAspect = aspects.some((asp) => {
     const nodal = asp.a === "node" || asp.b === "node";
@@ -98,5 +108,6 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryResult {
     aspects: aspects.slice(0, 12),
     hasNodalAspect,
     hiloRojo: percent > 90 && hasNodalAspect,
+    timeApproximate: a.timeUnknown || b.timeUnknown,
   };
 }

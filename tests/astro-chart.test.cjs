@@ -27,6 +27,7 @@ Module._resolveFilename = function (request, parent, isMain, options) {
 
 const { computeNatalChart } = require("../src/lib/astro/chart.ts");
 const { computeSynastry } = require("../src/lib/astro/synastry.ts");
+const { civilToUtc } = require("../src/lib/astro/time.ts");
 const { GET: getLocations } = require("../src/app/api/locations/route.ts");
 
 const birth = {
@@ -66,6 +67,7 @@ test("las doce casas actuales están separadas por treinta grados", () => {
   const chart = computeNatalChart(birth);
 
   assert.equal(chart.houses.length, 12);
+  assert.ok(Math.abs(chart.houses[0] - chart.triad.asc.longitude) < 1e-8);
 
   for (let i = 0; i < 12; i++) {
     const next = chart.houses[(i + 1) % 12];
@@ -94,6 +96,76 @@ test("la compatibilidad puede alcanzar el 100 por ciento", () => {
   };
 
   assert.equal(computeSynastry(alignedChart, alignedChart).percent, 100);
+});
+
+test("una hora natal desconocida excluye aspectos de Ascendente", () => {
+  const knownChart = computeNatalChart(birth);
+  const unknownChart = computeNatalChart({ ...birth, timeUnknown: true });
+  const result = computeSynastry(unknownChart, knownChart);
+
+  assert.equal(result.timeApproximate, true);
+  assert.ok(
+    result.aspects.every(
+      (aspect) =>
+        aspect.a !== "asc" &&
+        aspect.b !== "asc" &&
+        aspect.a !== "moon" &&
+        aspect.b !== "moon",
+    ),
+  );
+  assert.equal(
+    result.percent,
+    computeSynastry(knownChart, unknownChart).percent,
+  );
+});
+
+test("la hora local respeta cambios de horario y rechaza horas inexistentes", () => {
+  assert.equal(
+    civilToUtc("2024-01-01", "12:00", "America/New_York").toISOString(),
+    "2024-01-01T17:00:00.000Z",
+  );
+  assert.throws(
+    () => civilToUtc("2024-03-10", "02:30", "America/New_York"),
+    /no existió/,
+  );
+  assert.equal(
+    civilToUtc("2024-11-03", "01:30", "America/New_York").toISOString(),
+    "2024-11-03T05:30:00.000Z",
+  );
+  assert.throws(
+    () => civilToUtc("2024-02-30", "12:00", "America/New_York"),
+    RangeError,
+  );
+});
+
+test("las compatibilidades varían entre cartas reales y son simétricas", () => {
+  const cities = ["us-nyc", "us-la", "gb-lon", "fr-par", "jp-tyo"];
+  const charts = Array.from({ length: 8 }, (_, i) => {
+    const month = String((i % 12) + 1).padStart(2, "0");
+    const day = String((i % 27) + 1).padStart(2, "0");
+    const hour = String((i * 2) % 24).padStart(2, "0");
+    return computeNatalChart({
+      date: `${1988 + i}-${month}-${day}`,
+      time: `${hour}:30`,
+      cityId: cities[i % cities.length],
+      timeUnknown: false,
+    });
+  });
+
+  const scores = [];
+  for (let i = 0; i < charts.length; i++) {
+    for (let j = i + 1; j < charts.length; j++) {
+      const forward = computeSynastry(charts[i], charts[j]).percent;
+      const reverse = computeSynastry(charts[j], charts[i]).percent;
+      assert.equal(forward, reverse);
+      scores.push(forward);
+    }
+  }
+
+  assert.ok(
+    Math.max(...scores) - Math.min(...scores) >= 10,
+    `Las compatibilidades siguen concentradas: ${scores.join(", ")}`,
+  );
 });
 
 test("referencias angulares guardadas del Sol y la Luna", () => {

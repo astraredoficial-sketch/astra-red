@@ -311,16 +311,24 @@ export function CuentaUi() {
     setError("");
     setNotice("");
 
-    const { data, error: deleteError } = await supabase.functions.invoke(
-      "delete-account",
-    );
-    if (deleteError) {
-      setError(`No se pudo eliminar la cuenta: ${deleteError.message}`);
-      setDeletingAccount(false);
-      return;
-    }
-    if (data?.success !== true) {
-      setError("No se confirmó la eliminación de la cuenta. Inténtalo de nuevo.");
+    try {
+      const { data, error: deleteError } = await supabase.functions.invoke(
+        "delete-account",
+      );
+      if (deleteError) throw deleteError;
+      if (data?.success !== true) {
+        throw new Error(
+          "El servidor no confirmó la eliminación. Inténtalo de nuevo.",
+        );
+      }
+    } catch (cause) {
+      setError(
+        `No se pudo eliminar la cuenta: ${
+          cause instanceof Error
+            ? cause.message
+            : "Error inesperado. Inténtalo de nuevo."
+        }`,
+      );
       setDeletingAccount(false);
       return;
     }
@@ -397,9 +405,6 @@ export function CuentaUi() {
                     </span>
                     <h2 className="mt-4 font-serif text-2xl">{me.name}</h2>
                     <p className="mt-1 text-sm text-slate-400">{email}</p>
-                    <p className="mt-3 text-sm text-slate-300">
-                      {me.locationCity}, {me.locationCountry}
-                    </p>
                   </div>
                 </div>
                 <span className="text-3xl" aria-hidden="true">✨</span>

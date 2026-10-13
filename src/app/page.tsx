@@ -10,22 +10,16 @@ const featureCards = [
 
 export default function Home() {
   return (
-    <div className="starfield flex min-h-screen flex-col overflow-hidden bg-[#07060c] text-ink">
+    <div className="starfield starfield-home flex min-h-screen flex-col overflow-hidden bg-[#07060c] text-ink">
+      <div className="constellation-layer" aria-hidden="true" />
+      <div className="shooting-star" aria-hidden="true" />
+
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-6 sm:px-8">
         <BrandMark />
-        <Link
-          href="/acceso?mode=login"
-          className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-ink/80 transition hover:border-white/25 hover:text-white"
-        >
-          Ya tengo una cuenta
-        </Link>
       </header>
 
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center px-6 pb-20 pt-6 text-center sm:px-8">
         <div className="orbital-ring relative flex w-full max-w-[860px] items-center justify-center py-8 sm:py-12">
-          <div className="absolute inset-x-6 inset-y-3 rounded-full border border-white/10" />
-          <div className="absolute inset-10 rounded-full border border-white/10" />
-
           <div className="relative z-10 flex max-w-[620px] flex-col items-center px-4 text-center">
             <h1 className="font-serif rise text-[4.2rem] leading-[0.9] tracking-[-0.04em] text-white sm:text-[6rem] md:text-[7.2rem]">
               No es magia.
@@ -47,12 +41,19 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="rise mt-7 flex w-full max-w-[420px] flex-col items-center">
+            <div className="rise mt-7 flex w-full max-w-[420px] flex-col items-center gap-3">
               <Link
                 href="/acceso?mode=signup"
                 className="glow-thread inline-flex w-full items-center justify-center rounded-full bg-gradient-to-r from-[#ff476f] to-[#ff2b7d] px-7 py-4 text-base font-medium text-white shadow-[0_0_24px_rgba(255,42,95,0.45)] transition hover:scale-[1.01]"
               >
-                Crear cuenta gratis
+                Crear cuenta GRATIS
+              </Link>
+
+              <Link
+                href="/acceso?mode=login"
+                className="inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-ink/80 transition hover:border-white/25 hover:text-white"
+              >
+                Ya tengo una cuenta
               </Link>
             </div>
           </div>

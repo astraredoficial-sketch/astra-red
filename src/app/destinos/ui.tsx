@@ -75,6 +75,17 @@ export function DestinosUi() {
   }, [me, seenIds, store]);
 
   const current = availableProfiles[0];
+  const profilePlacements: [string, string][] = [];
+  if (current) {
+    profilePlacements.push(["Sol", current.profile.chart.triad.sun.sign]);
+    if (!current.profile.chart.timeUnknown) {
+      profilePlacements.push(["Luna", current.profile.chart.triad.moon.sign]);
+      profilePlacements.push([
+        "Ascendente",
+        current.profile.chart.triad.asc.sign,
+      ]);
+    }
+  }
 
   useEffect(() => {
     if (!me || !current || current.compatibility.percent !== 100) return;
@@ -168,6 +179,12 @@ export function DestinosUi() {
                 {current.compatibility.percent}% afinidad
               </span>
             </div>
+            {current.compatibility.timeApproximate && (
+              <p className="-mt-4 text-xs leading-5 text-amber-200/80">
+                Afinidad aproximada: falta una hora de nacimiento; se omiten
+                los aspectos de Luna y Ascendente.
+              </p>
+            )}
 
             <div className="mx-auto grid size-40 place-items-center overflow-hidden rounded-3xl border border-amber-300/30 bg-slate-950/70 text-5xl font-serif text-amber-200 shadow-lg shadow-black/20">
               {current.profile.avatarUrl ? (
@@ -188,23 +205,17 @@ export function DestinosUi() {
               <h1 className="font-serif text-3xl font-bold">
                 {current.profile.name}
               </h1>
-              <p className="mt-1 text-sm text-slate-400">
-                {current.profile.locationCity},{" "}
-                {current.profile.locationCountry}
-              </p>
               <p className="mt-3 text-sm text-slate-300">
-                Sol en {current.profile.chart.triad.sun.sign} · Luna en{" "}
-                {current.profile.chart.triad.moon.sign} · Ascendente en{" "}
-                {current.profile.chart.triad.asc.sign}
+                {profilePlacements
+                  .map(([label, sign]) => `${label} en ${sign}`)
+                  .join(" · ")}
               </p>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 rounded-2xl border border-slate-800 bg-slate-950/60 p-3 text-center">
-              {[
-                ["Sol", current.profile.chart.triad.sun.sign],
-                ["Luna", current.profile.chart.triad.moon.sign],
-                ["Ascendente", current.profile.chart.triad.asc.sign],
-              ].map(([label, sign]) => (
+            <div
+              className="grid grid-flow-col auto-cols-fr gap-2 rounded-2xl border border-slate-800 bg-slate-950/60 p-3 text-center"
+            >
+              {profilePlacements.map(([label, sign]) => (
                 <div key={label}>
                   <span className="block text-[10px] font-semibold uppercase text-slate-500">
                     {label}

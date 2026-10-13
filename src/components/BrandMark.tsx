@@ -5,10 +5,10 @@ export function BrandMark({ size = "md" }: { size?: "sm" | "md" }) {
 
   return (
     <Image
-      src="/astrared-logo.png"
+      src="/astrared-logo-v2.png"
       alt="AstraRed"
-      width={469}
-      height={133}
+      width={938}
+      height={266}
       loading="eager"
       className={`${imageSize} w-auto object-contain`}
     />

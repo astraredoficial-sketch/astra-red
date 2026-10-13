@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Image from "next/image";
 import React, { useState, useRef, useEffect } from "react";
 
 export type CountryOption = {
@@ -50,10 +51,12 @@ export function CountryCodeSelect({ selectedCode, onChange }: Props) {
         onClick={() => setIsOpen(!isOpen)}
         className="bg-slate-950 text-white border border-slate-800 rounded-xl px-3 py-2.5 flex items-center gap-2 cursor-pointer text-sm font-medium focus:outline-none focus:border-rose-500 hover:border-slate-700 transition"
       >
-        <img
+        <Image
           src={"https://flagcdn.com/w40/" + selected.iso + ".png"}
           alt={selected.name}
-          className="w-5 h-3.5 object-cover rounded-sm"
+          width={20}
+          height={14}
+          className="rounded-sm object-cover"
         />
         <span>{selected.code}</span>
         <span className="text-xs text-slate-400 ml-1">▾</span>
@@ -75,10 +78,12 @@ export function CountryCodeSelect({ selectedCode, onChange }: Props) {
                 (selected.code === c.code ? "bg-rose-950/40 text-rose-400 font-semibold" : "text-slate-200")
               }
             >
-              <img
+              <Image
                 src={"https://flagcdn.com/w40/" + c.iso + ".png"}
                 alt={c.name}
-                className="w-5 h-3.5 object-cover rounded-sm shrink-0"
+                width={20}
+                height={14}
+                className="shrink-0 rounded-sm object-cover"
               />
               <span>{c.code}</span>
             </button>

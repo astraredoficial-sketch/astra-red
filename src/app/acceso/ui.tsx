@@ -98,7 +98,6 @@ export function AccesoUi() {
       setError("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
-
     setBusy(true);
 
     try {
@@ -144,43 +143,44 @@ export function AccesoUi() {
   }
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-md flex-col px-5 py-8">
-      <BrandMark />
+    <main className="starfield relative min-h-screen overflow-hidden bg-[#07060c] text-ink">
+      <div className="mx-auto flex min-h-screen w-full max-w-md flex-col px-5 py-8">
+        <BrandMark />
 
-      <div className="mt-12">
-        <p className="text-xs uppercase tracking-[0.3em] text-astral">
-          Tu universo privado
-        </p>
-
-        <h1 className="mt-3 font-serif text-4xl">
-          {mode === "login" ? "Vuelve a tu órbita." : "Encuentra tu hilo."}
-        </h1>
-
-        <p className="mt-3 text-sm leading-6 text-muted">
-          {mode === "login"
-            ? "Entra para continuar con tu carta natal y tus conexiones."
-            : "Crea tu propia cuenta gratis y empieza a descubrir tu carta natal."}
-        </p>
-      </div>
-
-      {hasActiveSession && mode === "signup" && (
-        <section className="mt-6 rounded-2xl border border-astral/30 bg-white/5 p-4">
-          <p className="text-sm leading-6 text-muted">
-            Ya hay una cuenta abierta en este navegador. Para crear otra cuenta
-            independiente, primero cierra esa sesión. No se borrará su carta natal.
+        <div className="mt-12">
+          <p className="text-xs uppercase tracking-[0.3em] text-astral">
+            Tu universo privado
           </p>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void signOutToCreateAccount()}
-            className="mt-4 w-full rounded-full border border-white/15 px-4 py-3 text-sm hover:bg-white/5 disabled:opacity-50"
-          >
-            {busy ? "Cerrando sesión..." : "Cerrar sesión y crear otra cuenta"}
-          </button>
-        </section>
-      )}
 
-      <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
+          <h1 className="mt-3 font-serif text-4xl">
+            {mode === "login" ? "Vuelve a tu órbita." : "Encuentra tu hilo."}
+          </h1>
+
+          <p className="mt-3 text-sm leading-6 text-muted">
+            {mode === "login"
+              ? "Entra para continuar con tu carta natal y tus conexiones."
+              : "Crea tu propia cuenta GRATIS y empieza a descubrir tu carta natal."}
+          </p>
+        </div>
+
+        {hasActiveSession && mode === "signup" && (
+          <section className="mt-6 rounded-2xl border border-astral/30 bg-white/5 p-4">
+            <p className="text-sm leading-6 text-muted">
+              Ya hay una cuenta abierta en este navegador. Para crear otra cuenta
+              independiente, primero cierra esa sesión. No se borrará su carta natal.
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void signOutToCreateAccount()}
+              className="mt-4 w-full rounded-full border border-white/15 px-4 py-3 text-sm hover:bg-white/5 disabled:opacity-50"
+            >
+              {busy ? "Cerrando sesión..." : "Cerrar sesión y crear otra cuenta"}
+            </button>
+          </section>
+        )}
+
+        <form onSubmit={handleSubmit} className="mt-8 flex flex-col gap-4">
         <label className="text-sm text-muted" htmlFor="access-email">
           Correo electrónico
         </label>
@@ -231,7 +231,7 @@ export function AccesoUi() {
             ? "Un momento..."
             : mode === "login"
               ? "Entrar"
-              : "Crear cuenta gratis"}
+              : "Crear cuenta GRATIS"}
         </button>
       </form>
 
@@ -256,7 +256,7 @@ export function AccesoUi() {
       >
         Volver al inicio
       </Link>
+      </div>
     </main>
   );
 }
-

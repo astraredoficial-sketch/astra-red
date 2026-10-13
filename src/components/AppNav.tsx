@@ -17,10 +17,15 @@ export function AppNav({ active }: Props) {
     let active = true;
     let currentUserId: string | null = null;
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let pollingTimer: number | null = null;
 
     async function watchUnreadMessages(userId: string | null) {
       if (currentUserId === userId && (channel || !userId)) return;
       currentUserId = userId;
+      if (pollingTimer !== null) {
+        window.clearInterval(pollingTimer);
+        pollingTimer = null;
+      }
       if (channel) {
         void supabase.removeChannel(channel);
         channel = null;
@@ -29,6 +34,21 @@ export function AppNav({ active }: Props) {
       setUnreadError("");
       if (!userId) return;
       let refreshVersion = 0;
+
+      function startPolling() {
+        if (pollingTimer === null) {
+          pollingTimer = window.setInterval(() => {
+            void refreshUnreadCount();
+          }, 15000);
+        }
+      }
+
+      function stopPolling() {
+        if (pollingTimer !== null) {
+          window.clearInterval(pollingTimer);
+          pollingTimer = null;
+        }
+      }
 
       async function refreshUnreadCount() {
         const version = ++refreshVersion;
@@ -65,14 +85,21 @@ export function AppNav({ active }: Props) {
         .subscribe((status, error) => {
           if (!active || currentUserId !== userId) return;
           if (status === "SUBSCRIBED") {
+            stopPolling();
             void refreshUnreadCount();
             return;
           }
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
             console.error("No se pudo actualizar el contador de mensajes:", error);
             setUnreadError("No se pudieron actualizar los mensajes sin leer.");
+            startPolling();
           }
         });
+      void refreshUnreadCount();
     }
 
     const {
@@ -96,6 +123,7 @@ export function AppNav({ active }: Props) {
     return () => {
       active = false;
       subscription.unsubscribe();
+      if (pollingTimer !== null) window.clearInterval(pollingTimer);
       if (channel) void supabase.removeChannel(channel);
     };
   }, []);

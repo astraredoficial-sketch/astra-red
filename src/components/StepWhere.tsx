@@ -158,7 +158,8 @@ export function StepWhere({ onSelectCity }: StepWhereProps) {
         </h2>
         <p className="text-xs leading-5 text-slate-400">
           Elige el país y busca la ciudad donde naciste para calcular el huso
-          horario y la posición de tu carta.
+          horario y la posición de tu carta. Esta ubicación no se muestra en tu
+          perfil público.
         </p>
       </div>
 

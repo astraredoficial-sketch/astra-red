@@ -7,7 +7,10 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function jsonResponse(body: Record<string, string>, status: number) {
+function jsonResponse(
+  body: Record<string, string | boolean>,
+  status: number,
+) {
   return new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -128,6 +131,7 @@ Deno.serve(async (request: Request) => {
 
   const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(
     user.id,
+    false,
   );
   if (deleteUserError) {
     console.error("No se pudo eliminar el usuario de Auth:", deleteUserError);
@@ -141,7 +145,7 @@ Deno.serve(async (request: Request) => {
   }
 
   return jsonResponse(
-    { success: "La cuenta y sus datos fueron eliminados." },
+    { success: true, message: "La cuenta y sus datos fueron eliminados." },
     200,
   );
 });

@@ -1,22 +1,144 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Capacitor } from "@capacitor/core";
+import { Directory, Filesystem } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 import { AppNav } from "@/components/AppNav";
 import { ChartWheel } from "@/components/ChartWheel";
 import { Triad } from "@/components/Triad";
 import { useSession } from "@/hooks/useSession";
 import { generateLifeSummary, generatePlanetReadings } from "@/lib/astro/interpreter";
+import { createNatalShareCard } from "@/lib/astro/share-card";
 import { PLANET_META } from "@/lib/astro/constants";
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        reject(new Error("No se pudo preparar la imagen para compartir."));
+        return;
+      }
+      const separator = reader.result.indexOf(",");
+      if (separator < 0) {
+        reject(new Error("El formato de la imagen generada no es válido."));
+        return;
+      }
+      resolve(reader.result.slice(separator + 1));
+    };
+    reader.onerror = () =>
+      reject(reader.error ?? new Error("No se pudo leer la imagen generada."));
+    reader.readAsDataURL(blob);
+  });
+}
 
 export default function CartaUi() {
   const router = useRouter();
   const { ready, store, me, error } = useSession();
+  const [sharingCard, setSharingCard] = useState(false);
+  const [shareError, setShareError] = useState("");
+  const [whatsappLink, setWhatsappLink] = useState("");
+  const [shareNotice, setShareNotice] = useState("");
 
   useEffect(() => {
     if (!ready || error || me) return;
     router.replace(store?.currentUserId ? "/onboarding" : "/acceso?mode=login");
   }, [error, me, ready, router, store?.currentUserId]);
+
+  async function shareCard() {
+    if (!me) return;
+    setSharingCard(true);
+    setShareError("");
+    setShareNotice("");
+    setWhatsappLink("");
+
+    try {
+      const chart = me.chart;
+      const image = await createNatalShareCard(
+        chart,
+        me.name,
+        generateLifeSummary(chart),
+        generatePlanetReadings(chart),
+      );
+      const file = new File([image], "carta-natal-astrared.png", {
+        type: "image/png",
+      });
+      const shareText = `Te comparto mi carta natal de AstraRed.`;
+
+      if (Capacitor.isNativePlatform()) {
+        const { value: canShare } = await Share.canShare();
+        if (!canShare) {
+          throw new Error("Este dispositivo no permite compartir archivos.");
+        }
+        const { uri } = await Filesystem.writeFile({
+          path: "carta-natal-astrared.png",
+          data: await blobToBase64(image),
+          directory: Directory.Cache,
+          recursive: true,
+        });
+        await Share.share({
+          title: "Mi carta natal de AstraRed",
+          text: shareText,
+          files: [uri],
+          dialogTitle: "Compartir mi carta natal",
+        });
+        setShareNotice(
+          "Elige WhatsApp en el menú para enviar la imagen completa de tu carta natal.",
+        );
+        return;
+      }
+
+      if (typeof navigator.share === "function" && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: "Mi carta natal de AstraRed",
+            text: shareText,
+          });
+          setShareNotice("Elige WhatsApp para enviar la imagen completa de tu carta natal.");
+          return;
+        } catch (cause) {
+          if (cause instanceof DOMException && cause.name === "AbortError") {
+            setShareNotice("Se canceló el envío de la tarjeta.");
+            return;
+          }
+        }
+      }
+
+      const imageUrl = URL.createObjectURL(image);
+      const download = document.createElement("a");
+      download.href = imageUrl;
+      download.download = file.name;
+      download.click();
+      window.setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+
+      const waUrl = `https://wa.me/?text=${encodeURIComponent(
+        shareText,
+      )}`;
+      const whatsappWindow = window.open(waUrl, "_blank");
+      if (whatsappWindow) {
+        whatsappWindow.opener = null;
+        setShareNotice(
+          "La imagen completa se descargó. Adjunta el archivo PNG en WhatsApp para enviarlo.",
+        );
+      } else {
+        setWhatsappLink(waUrl);
+        setShareNotice(
+          "La imagen completa se descargó. Abre WhatsApp y adjunta el archivo PNG para compartirlo.",
+        );
+      }
+    } catch (cause) {
+      setShareError(
+        cause instanceof Error
+          ? cause.message
+          : "No se pudo preparar la tarjeta para compartir.",
+      );
+    } finally {
+      setSharingCard(false);
+    }
+  }
 
   if (!ready || (!me && !error)) {
     return (
@@ -64,9 +186,39 @@ export default function CartaUi() {
               <p className="mt-2 break-words font-serif text-2xl capitalize text-[#35435a] sm:text-3xl">
                 {me.name}
               </p>
+              <button
+                type="button"
+                onClick={() => void shareCard()}
+                disabled={sharingCard}
+                className="mt-5 rounded-full border border-[#a88648]/70 bg-[#18243a] px-6 py-3 text-sm font-medium text-[#f2e5c6] shadow-lg transition hover:bg-[#243553] disabled:cursor-wait disabled:opacity-60"
+              >
+                {sharingCard ? "Preparando tu tarjeta..." : "Compartir carta por WhatsApp"}
+              </button>
+              <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-[#64676d]">
+                Comparte una imagen original con tu rueda, posiciones,
+                casas y lecturas astrales. No incluye fecha, hora ni lugar de nacimiento.
+              </p>
+              {shareError && (
+                <p role="alert" className="mt-2 text-xs text-red-800">
+                  {shareError}
+                </p>
+              )}
+              {shareNotice && (
+                <p role="status" className="mt-2 text-xs text-[#65522e]">
+                  {shareNotice}
+                </p>
+              )}
+              {whatsappLink && (
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-block text-sm font-medium text-[#65522e] underline underline-offset-4"
+                >
+                  Abrir WhatsApp
+                </a>
+              )}
               <div className="mx-auto mt-5 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs font-medium uppercase tracking-[0.14em] text-[#5d6470] sm:text-sm">
-                <span>{me.locationCity}, {me.locationCountry}</span>
-                <span aria-hidden="true" className="text-[#a88648]">✦</span>
                 <span>{chart.triad.sun.sign} · {chart.triad.moon.sign} · {chart.triad.asc.sign}</span>
               </div>
               <div aria-hidden="true" className="mx-auto mt-6 flex max-w-xs items-center gap-3 text-[#a88648]">
@@ -82,7 +234,7 @@ export default function CartaUi() {
                 className="mx-auto w-full max-w-[560px] drop-shadow-[0_18px_32px_rgba(22,31,50,0.28)]"
               />
               <p className="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.28em] text-[#897344]">
-                Círculo zodiacal · casas astrológicas
+                Zodiaco tropical · casas iguales
               </p>
             </section>
 
@@ -101,7 +253,9 @@ export default function CartaUi() {
               </p>
               {chart.timeUnknown && (
                 <p className="mx-auto mt-6 max-w-2xl border-t border-[#a88648]/30 pt-4 text-center text-xs leading-5 text-[#64676d]">
-                  La hora de nacimiento no estaba disponible y se utilizó el mediodía. El ascendente y las casas pueden variar.
+                  La hora de nacimiento no estaba disponible y se utilizó el
+                  mediodía como referencia. La Luna, el Ascendente y las casas
+                  pueden variar; interpreta estas posiciones con cautela.
                 </p>
               )}
             </section>

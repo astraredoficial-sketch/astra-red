@@ -23,7 +23,28 @@ type ChatMessage = {
   createdAt: string;
 };
 
-function toMessage(row: MessageRow): ChatMessage {
+type MessageFields = Pick<
+  MessageRow,
+  "id" | "sender_id" | "recipient_id" | "body" | "created_at"
+>;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+async function edgeFunctionErrorMessage(error: Error): Promise<string> {
+  if ("context" in error && error.context instanceof Response) {
+    try {
+      const body: unknown = await error.context.clone().json();
+      if (isRecord(body) && typeof body.error === "string") return body.error;
+    } catch {
+      return error.message;
+    }
+  }
+  return error.message;
+}
+
+function toMessage(row: MessageFields): ChatMessage {
   return {
     id: row.id,
     senderId: row.sender_id,
@@ -47,6 +68,11 @@ export function ConversacionUi() {
   const [busy, setBusy] = useState(false);
   const [isMatch, setIsMatch] = useState(false);
   const [error, setError] = useState("");
+  const [syncNotice, setSyncNotice] = useState("");
+  const [syncError, setSyncError] = useState("");
+  const [icebreakers, setIcebreakers] = useState<string[]>([]);
+  const [loadingIcebreakers, setLoadingIcebreakers] = useState(false);
+  const [assistantError, setAssistantError] = useState("");
 
   useEffect(() => {
     if (!ready || sessionError || me) return;
@@ -90,37 +116,72 @@ export function ConversacionUi() {
       }
 
       setIsMatch(true);
-      const { data, error: messagesError } = await supabase
-        .from("chat_messages")
-        .select("id, sender_id, recipient_id, body, created_at, read_at")
-        .or(messageFilter)
-        .order("created_at", { ascending: true });
+      let refreshing = false;
+      let pollingTimer: number | null = null;
 
-      if (!active) return;
-      if (messagesError) {
-        setError(`No se pudieron cargar los mensajes: ${messagesError.message}`);
-        setLoading(false);
-        return;
+      async function refreshMessages() {
+        if (!active || refreshing) return;
+        refreshing = true;
+        try {
+          const { data, error: messagesError } = await supabase
+            .from("chat_messages")
+            .select("id, sender_id, recipient_id, body, created_at, read_at")
+            .or(messageFilter)
+            .order("created_at", { ascending: true });
+
+          if (!active) return;
+          if (messagesError) {
+            setSyncError(`No se pudieron sincronizar los mensajes: ${messagesError.message}`);
+            return;
+          }
+
+          const rows = data as MessageRow[];
+          setMessages(rows.map(toMessage));
+          setSyncError("");
+
+          const unreadIds = rows
+            .filter(
+              (row) =>
+                row.recipient_id === currentUser.id && row.read_at === null,
+            )
+            .map((row) => row.id);
+          if (unreadIds.length > 0) {
+            const { error: readError } = await supabase
+              .from("chat_messages")
+              .update({ read_at: new Date().toISOString() })
+              .in("id", unreadIds)
+              .eq("recipient_id", currentUser.id)
+              .is("read_at", null);
+            if (readError && active) {
+              setSyncError(`No se pudieron marcar los mensajes como leídos: ${readError.message}`);
+            }
+          }
+        } finally {
+          refreshing = false;
+        }
       }
-      const rows = data as MessageRow[];
-      setMessages(rows.map(toMessage));
+
+      await refreshMessages();
+      if (!active) return;
       setLoading(false);
 
-      const unreadIds = rows
-        .filter(
-          (row) => row.recipient_id === currentUser.id && row.read_at === null,
-        )
-        .map((row) => row.id);
-      if (unreadIds.length > 0) {
-        const { error: readError } = await supabase
-          .from("chat_messages")
-          .update({ read_at: new Date().toISOString() })
-          .in("id", unreadIds)
-          .eq("recipient_id", currentUser.id)
-          .is("read_at", null);
-        if (readError && active) {
-          setError(`No se pudieron marcar los mensajes como leídos: ${readError.message}`);
+      function startPolling() {
+        setSyncNotice(
+          "Conexión en tiempo real no disponible. Los mensajes se actualizan automáticamente.",
+        );
+        if (pollingTimer === null) {
+          pollingTimer = window.setInterval(() => {
+            void refreshMessages();
+          }, 5000);
         }
+      }
+
+      function stopPolling() {
+        if (pollingTimer !== null) {
+          window.clearInterval(pollingTimer);
+          pollingTimer = null;
+        }
+        setSyncNotice("");
       }
 
       const channel = supabase
@@ -165,16 +226,24 @@ export function ConversacionUi() {
           },
         )
         .subscribe((status, channelError) => {
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-            setError(
-              `El chat está guardado, pero no se pudo activar la actualización en tiempo real: ${
-                channelError?.message ?? status
-              }`,
-            );
+          if (!active) return;
+          if (status === "SUBSCRIBED") {
+            stopPolling();
+            void refreshMessages();
+          } else if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
+            if (channelError) {
+              console.error("Realtime no está disponible para esta conversación:", channelError);
+            }
+            startPolling();
           }
         });
 
       return () => {
+        if (pollingTimer !== null) window.clearInterval(pollingTimer);
         void supabase.removeChannel(channel);
       };
     }
@@ -197,7 +266,6 @@ export function ConversacionUi() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!me || !other || !isMatch || busy) return;
-    const currentUser = me;
     const currentOther = other;
 
     const body = draft.trim();
@@ -206,18 +274,42 @@ export function ConversacionUi() {
     setBusy(true);
     setError("");
     try {
-      const { data, error: sendError } = await supabase
-        .from("chat_messages")
-        .insert({
-          sender_id: currentUser.id,
-          recipient_id: currentOther.id,
-          body,
-        })
-        .select("id, sender_id, recipient_id, body, created_at, read_at")
-        .single();
-
-      if (sendError) throw sendError;
-      const sent = toMessage(data as MessageRow);
+      const { data, error: sendError } = await supabase.functions.invoke(
+        "chat-assistant",
+        {
+          body: {
+            action: "send-message",
+            recipientId: currentOther.id,
+            text: body,
+          },
+        },
+      );
+      if (sendError) {
+        throw new Error(
+          `No se pudo revisar o enviar el mensaje: ${await edgeFunctionErrorMessage(sendError)}`,
+        );
+      }
+      const response: unknown = data;
+      if (!isRecord(response) || !isRecord(response.message)) {
+        throw new Error("El servidor no confirmó el envío del mensaje.");
+      }
+      const row = response.message;
+      if (
+        typeof row.id !== "string" ||
+        typeof row.sender_id !== "string" ||
+        typeof row.recipient_id !== "string" ||
+        typeof row.body !== "string" ||
+        typeof row.created_at !== "string"
+      ) {
+        throw new Error("El servidor devolvió un mensaje con formato inválido.");
+      }
+      const sent = toMessage({
+        id: row.id,
+        sender_id: row.sender_id,
+        recipient_id: row.recipient_id,
+        body: row.body,
+        created_at: row.created_at,
+      });
       setMessages((current) =>
         current.some((message) => message.id === sent.id)
           ? current
@@ -241,6 +333,43 @@ export function ConversacionUi() {
       );
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function loadIcebreakers() {
+    if (!other || loadingIcebreakers) return;
+    setLoadingIcebreakers(true);
+    setAssistantError("");
+    try {
+      const { data, error: assistantInvokeError } =
+        await supabase.functions.invoke("chat-assistant", {
+          body: { action: "icebreakers", recipientId: other.id },
+        });
+      if (assistantInvokeError) {
+        throw new Error(await edgeFunctionErrorMessage(assistantInvokeError));
+      }
+
+      const response: unknown = data;
+      if (
+        !isRecord(response) ||
+        !Array.isArray(response.suggestions) ||
+        response.suggestions.length !== 3 ||
+        !response.suggestions.every(
+          (suggestion): suggestion is string =>
+            typeof suggestion === "string" && suggestion.length > 0,
+        )
+      ) {
+        throw new Error("El asistente devolvió sugerencias con formato inválido.");
+      }
+      setIcebreakers(response.suggestions);
+    } catch (cause) {
+      setAssistantError(
+        cause instanceof Error
+          ? `No se pudieron generar sugerencias: ${cause.message}`
+          : "No se pudieron generar sugerencias. Inténtalo de nuevo.",
+      );
+    } finally {
+      setLoadingIcebreakers(false);
     }
   }
 
@@ -319,6 +448,46 @@ export function ConversacionUi() {
           </section>
         ) : (
           <>
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => void loadIcebreakers()}
+                disabled={loadingIcebreakers}
+                className="rounded-full border border-astral/30 bg-astral/10 px-4 py-2 text-sm text-[#e5ccff] transition hover:bg-astral/20 disabled:opacity-50"
+              >
+                {loadingIcebreakers
+                  ? "Buscando una buena pregunta..."
+                  : "Ayúdame a romper el hielo"}
+              </button>
+              {icebreakers.length > 0 && (
+                <ul className="mt-3 grid gap-2">
+                  {icebreakers.map((suggestion) => (
+                    <li key={suggestion}>
+                      <button
+                        type="button"
+                        onClick={() => setDraft(suggestion)}
+                        className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-left text-sm text-slate-200 transition hover:bg-white/[0.08]"
+                      >
+                        {suggestion}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {assistantError && (
+                <p role="alert" className="mt-2 text-sm text-thread">
+                  {assistantError}
+                </p>
+              )}
+            </div>
+            {(syncNotice || syncError) && (
+              <p
+                role={syncError ? "alert" : "status"}
+                className={`mt-3 text-sm ${syncError ? "text-thread" : "text-muted"}`}
+              >
+                {syncError || syncNotice}
+              </p>
+            )}
             <section
               aria-label="Mensajes de la conversación"
               aria-live="polite"
@@ -366,6 +535,11 @@ export function ConversacionUi() {
               onSubmit={handleSubmit}
               className="rounded-2xl border border-white/10 bg-[#12101a] p-2"
             >
+              <p className="px-3 pb-2 text-xs leading-5 text-muted">
+                OpenAI revisa cada mensaje para bloquear contenido sexual
+                explícito y acoso. Las sugerencias usan los signos solares y
+                lunares; no se comparte el historial del chat.
+              </p>
               <label htmlFor="chat-message" className="sr-only">
                 Escribe un mensaje
               </label>

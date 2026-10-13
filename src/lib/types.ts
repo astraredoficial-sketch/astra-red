@@ -70,8 +70,6 @@ export type UserProfile = {
   gender: Gender;
   lookingFor: LookingFor;
   targetGender: TargetGender;
-  locationCity: string;
-  locationCountry: string;
   avatarUrl: string | null;
   chart: NatalChart;
 };
@@ -89,4 +87,5 @@ export type SynastryResult = {
   aspects: SynastryAspect[];
   hasNodalAspect: boolean;
   hiloRojo: boolean;
+  timeApproximate: boolean;
 };

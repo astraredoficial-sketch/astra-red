@@ -70,9 +70,6 @@ export function VipConnectionAlert({
           <div className="min-w-0 space-y-2">
             <ProfilePortrait profile={me} />
             <p className="truncate text-sm font-semibold text-white">{me.name}</p>
-            <p className="text-xs text-slate-400">
-              {me.locationCity}, {me.locationCountry}
-            </p>
           </div>
           <span
             aria-hidden="true"
@@ -85,9 +82,6 @@ export function VipConnectionAlert({
             <p className="truncate text-sm font-semibold text-white">
               {other.name}
             </p>
-            <p className="text-xs text-slate-400">
-              {other.locationCity}, {other.locationCountry}
-            </p>
           </div>
         </div>
 
@@ -98,12 +92,16 @@ export function VipConnectionAlert({
               <p className="text-slate-300">
                 Sol {profile.chart.triad.sun.sign}
               </p>
-              <p className="text-slate-300">
-                Luna {profile.chart.triad.moon.sign}
-              </p>
-              <p className="text-slate-300">
-                Ascendente {profile.chart.triad.asc.sign}
-              </p>
+              {!profile.chart.timeUnknown && (
+                <>
+                  <p className="text-slate-300">
+                    Luna {profile.chart.triad.moon.sign}
+                  </p>
+                  <p className="text-slate-300">
+                    Ascendente {profile.chart.triad.asc.sign}
+                  </p>
+                </>
+              )}
             </div>
           ))}
         </div>

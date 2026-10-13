@@ -27,8 +27,6 @@ type ProfileRow = {
   gender: string;
   target_gender: string;
   looking_for: string;
-  location_city: string;
-  location_country: string;
   avatar_url: string | null;
   chart: unknown;
 };
@@ -112,10 +110,7 @@ function toUserProfile(row: ProfileRow): UserProfile | null {
   if (
     typeof row.name !== "string" ||
     !row.name.trim() ||
-    typeof row.location_city !== "string" ||
-    !row.location_city ||
-    typeof row.location_country !== "string" ||
-    !row.location_country
+    typeof row.id !== "string"
   ) {
     return null;
   }
@@ -129,8 +124,6 @@ function toUserProfile(row: ProfileRow): UserProfile | null {
     gender: row.gender as UserProfile["gender"],
     targetGender: row.target_gender as TargetGender,
     lookingFor: row.looking_for as UserProfile["lookingFor"],
-    locationCity: row.location_city,
-    locationCountry: row.location_country,
     avatarUrl: typeof row.avatar_url === "string" ? row.avatar_url : null,
     chart: row.chart,
   };
@@ -160,7 +153,7 @@ export function useSession() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id, name, gender, target_gender, looking_for, location_city, location_country, avatar_url, chart",
+          "id, name, gender, target_gender, looking_for, avatar_url, chart",
         );
 
       if (!active) return;

@@ -59,6 +59,30 @@ test("las fechas se calculan sin desplazamiento de día por zona horaria", () =>
   assert.equal(result.date, "2027-01-01");
 });
 
+test("las fases lunares concuerdan con referencias de luna nueva y llena", () => {
+  const newMoon = calculateRealAstralData(
+    new Date("2000-01-06T18:14:00.000Z"),
+    "moon-observation",
+  );
+  const fullMoon = calculateRealAstralData(
+    new Date("2000-01-21T04:40:00.000Z"),
+    "moon-observation",
+  );
+
+  assert.ok(newMoon.illumination < 1, `Iluminación de luna nueva: ${newMoon.illumination}%`);
+  assert.ok(fullMoon.illumination > 99, `Iluminación de luna llena: ${fullMoon.illumination}%`);
+});
+
+test("el motor detecta periodos conocidos de retrogradación", () => {
+  const retrograde = calculateRealAstralData(
+    new Date("2025-03-20T12:00:00.000Z"),
+    "moon-observation",
+  );
+
+  assert.equal(retrograde.mercuryRetrograde, true);
+  assert.equal(retrograde.venusRetrograde, true);
+});
+
 test("el calendario ofrece intenciones de hogar, vehículos, relaciones y trabajo", () => {
   for (const activity of [
     "home-purchase",

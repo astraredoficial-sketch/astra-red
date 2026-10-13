@@ -43,76 +43,87 @@ export function MensajesUi() {
   useEffect(() => {
     if (!me || !store) return;
     let active = true;
+    let loadingConversations = false;
     const currentUser = me;
     const currentProfiles = store.profiles;
 
     async function loadConversations() {
-      const { data: matches, error: matchError } = await supabase
-        .from("matches")
-        .select("user_a, user_b, created_at");
+      if (loadingConversations) return;
+      loadingConversations = true;
+      try {
+        const { data: matches, error: matchError } = await supabase
+          .from("matches")
+          .select("user_a, user_b, created_at");
 
-      if (!active) return;
-      if (matchError) {
-        setError(`No se pudieron cargar tus conexiones: ${matchError.message}`);
+        if (!active) return;
+        if (matchError) {
+          setError(`No se pudieron cargar tus conexiones: ${matchError.message}`);
+          setLoading(false);
+          return;
+        }
+
+        const { data, error: messageError } = await supabase
+          .from("chat_messages")
+          .select("id, sender_id, recipient_id, body, created_at")
+          .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
+          .order("created_at", { ascending: false });
+
+        if (!active) return;
+        if (messageError) {
+          setError(`No se pudieron cargar tus conversaciones: ${messageError.message}`);
+          setLoading(false);
+          return;
+        }
+
+        const profiles = new Map(
+          currentProfiles.map((profile) => [profile.id, profile]),
+        );
+        const latest = new Map<string, Conversation>();
+        const messagesByOther = new Map<string, MessageRow>();
+
+        for (const row of data as MessageRow[]) {
+          const otherId =
+            row.sender_id === currentUser.id ? row.recipient_id : row.sender_id;
+          if (!messagesByOther.has(otherId)) messagesByOther.set(otherId, row);
+        }
+
+        for (const match of matches as MatchRow[]) {
+          const otherId =
+            match.user_a === currentUser.id ? match.user_b : match.user_a;
+          const profile = profiles.get(otherId);
+          if (!profile) continue;
+
+          const lastMessage = messagesByOther.get(otherId);
+          latest.set(otherId, {
+            otherId,
+            name: profile.name,
+            lastMessage:
+              lastMessage?.body ??
+              "Tienen una conexión mutua. Empieza la conversación.",
+            updatedAt: lastMessage?.created_at ?? match.created_at,
+          });
+        }
+
+        setConversations(
+          [...latest.values()].sort(
+            (a, b) =>
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+          ),
+        );
+        setError("");
         setLoading(false);
-        return;
+      } finally {
+        loadingConversations = false;
       }
-
-      const { data, error: messageError } = await supabase
-        .from("chat_messages")
-        .select("id, sender_id, recipient_id, body, created_at")
-        .or(`sender_id.eq.${currentUser.id},recipient_id.eq.${currentUser.id}`)
-        .order("created_at", { ascending: false });
-
-      if (!active) return;
-      if (messageError) {
-        setError(`No se pudieron cargar tus conversaciones: ${messageError.message}`);
-        setLoading(false);
-        return;
-      }
-
-      const profiles = new Map(
-        currentProfiles.map((profile) => [profile.id, profile]),
-      );
-      const latest = new Map<string, Conversation>();
-      const messagesByOther = new Map<string, MessageRow>();
-
-      for (const row of data as MessageRow[]) {
-        const otherId =
-          row.sender_id === currentUser.id ? row.recipient_id : row.sender_id;
-        if (!messagesByOther.has(otherId)) messagesByOther.set(otherId, row);
-      }
-
-      for (const match of matches as MatchRow[]) {
-        const otherId =
-          match.user_a === currentUser.id ? match.user_b : match.user_a;
-        const profile = profiles.get(otherId);
-        if (!profile) continue;
-
-        const lastMessage = messagesByOther.get(otherId);
-        latest.set(otherId, {
-          otherId,
-          name: profile.name,
-          lastMessage:
-            lastMessage?.body ??
-            "Tienen una conexión mutua. Empieza la conversación.",
-          updatedAt: lastMessage?.created_at ?? match.created_at,
-        });
-      }
-
-      setConversations(
-        [...latest.values()].sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-        ),
-      );
-      setError("");
-      setLoading(false);
     }
 
     void loadConversations();
+    const pollingTimer = window.setInterval(() => {
+      void loadConversations();
+    }, 15000);
     return () => {
       active = false;
+      window.clearInterval(pollingTimer);
     };
   }, [me, store]);
 
