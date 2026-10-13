@@ -101,20 +101,17 @@ MAILTRAP_API_TOKEN=<token API con acceso de envío para astrared.vip>
 MAILTRAP_FROM_EMAIL=notificaciones@astrared.vip
 APP_URL=https://astrared.vip
 CRON_SECRET=<secreto aleatorio largo para las alertas programadas>
-OPENAI_API_KEY=<clave privada de OpenAI>
-OPENAI_CHAT_MODEL=gpt-4o-mini
 ```
 
-`chat-assistant` valida la sesión y la conexión mutua, revisa cada mensaje
-saliente con el endpoint de moderación de OpenAI y solo entonces lo guarda con
-la clave de servicio. Bloquea contenido sexual explícito y acoso. Las cuentas
-autenticadas no tienen permiso para insertar mensajes directamente. También
-genera tres sugerencias para romper el hielo a partir de los signos solares y
-lunares de ambas cartas cuando se conocen ambas horas. El límite es de 30
-acciones de IA por usuario por hora. Configura `OPENAI_API_KEY` como secreto;
-nunca lo incluyas en `NEXT_PUBLIC_*` ni en el repositorio. El chat informa que
-el texto enviado se procesa con OpenAI; no se envía el historial del chat al
-generador de sugerencias.
+`chat-assistant` valida la sesión y la conexión mutua, aplica un filtro básico
+de lenguaje obsceno a cada mensaje y solo entonces lo guarda con la clave de
+servicio. Este filtro local no detecta todas las formas de abuso. Las cuentas
+autenticadas no tienen permiso para insertar mensajes directamente. El chat
+ofrece preguntas predefinidas gratuitas para romper el hielo, además de
+acciones para reportar y bloquear cuentas. Los reportes y bloqueos solo se
+pueden crear a través de la función autenticada; un bloqueo impide leer o
+enviar mensajes entre ambas cuentas. El límite sigue siendo de 30 mensajes por
+usuario por hora. No se necesita una clave de OpenAI para estas funciones.
 
 Los tokens API se crean en **Mailtrap → Settings → API Tokens**; limita el token
 a `astrared.vip` y guárdalo solo como secreto de Edge Function. La entrega de

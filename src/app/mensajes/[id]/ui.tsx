@@ -5,7 +5,17 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { AppNav } from "@/components/AppNav";
 import { useSession } from "@/hooks/useSession";
+import { getIcebreakers } from "@/lib/chat/icebreakers";
 import { supabase } from "@/lib/supabase/client";
+
+type ReportReason = "obscene" | "harassment" | "spam" | "other";
+
+const REPORT_REASONS: { value: ReportReason; label: string }[] = [
+  { value: "obscene", label: "Contenido obsceno o no deseado" },
+  { value: "harassment", label: "Acoso o amenazas" },
+  { value: "spam", label: "Spam o estafa" },
+  { value: "other", label: "Otro motivo" },
+];
 
 type MessageRow = {
   id: string;
@@ -67,12 +77,16 @@ export function ConversacionUi() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [isMatch, setIsMatch] = useState(false);
+  const [conversationBlocked, setConversationBlocked] = useState(false);
   const [error, setError] = useState("");
+  const [safetyNotice, setSafetyNotice] = useState("");
+  const [safetyError, setSafetyError] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<ReportReason>("obscene");
   const [syncNotice, setSyncNotice] = useState("");
   const [syncError, setSyncError] = useState("");
   const [icebreakers, setIcebreakers] = useState<string[]>([]);
-  const [loadingIcebreakers, setLoadingIcebreakers] = useState(false);
-  const [assistantError, setAssistantError] = useState("");
+  const [icebreakerRound, setIcebreakerRound] = useState(0);
 
   useEffect(() => {
     if (!ready || sessionError || me) return;
@@ -336,40 +350,74 @@ export function ConversacionUi() {
     }
   }
 
-  async function loadIcebreakers() {
-    if (!other || loadingIcebreakers) return;
-    setLoadingIcebreakers(true);
-    setAssistantError("");
+  function loadIcebreakers() {
+    setIcebreakers(getIcebreakers(icebreakerRound));
+    setIcebreakerRound((round) => round + 1);
+  }
+
+  async function handleBlock() {
+    if (!other || !me || busy || conversationBlocked) return;
+    if (!window.confirm(`¿Quieres bloquear a ${other.name}?`)) return;
+
+    setBusy(true);
+    setSafetyError("");
+    setSafetyNotice("");
     try {
-      const { data, error: assistantInvokeError } =
-        await supabase.functions.invoke("chat-assistant", {
-          body: { action: "icebreakers", recipientId: other.id },
-        });
-      if (assistantInvokeError) {
-        throw new Error(await edgeFunctionErrorMessage(assistantInvokeError));
+      const { error: blockError } = await supabase.functions.invoke(
+        "chat-assistant",
+        { body: { action: "block-user", recipientId: other.id } },
+      );
+      if (blockError) {
+        throw new Error(await edgeFunctionErrorMessage(blockError));
       }
 
-      const response: unknown = data;
-      if (
-        !isRecord(response) ||
-        !Array.isArray(response.suggestions) ||
-        response.suggestions.length !== 3 ||
-        !response.suggestions.every(
-          (suggestion): suggestion is string =>
-            typeof suggestion === "string" && suggestion.length > 0,
-        )
-      ) {
-        throw new Error("El asistente devolvió sugerencias con formato inválido.");
-      }
-      setIcebreakers(response.suggestions);
+      setConversationBlocked(true);
+      setIsMatch(false);
+      setIcebreakers([]);
+      setSafetyNotice(`Bloqueaste a ${other.name}. No podrá escribirte.`);
     } catch (cause) {
-      setAssistantError(
+      setSafetyError(
         cause instanceof Error
-          ? `No se pudieron generar sugerencias: ${cause.message}`
-          : "No se pudieron generar sugerencias. Inténtalo de nuevo.",
+          ? `No se pudo bloquear esta cuenta: ${cause.message}`
+          : "No se pudo bloquear esta cuenta. Inténtalo de nuevo.",
       );
     } finally {
-      setLoadingIcebreakers(false);
+      setBusy(false);
+    }
+  }
+
+  async function handleReport(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!other || !me || busy) return;
+
+    setBusy(true);
+    setSafetyError("");
+    setSafetyNotice("");
+    try {
+      const { error: reportError } = await supabase.functions.invoke(
+        "chat-assistant",
+        {
+          body: {
+            action: "report-user",
+            recipientId: other.id,
+            reason: reportReason,
+          },
+        },
+      );
+      if (reportError) {
+        throw new Error(await edgeFunctionErrorMessage(reportError));
+      }
+
+      setReportOpen(false);
+      setSafetyNotice("Gracias. Recibimos tu reporte para revisarlo.");
+    } catch (cause) {
+      setSafetyError(
+        cause instanceof Error
+          ? `No se pudo enviar el reporte: ${cause.message}`
+          : "No se pudo enviar el reporte. Inténtalo de nuevo.",
+      );
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -427,7 +475,79 @@ export function ConversacionUi() {
               Ver sinastría
             </Link>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setSafetyError("");
+              setReportOpen((open) => !open);
+            }}
+            disabled={busy || !isMatch || conversationBlocked}
+            className="rounded-full border border-white/15 px-3 py-2 text-xs text-slate-200 transition hover:bg-white/5 disabled:opacity-50"
+          >
+            Reportar
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleBlock()}
+            disabled={busy || conversationBlocked}
+            className="rounded-full border border-thread/30 px-3 py-2 text-xs text-thread transition hover:bg-thread/10 disabled:opacity-50"
+          >
+            Bloquear
+          </button>
         </header>
+
+        {reportOpen && (
+          <form
+            onSubmit={handleReport}
+            className="mt-3 rounded-xl border border-white/10 bg-[#12101a] p-3"
+          >
+            <label
+              htmlFor="chat-report-reason"
+              className="mb-2 block text-sm text-slate-200"
+            >
+              ¿Por qué quieres reportar esta cuenta?
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                id="chat-report-reason"
+                value={reportReason}
+                onChange={(event) =>
+                  setReportReason(event.target.value as ReportReason)
+                }
+                className="min-h-10 flex-1 rounded-lg border border-white/10 bg-[#171323] px-3 text-sm text-slate-100"
+              >
+                {REPORT_REASONS.map((reason) => (
+                  <option key={reason.value} value={reason.value}>
+                    {reason.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="submit"
+                disabled={busy}
+                className="min-h-10 rounded-lg bg-thread px-4 text-sm text-white disabled:opacity-50"
+              >
+                {busy ? "Enviando..." : "Enviar reporte"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportOpen(false)}
+                disabled={busy}
+                className="min-h-10 rounded-lg border border-white/10 px-3 text-sm text-slate-200 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        )}
+        {(safetyNotice || safetyError) && (
+          <p
+            role={safetyError ? "alert" : "status"}
+            className={`mt-3 text-sm ${safetyError ? "text-thread" : "text-emerald-300"}`}
+          >
+            {safetyError || safetyNotice}
+          </p>
+        )}
 
         {loading ? (
           <p className="my-8 text-center text-sm text-muted">
@@ -437,7 +557,9 @@ export function ConversacionUi() {
           <section className="my-auto py-12 text-center">
             <h2 className="font-serif text-xl">Esta conversación aún no está abierta</h2>
             <p className="mx-auto mt-3 max-w-sm text-sm leading-6 text-muted">
-              Solo pueden escribirse quienes se hayan dado me gusta mutuamente.
+              {conversationBlocked
+                ? "Bloqueaste esta cuenta. Ya no podrán enviarse mensajes."
+                : "Solo pueden escribirse quienes se hayan dado me gusta mutuamente."}
             </p>
             <Link
               href="/destinos"
@@ -452,12 +574,9 @@ export function ConversacionUi() {
               <button
                 type="button"
                 onClick={() => void loadIcebreakers()}
-                disabled={loadingIcebreakers}
-                className="rounded-full border border-astral/30 bg-astral/10 px-4 py-2 text-sm text-[#e5ccff] transition hover:bg-astral/20 disabled:opacity-50"
+                className="rounded-full border border-astral/30 bg-astral/10 px-4 py-2 text-sm text-[#e5ccff] transition hover:bg-astral/20"
               >
-                {loadingIcebreakers
-                  ? "Buscando una buena pregunta..."
-                  : "Ayúdame a romper el hielo"}
+                Ayúdame a romper el hielo
               </button>
               {icebreakers.length > 0 && (
                 <ul className="mt-3 grid gap-2">
@@ -474,11 +593,9 @@ export function ConversacionUi() {
                   ))}
                 </ul>
               )}
-              {assistantError && (
-                <p role="alert" className="mt-2 text-sm text-thread">
-                  {assistantError}
-                </p>
-              )}
+              <p className="mt-2 text-xs text-muted">
+                Ideas gratis. Elige una para editarla antes de enviarla.
+              </p>
             </div>
             {(syncNotice || syncError) && (
               <p
@@ -536,9 +653,8 @@ export function ConversacionUi() {
               className="rounded-2xl border border-white/10 bg-[#12101a] p-2"
             >
               <p className="px-3 pb-2 text-xs leading-5 text-muted">
-                OpenAI revisa cada mensaje para bloquear contenido sexual
-                explícito y acoso. Las sugerencias usan los signos solares y
-                lunares; no se comparte el historial del chat.
+                Un filtro automático básico bloquea algunas palabras obscenas u
+                ofensivas. No detecta todo; puedes reportar o bloquear una cuenta.
               </p>
               <label htmlFor="chat-message" className="sr-only">
                 Escribe un mensaje
