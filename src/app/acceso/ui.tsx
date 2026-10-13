@@ -8,6 +8,9 @@ import { supabase } from "@/lib/supabase/client";
 
 type Mode = "login" | "signup";
 
+const EMAIL_CONFIRMATION_REDIRECT_URL =
+  "https://astrared.vip/acceso?mode=login";
+
 export function AccesoUi() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
@@ -106,7 +109,7 @@ export function AccesoUi() {
           email: cleanEmail,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/acceso?mode=login`,
+            emailRedirectTo: EMAIL_CONFIRMATION_REDIRECT_URL,
           },
         });
 
