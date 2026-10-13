@@ -36,6 +36,38 @@ test("chat safety blocks common obscene terms and common obfuscation", () => {
   assert.equal(containsObsceneLanguage("Hablemos de s3xo"), true);
 });
 
+test("chat safety blocks at least twenty common Spanish obscenities", () => {
+  const obsceneTerms = [
+    "carajo",
+    "cagada",
+    "chingada",
+    "chingar",
+    "coger",
+    "culero",
+    "culiao",
+    "follar",
+    "gonorrea",
+    "hijuepucha",
+    "joder",
+    "jodido",
+    "malparida",
+    "mamón",
+    "pendejada",
+    "picha",
+    "pichula",
+    "pija",
+    "pinga",
+    "putear",
+    "putería",
+    "tirar",
+    "zorra",
+  ];
+
+  for (const term of obsceneTerms) {
+    assert.equal(containsObsceneLanguage(term), true, `Expected "${term}" to be blocked`);
+  }
+});
+
 test("chat safety allows respectful conversation and avoids partial-word matches", () => {
   assert.equal(containsObsceneLanguage("Me encanta conocer lugares nuevos"), false);
   assert.equal(containsObsceneLanguage("Este año quiero aprender"), false);
