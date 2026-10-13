@@ -25,6 +25,7 @@ const BLOCKED_TERMS = [
   "putos",
   "shit",
   "slut",
+  "sexo",
   "verga",
   "whore",
 ];

@@ -32,6 +32,8 @@ test("chat safety blocks common obscene terms and common obfuscation", () => {
   assert.equal(containsObsceneLanguage("Eres un pendejo"), true);
   assert.equal(containsObsceneLanguage("que m1erd4"), true);
   assert.equal(containsObsceneLanguage("Qué coño haces"), true);
+  assert.equal(containsObsceneLanguage("sexo"), true);
+  assert.equal(containsObsceneLanguage("Hablemos de s3xo"), true);
 });
 
 test("chat safety allows respectful conversation and avoids partial-word matches", () => {
