@@ -27,7 +27,6 @@ const BLOCKED_TERMS = [
   "culero",
   "culiada",
   "culiao",
-  "coger",
   "dick",
   "follar",
   "fuck",
@@ -66,7 +65,6 @@ const BLOCKED_TERMS = [
   "shit",
   "slut",
   "sexo",
-  "tirar",
   "verga",
   "whore",
   "zorra",
@@ -97,5 +95,10 @@ function normalizeMessage(text: string): string {
 
 export function containsObsceneLanguage(text: string): boolean {
   const normalized = ` ${normalizeMessage(text)} `;
-  return BLOCKED_TERMS.some((term) => normalized.includes(` ${term} `));
+  return (
+    BLOCKED_TERMS.some((term) => normalized.includes(` ${term} `)) ||
+    /\b(?:coger|tirar)\s+(?:contigo|conmigo|juntos|juntas|en la cama|desnudos?|desnudas?|sin ropa)\b/.test(
+      normalized,
+    )
+  );
 }

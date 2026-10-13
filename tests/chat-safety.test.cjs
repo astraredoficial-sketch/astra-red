@@ -42,7 +42,6 @@ test("chat safety blocks at least twenty common Spanish obscenities", () => {
     "cagada",
     "chingada",
     "chingar",
-    "coger",
     "culero",
     "culiao",
     "follar",
@@ -59,7 +58,6 @@ test("chat safety blocks at least twenty common Spanish obscenities", () => {
     "pinga",
     "putear",
     "putería",
-    "tirar",
     "zorra",
   ];
 
@@ -72,6 +70,14 @@ test("chat safety allows respectful conversation and avoids partial-word matches
   assert.equal(containsObsceneLanguage("Me encanta conocer lugares nuevos"), false);
   assert.equal(containsObsceneLanguage("Este año quiero aprender"), false);
   assert.equal(containsObsceneLanguage("Qué bonito día"), false);
+  assert.equal(containsObsceneLanguage("Voy a coger el autobús"), false);
+  assert.equal(containsObsceneLanguage("Tengo que tirar la basura"), false);
+});
+
+test("chat safety blocks ambiguous verbs in an explicit sexual context", () => {
+  assert.equal(containsObsceneLanguage("Quiero coger contigo"), true);
+  assert.equal(containsObsceneLanguage("Vamos a tirar juntos"), true);
+  assert.equal(containsObsceneLanguage("Coger en la cama"), true);
 });
 
 test("free icebreakers return three distinct prompts and cycle through the set", () => {
