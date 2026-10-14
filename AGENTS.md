@@ -17,6 +17,6 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Birth date/time and birthplace are private chart inputs. Do not expose them in public profile data.
 - Keep the interface concise, responsive, dark/editorial, and accessible. Use SVG icons instead of decorative emoji; preserve functional lunar/zodiac symbols.
 - SEO is Spanish-first and editorial: create a small number of original guides, avoid mass-generated zodiac pages, and do not invent traffic, reviews, or product claims.
-- No third-party analytics are approved. Legal contact: `astraared.oficial@gmail.com`; public operator name: AstraRed.
+- No third-party analytics are approved. Legal contact: `astrared.oficial@gmail.com`; public operator name: AstraRed.
 - Read `.agents/product-marketing.md` before changing product positioning, pricing, beta access, legal copy, or SEO strategy.
 - Use `npm run lint`, `npm test`, and `npm run build` for validation. Supabase migrations are versioned under `supabase/migrations/`.

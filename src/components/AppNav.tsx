@@ -245,6 +245,29 @@ export function AppNav({ active }: Props) {
               </Link>
             );
           })}
+          <a
+            href="https://ko-fi.com/astrared"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Dona un café a AstraRed"
+            title="Dona un café"
+            className="flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border border-thread/40 px-2 py-3 text-sm font-semibold text-[#f0d9e2] shadow-sm transition hover:border-thread hover:bg-thread/10 sm:min-w-0 sm:px-3 md:px-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            <svg
+              aria-hidden="true"
+              className="h-5 w-5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="1.7"
+            >
+              <path d="M5 8h12v8a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8Z" />
+              <path d="M17 10h1a3 3 0 1 1 0 6h-1M8 4c1 1 1 2 0 3m5-3c1 1 1 2 0 3M4 22h15" />
+            </svg>
+            <span className="sr-only sm:not-sr-only">Dona un café</span>
+          </a>
         </nav>
       </div>
     </header>

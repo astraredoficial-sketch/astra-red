@@ -44,8 +44,8 @@ export default function SafetyPage() {
         <p>
           Para reportar una cuenta, contenido o incidente de seguridad, escribe
           a{" "}
-          <a href="mailto:astraared.oficial@gmail.com">
-            astraared.oficial@gmail.com
+          <a href="mailto:astrared.oficial@gmail.com">
+            astrared.oficial@gmail.com
           </a>{" "}
           e incluye la información necesaria para investigar, sin reenviar datos
           sensibles de otras personas que no sean pertinentes.

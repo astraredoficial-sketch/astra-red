@@ -1,5 +1,12 @@
 import Link from "next/link";
+import { cacheLife } from "next/cache";
 import { BrandMark } from "@/components/BrandMark";
+
+async function getCurrentYear() {
+  "use cache";
+  cacheLife("days");
+  return new Date().getFullYear();
+}
 
 const footerGroups = [
   {
@@ -24,7 +31,7 @@ const footerGroups = [
       { label: "Comunidad segura", href: "/seguridad" },
       {
         label: "Escríbenos",
-        href: "mailto:astraared.oficial@gmail.com",
+        href: "mailto:astrared.oficial@gmail.com",
       },
     ],
   },
@@ -37,7 +44,9 @@ const footerGroups = [
   },
 ];
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const currentYear = await getCurrentYear();
+
   return (
     <footer className="relative z-10 border-t border-white/10 bg-[#080711]/95">
       <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8 sm:py-12">
@@ -51,7 +60,15 @@ export function SiteFooter() {
                   </Link>
                   <p className="max-w-xs text-sm leading-6 text-muted">
                     Carta natal, afinidades y calendario astral para explorar
-                    tus ciclos con curiosidad.
+                    tus ciclos y conexiones con curiosidad.
+                  </p>
+                  <p className="max-w-xs text-sm leading-6 text-muted">
+                    La astrología es una herramienta simbólica de reflexión, no
+                    una predicción científica ni asesoría profesional.
+                  </p>
+                  <p className="max-w-xs text-sm leading-6 text-muted">
+                    Beta gratuita para mayores de 18 años. Tus datos precisos de
+                    nacimiento no se muestran en tu perfil público.
                   </p>
                 </div>
               )}
@@ -75,14 +92,28 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-9 flex flex-col gap-4 border-t border-white/10 pt-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>© AstraRed. Beta gratuita para mayores de 18 años.</p>
+          <div className="space-y-1">
+            <p>
+              © {currentYear} AstraRed. Beta gratuita para mayores
+              de 18 años.
+            </p>
+            <p>
+              Contacto:{" "}
+              <a
+                href="mailto:astrared.oficial@gmail.com"
+                className="underline underline-offset-2 hover:text-white"
+              >
+                astrared.oficial@gmail.com
+              </a>
+            </p>
+          </div>
           <a
             href="https://ko-fi.com/astrared"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex min-h-10 items-center justify-center self-start rounded-full border border-thread/40 px-4 py-2 font-medium text-[#f0d9e2] transition-colors hover:border-thread hover:bg-thread/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:self-auto"
           >
-            Apoyar AstraRed en Ko-fi
+            Dona un café
           </a>
         </div>
       </div>

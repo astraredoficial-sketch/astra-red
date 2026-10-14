@@ -23,7 +23,7 @@
 
 - Minimum age is 18. Registration collects a self-declared birth date; no identity document is requested.
 - Birth date, birth time, and precise birthplace are private chart inputs.
-- Public operator name: AstraRed. Contact: `astraared.oficial@gmail.com`. Jurisdictional context: Venezuela.
+- Public operator name: AstraRed. Contact: `astrared.oficial@gmail.com`. Jurisdictional context: Venezuela.
 - The current infrastructure includes Vercel hosting and Supabase authentication, database, and storage.
 - Ko-fi support page: `https://ko-fi.com/astrared` (PayPal is linked as a payment method on Ko-fi).
 - Legal pages are operational drafts and should receive local legal review before being treated as definitive legal advice.

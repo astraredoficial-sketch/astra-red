@@ -81,7 +81,7 @@ AstraRed está dirigido a personas de 18 años o más. Los datos de nacimiento s
 AstraRed busca conversar con inversionistas ángeles, aceleradoras y aliados con experiencia en productos de consumo, bienestar digital, comunidades en línea y crecimiento responsable. La oportunidad y las condiciones de inversión se discutirán con información actualizada cuando las métricas estén disponibles.
 
 - Sitio: [astrared.vip](https://astrared.vip)
-- Contacto: [astraared.oficial@gmail.com](mailto:astraared.oficial@gmail.com)
+- Contacto: [astrared.oficial@gmail.com](mailto:astrared.oficial@gmail.com)
 - Apoyo voluntario: [Ko-fi de AstraRed](https://ko-fi.com/astrared)
 
 ---

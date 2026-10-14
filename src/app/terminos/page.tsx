@@ -66,8 +66,8 @@ export default function TermsPage() {
         <p>
           Puedes solicitar la eliminación de tu cuenta desde las opciones
           disponibles o contactar a{" "}
-          <a href="mailto:astraared.oficial@gmail.com">
-            astraared.oficial@gmail.com
+          <a href="mailto:astrared.oficial@gmail.com">
+            astrared.oficial@gmail.com
           </a>
           . Podemos actualizar estos términos; la versión vigente se publicará
           en esta página.

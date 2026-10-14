@@ -20,8 +20,8 @@ export default function PrivacyPage() {
         <p>
           El responsable del servicio es AstraRed. Para consultas sobre
           privacidad puedes escribir a{" "}
-          <a href="mailto:astraared.oficial@gmail.com">
-            astraared.oficial@gmail.com
+          <a href="mailto:astrared.oficial@gmail.com">
+            astrared.oficial@gmail.com
           </a>
           .
         </p>
@@ -104,6 +104,24 @@ export default function PrivacyPage() {
           suspenderla y eliminar sus datos. Esta política puede actualizarse
           cuando cambien el producto o sus prácticas; publicaremos aquí la
           versión vigente.
+        </p>
+      </section>
+      <section>
+        <h2>8. Búsqueda ampliada de localidades</h2>
+        <p>
+          Si eliges buscar una localidad en OpenStreetMap durante el registro,
+          enviamos el nombre que escribiste y el país seleccionado a Nominatim,
+          su servicio de búsqueda geográfica, para encontrar coincidencias. La
+          consulta no incluye tu fecha ni hora de nacimiento. El servicio está
+          sujeto a la{" "}
+          <a href="https://wiki.osmfoundation.org/wiki/Privacy_Policy">
+            política de privacidad de OpenStreetMap Foundation
+          </a>{" "}
+          y sus datos a la{" "}
+          <a href="https://www.openstreetmap.org/copyright">
+            licencia y atribución de OpenStreetMap
+          </a>
+          .
         </p>
       </section>
       <p className="text-xs text-muted">

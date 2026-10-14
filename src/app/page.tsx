@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
+import { HomeSessionRedirect } from "@/components/HomeSessionRedirect";
 
 const features = [
   {
@@ -37,7 +38,7 @@ const websiteSchema = {
       "@type": "Organization",
       name: "AstraRed",
       url: "https://astrared.vip",
-      logo: "https://astrared.vip/icon.svg",
+      logo: "https://astrared.vip/astrared-logo.png",
     },
     {
       "@type": "WebSite",
@@ -69,6 +70,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <div className="starfield starfield-home flex min-h-screen flex-col overflow-hidden bg-[#07060c] text-ink">
+      <HomeSessionRedirect />
       <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center px-6 py-6 sm:px-8">
         <BrandMark />
       </header>

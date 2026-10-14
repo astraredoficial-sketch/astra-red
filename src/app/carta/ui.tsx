@@ -34,6 +34,55 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
+async function createNatalPdf(image: Blob): Promise<Blob> {
+  const [{ jsPDF }, imageBase64] = await Promise.all([
+    import("jspdf"),
+    blobToBase64(image),
+  ]);
+  const bitmap = await createImageBitmap(image);
+
+  try {
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true,
+    });
+    const margin = 10;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const contentWidth = pageWidth - margin * 2;
+    const contentHeight = pageHeight - margin * 2;
+    const imageHeight = (contentWidth * bitmap.height) / bitmap.width;
+    const pageCount = Math.max(1, Math.ceil(imageHeight / contentHeight));
+    const imageData = `data:image/png;base64,${imageBase64}`;
+
+    pdf.setProperties({
+      title: "Carta natal de AstraRed",
+      author: "AstraRed",
+      subject: "Carta natal para compartir",
+    });
+
+    for (let page = 0; page < pageCount; page += 1) {
+      if (page > 0) pdf.addPage();
+      pdf.addImage(
+        imageData,
+        "PNG",
+        margin,
+        margin - page * contentHeight,
+        contentWidth,
+        imageHeight,
+        "natal-share-card",
+        "FAST",
+      );
+    }
+
+    return pdf.output("blob");
+  } finally {
+    bitmap.close();
+  }
+}
+
 export default function CartaUi() {
   const router = useRouter();
   const { ready, store, me, error } = useSession();
@@ -62,8 +111,9 @@ export default function CartaUi() {
         generateLifeSummary(chart),
         generatePlanetReadings(chart),
       );
-      const file = new File([image], "carta-natal-astrared.png", {
-        type: "image/png",
+      const pdf = await createNatalPdf(image);
+      const file = new File([pdf], "carta-natal-astrared.pdf", {
+        type: "application/pdf",
       });
       const shareText = `Te comparto mi carta natal de AstraRed.`;
 
@@ -73,8 +123,8 @@ export default function CartaUi() {
           throw new Error("Este dispositivo no permite compartir archivos.");
         }
         const { uri } = await Filesystem.writeFile({
-          path: "carta-natal-astrared.png",
-          data: await blobToBase64(image),
+          path: "carta-natal-astrared.pdf",
+          data: await blobToBase64(pdf),
           directory: Directory.Cache,
           recursive: true,
         });
@@ -85,7 +135,7 @@ export default function CartaUi() {
           dialogTitle: "Compartir mi carta natal",
         });
         setShareNotice(
-          "Elige WhatsApp en el menú para enviar la imagen completa de tu carta natal.",
+          "Elige WhatsApp en el menú para enviar el PDF completo de tu carta natal.",
         );
         return;
       }
@@ -97,22 +147,22 @@ export default function CartaUi() {
             title: "Mi carta natal de AstraRed",
             text: shareText,
           });
-          setShareNotice("Elige WhatsApp para enviar la imagen completa de tu carta natal.");
+          setShareNotice("Elige WhatsApp para enviar el PDF completo de tu carta natal.");
           return;
         } catch (cause) {
           if (cause instanceof DOMException && cause.name === "AbortError") {
-            setShareNotice("Se canceló el envío de la tarjeta.");
+            setShareNotice("Se canceló el envío del PDF.");
             return;
           }
         }
       }
 
-      const imageUrl = URL.createObjectURL(image);
+      const pdfUrl = URL.createObjectURL(pdf);
       const download = document.createElement("a");
-      download.href = imageUrl;
+      download.href = pdfUrl;
       download.download = file.name;
       download.click();
-      window.setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
 
       const waUrl = `https://wa.me/?text=${encodeURIComponent(
         shareText,
@@ -121,19 +171,19 @@ export default function CartaUi() {
       if (whatsappWindow) {
         whatsappWindow.opener = null;
         setShareNotice(
-          "La imagen completa se descargó. Adjunta el archivo PNG en WhatsApp para enviarlo.",
+          "El PDF se descargó. Adjunta el archivo en WhatsApp para enviarlo.",
         );
       } else {
         setWhatsappLink(waUrl);
         setShareNotice(
-          "La imagen completa se descargó. Abre WhatsApp y adjunta el archivo PNG para compartirlo.",
+          "El PDF se descargó. Abre WhatsApp y adjunta el archivo para compartirlo.",
         );
       }
     } catch (cause) {
       setShareError(
         cause instanceof Error
           ? cause.message
-          : "No se pudo preparar la tarjeta para compartir.",
+          : "No se pudo preparar el PDF para compartir.",
       );
     } finally {
       setSharingCard(false);
@@ -192,10 +242,10 @@ export default function CartaUi() {
                 disabled={sharingCard}
                 className="mt-5 rounded-full border border-[#a88648]/70 bg-[#18243a] px-6 py-3 text-sm font-medium text-[#f2e5c6] shadow-lg transition hover:bg-[#243553] disabled:cursor-wait disabled:opacity-60"
               >
-                {sharingCard ? "Preparando tu tarjeta..." : "Compartir carta por WhatsApp"}
+                {sharingCard ? "Preparando tu PDF..." : "Compartir carta natal en PDF"}
               </button>
               <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-[#64676d]">
-                Comparte una imagen original con tu rueda, posiciones,
+                Comparte un PDF con tu rueda, posiciones,
                 casas y lecturas astrales. No incluye fecha, hora ni lugar de nacimiento.
               </p>
               {shareError && (
