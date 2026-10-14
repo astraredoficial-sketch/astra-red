@@ -57,3 +57,27 @@ Hacer que las páginas públicas de AstraRed sean fáciles de rastrear, entender
 - Robots permite rastreo de búsqueda y citación, y bloquea GPTBot y ClaudeBot, identificados como crawlers de entrenamiento.
 - Google-Extended permanece permitido porque su uso incluye grounding de Gemini; bloquearlo también podría reducir la posibilidad de aparecer como fuente en esas respuestas.
 - `llms.txt` resume el producto y enlaza solo páginas públicas, sin divulgar entradas privadas ni afirmar métricas, ingresos o funciones de pago.
+
+## Estado de ejecución — 14 de octubre de 2026
+
+### Fase 1 — Fundamentos técnicos
+
+- Completada y publicada: `robots.txt`, `sitemap.xml` y `llms.txt` responden desde `https://astrared.vip`.
+- Verificado en producción: el sitemap contiene ocho páginas públicas; las ocho responden `200` y conservan `index, follow`. `/acceso` y `/calendario` mantienen `noindex, nofollow`.
+
+### Fase 2 — Indexación y diagnóstico
+
+- Google Search Console: propiedad de prefijo `https://astrared.vip/` verificada mediante etiqueta HTML. El sitemap `/sitemap.xml` figura como correcto, con ocho páginas descubiertas.
+- Bing Webmaster Tools: sitio importado desde Search Console, incluido su sitemap. El sitemap `https://astrared.vip/sitemap.xml` figura como importado y exitoso, con ocho URL descubiertas.
+- La cuenta de Bing indica que los datos e informes pueden tardar hasta 48 horas en estar disponibles. No se establece todavía una línea base de rendimiento, impresiones o clics.
+- Pendiente para la siguiente revisión: consultar cobertura e informes de rendimiento cuando termine el procesamiento; no inferir indexación o tráfico a partir del envío del sitemap.
+
+### Fase 3 — Contenido editorial útil
+
+- Actualizadas las guías de carta natal, sinastría y fases lunares con ejemplos prácticos, enlaces hacia la beta y límites explícitos de las interpretaciones astrológicas.
+- La guía lunar ahora enumera las ocho fases en orden y enlaza una fuente astronómica primaria de NASA para el ciclo físico, separándolo de sus lecturas simbólicas.
+
+### Metadatos y contenido estructurado
+
+- Las páginas públicas del sitemap usan canonical propio y metadatos Open Graph/Twitter coherentes con su título y URL, en lugar de heredar los datos sociales de la portada.
+- Se mantiene el marcado `Organization`/`WebSite` existente en la portada. No se añadió marcado `Article` a las guías porque el sitio no declara una fecha editorial ni una autoría verificable que respalde esos campos.

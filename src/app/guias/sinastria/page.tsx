@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicDocument } from "@/components/PublicDocument";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = publicPageMetadata({
   title: "Qué es la sinastría",
   description:
     "Una introducción a la sinastría: cómo se comparan dos cartas natales y qué puede aportar una lectura astrológica de afinidad.",
-  alternates: { canonical: "/guias/sinastria" },
-  robots: { index: true, follow: true },
-};
+  path: "/guias/sinastria",
+  type: "article",
+});
 
 export default function SynastryGuide() {
   return (
@@ -45,9 +45,21 @@ export default function SynastryGuide() {
           simbólica y no constituye un resultado científico.
         </p>
       </section>
+      <section>
+        <h2>¿Cómo aprovechar una lectura de afinidad?</h2>
+        <p>
+          Toma cualquier coincidencia o diferencia como una pregunta para
+          conversar: qué necesita cada persona, qué límites quiere cuidar y
+          cómo prefiere comunicarse. La calidad de una relación depende de las
+          decisiones y el trato mutuo, no de una puntuación astrológica.
+        </p>
+      </section>
       <p>
         Empieza por entender los tres puntos principales de tu{" "}
         <Link href="/guias/carta-natal">carta natal</Link>.
+      </p>
+      <p>
+        <Link href="/acceso?mode=signup">Conoce las funciones de AstraRed en la beta gratuita</Link>.
       </p>
     </PublicDocument>
   );

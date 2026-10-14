@@ -1,14 +1,13 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicDocument } from "@/components/PublicDocument";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = publicPageMetadata({
   title: "Seguridad y comunidad",
   description:
     "Recomendaciones para cuidar tu privacidad y contribuir a una comunidad respetuosa en AstraRed.",
-  alternates: { canonical: "/seguridad" },
-  robots: { index: true, follow: true },
-};
+  path: "/seguridad",
+});
 
 export default function SafetyPage() {
   return (

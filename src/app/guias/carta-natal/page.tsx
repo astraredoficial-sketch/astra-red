@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicDocument } from "@/components/PublicDocument";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = publicPageMetadata({
   title: "Cómo empezar a leer tu carta natal",
   description:
     "Conoce el papel del Sol, la Luna y el Ascendente en una carta natal y cómo interpretarlos como un conjunto simbólico.",
-  alternates: { canonical: "/guias/carta-natal" },
-  robots: { index: true, follow: true },
-};
+  path: "/guias/carta-natal",
+  type: "article",
+});
 
 export default function NatalChartGuide() {
   return (
@@ -50,10 +50,21 @@ export default function NatalChartGuide() {
           puede servir como lenguaje de reflexión; no determina tu personalidad
           ni tu futuro.
         </p>
+        <p>
+          Como ejercicio, puedes preguntarte qué temas asocias con tu identidad
+          (Sol), qué necesitas para sentir seguridad (Luna) y cómo te acercas a
+          situaciones nuevas (Ascendente), sin tomar esas asociaciones como
+          rasgos comprobados.
+        </p>
       </section>
       <p>
         Si quieres comparar dos cartas, continúa con nuestra guía sobre{" "}
         <Link href="/guias/sinastria">qué es la sinastría</Link>.
+      </p>
+      <p>
+        <Link href="/acceso?mode=signup">Explora tu carta en la beta gratuita</Link>{" "}
+        y revisa cómo se tratan tus datos de nacimiento en la{" "}
+        <Link href="/privacidad">política de privacidad</Link>.
       </p>
     </PublicDocument>
   );

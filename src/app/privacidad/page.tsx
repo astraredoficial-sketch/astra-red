@@ -1,13 +1,12 @@
-import type { Metadata } from "next";
 import { PublicDocument } from "@/components/PublicDocument";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = publicPageMetadata({
   title: "Política de privacidad",
   description:
     "Conoce cómo AstraRed trata y protege los datos de cuenta, nacimiento, perfil y conversación durante la beta.",
-  alternates: { canonical: "/privacidad" },
-  robots: { index: true, follow: true },
-};
+  path: "/privacidad",
+});
 
 export default function PrivacyPage() {
   return (

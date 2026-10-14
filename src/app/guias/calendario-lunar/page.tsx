@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { PublicDocument } from "@/components/PublicDocument";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = publicPageMetadata({
   title: "Fases lunares y calendario astral",
   description:
     "Aprende qué representan las fases lunares y cómo consultar un calendario astral como guía simbólica para planificar con intención.",
-  alternates: { canonical: "/guias/calendario-lunar" },
-  robots: { index: true, follow: true },
-};
+  path: "/guias/calendario-lunar",
+  type: "article",
+});
 
 export default function LunarCalendarGuide() {
   return (
@@ -18,25 +18,21 @@ export default function LunarCalendarGuide() {
       introduction="La Luna pasa por un ciclo visible de fases. Un calendario astral reúne esas referencias con interpretaciones simbólicas para ayudarte a observar tus planes con otra perspectiva."
     >
       <section>
-        <h2>Las fases, en breve</h2>
-        <ul>
-          <li>
-            <strong>Luna nueva:</strong> la parte iluminada no es visible desde
-            la Tierra; muchas tradiciones la asocian con comienzos y pausa.
-          </li>
-          <li>
-            <strong>Cuarto creciente:</strong> aumenta la porción iluminada y se
-            acerca la Luna llena.
-          </li>
-          <li>
-            <strong>Luna llena:</strong> vemos su disco iluminado, una fase que
-            algunas prácticas relacionan con culminación o revisión.
-          </li>
-          <li>
-            <strong>Cuarto menguante:</strong> disminuye la porción visible
-            mientras el ciclo avanza hacia la próxima Luna nueva.
-          </li>
-        </ul>
+        <h2>¿Cuáles son las fases de la Luna?</h2>
+        <p>
+          En orden, las ocho fases son Luna nueva, Luna creciente, cuarto
+          creciente, gibosa creciente, Luna llena, gibosa menguante, cuarto
+          menguante y Luna menguante. Los cuatro hitos principales son la Luna
+          nueva, los cuartos y la Luna llena.
+        </p>
+        <p>
+          La{" "}
+          <a href="https://science.nasa.gov/moon/moon-phases/">
+            guía de NASA sobre las fases lunares
+          </a>{" "}
+          (en inglés) describe el ciclo astronómico; las asociaciones
+          astrológicas son interpretaciones simbólicas distintas.
+        </p>
       </section>
       <section>
         <h2>Usa el calendario como una pausa, no como una orden</h2>
@@ -58,6 +54,11 @@ export default function LunarCalendarGuide() {
       <p>
         Explora también cómo se comparan dos cartas en la guía sobre{" "}
         <Link href="/guias/sinastria">sinastría</Link>.
+      </p>
+      <p>
+        <Link href="/acceso?mode=signup">
+          Consulta el calendario astral en la beta gratuita
+        </Link>.
       </p>
     </PublicDocument>
   );

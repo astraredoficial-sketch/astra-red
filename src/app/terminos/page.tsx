@@ -1,13 +1,12 @@
-import type { Metadata } from "next";
 import { PublicDocument } from "@/components/PublicDocument";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = publicPageMetadata({
   title: "Términos de uso",
   description:
     "Consulta las condiciones de acceso y uso de AstraRed durante su beta gratuita.",
-  alternates: { canonical: "/terminos" },
-  robots: { index: true, follow: true },
-};
+  path: "/terminos",
+});
 
 export default function TermsPage() {
   return (
