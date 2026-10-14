@@ -24,6 +24,9 @@ export const metadata: Metadata = {
     "Explora tu carta natal, descubre afinidades y consulta un calendario astral para vivir tus decisiones con intención.",
   applicationName: "AstraRed",
   robots: { index: false, follow: false },
+  verification: {
+    google: "SKHJ_Wpphc6CEdj41DjB59QXas9xXlkXAZEp2HlpZb8",
+  },
   openGraph: {
     title: "AstraRed | Carta natal, sinastría y calendario astral",
     description:
