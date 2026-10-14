@@ -82,7 +82,7 @@ AstraRed busca conversar con inversionistas ángeles, aceleradoras y aliados con
 
 - Sitio: [astrared.vip](https://astrared.vip)
 - Contacto: [astraared.oficial@gmail.com](mailto:astraared.oficial@gmail.com)
-- Apoyo voluntario: [paypal.me/aronstereo](https://paypal.me/aronstereo)
+- Apoyo voluntario: [Ko-fi de AstraRed](https://ko-fi.com/astrared)
 
 ---
 

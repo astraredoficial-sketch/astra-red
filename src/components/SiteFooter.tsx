@@ -77,12 +77,12 @@ export function SiteFooter() {
         <div className="mt-9 flex flex-col gap-4 border-t border-white/10 pt-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>© AstraRed. Beta gratuita para mayores de 18 años.</p>
           <a
-            href="https://paypal.me/aronstereo"
+            href="https://ko-fi.com/astrared"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex min-h-10 items-center justify-center self-start rounded-full border border-thread/40 px-4 py-2 font-medium text-[#f0d9e2] transition-colors hover:border-thread hover:bg-thread/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:self-auto"
           >
-            Apoyar AstraRed
+            Apoyar AstraRed en Ko-fi
           </a>
         </div>
       </div>

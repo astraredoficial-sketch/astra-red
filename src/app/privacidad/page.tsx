@@ -70,8 +70,10 @@ export default function PrivacyPage() {
           base de datos y almacenamiento de archivos. Estos proveedores pueden
           procesar información para prestar sus servicios; su tratamiento
           depende también de las políticas y configuraciones de cada proveedor.
-          Si decides apoyar el proyecto mediante PayPal, PayPal procesa la
-          donación conforme a sus propias condiciones.
+          Si decides apoyar el proyecto desde Ko-fi, la plataforma y el
+          proveedor de pago que elijas (incluido PayPal, si está disponible)
+          procesan la aportación conforme a sus respectivas condiciones y
+          políticas de privacidad.
         </p>
       </section>
       <section>

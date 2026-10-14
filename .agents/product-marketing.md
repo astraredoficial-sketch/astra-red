@@ -25,7 +25,7 @@
 - Birth date, birth time, and precise birthplace are private chart inputs.
 - Public operator name: AstraRed. Contact: `astraared.oficial@gmail.com`. Jurisdictional context: Venezuela.
 - The current infrastructure includes Vercel hosting and Supabase authentication, database, and storage.
-- PayPal support link: `https://paypal.me/aronstereo`.
+- Ko-fi support page: `https://ko-fi.com/astrared` (PayPal is linked as a payment method on Ko-fi).
 - Legal pages are operational drafts and should receive local legal review before being treated as definitive legal advice.
 
 ## Product and technical safeguards
