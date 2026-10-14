@@ -37,9 +37,9 @@ export const metadata: Metadata = {
     images: ["/astrared-social.png"],
   },
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/astrared-icon-20261014.png",
+    shortcut: "/astrared-icon-20261014.png",
+    apple: "/astrared-apple-icon-20261014.png",
   },
 };
 

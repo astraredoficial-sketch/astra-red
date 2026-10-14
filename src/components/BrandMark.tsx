@@ -5,11 +5,10 @@ export function BrandMark({ size = "md" }: { size?: "sm" | "md" }) {
 
   return (
     <Image
-      src="/astrared-logo.svg"
+      src="/astrared-logo-20261014.png"
       alt="AstraRed · Sinastría interpersonal y sincronía cósmica"
-      width={550}
-      height={140}
-      unoptimized
+      width={1474}
+      height={387}
       fetchPriority="high"
       className={`${imageSize} w-auto max-w-full object-contain`}
     />
