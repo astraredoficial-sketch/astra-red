@@ -396,7 +396,7 @@ export function CuentaUi() {
                         className="size-20 object-cover"
                       />
                     ) : (
-                      me.name.trim().charAt(0).toUpperCase() || "✦"
+                      me.name.trim().charAt(0).toUpperCase() || "A"
                     )}
                   </div>
                   <div className="min-w-0">
@@ -407,7 +407,21 @@ export function CuentaUi() {
                     <p className="mt-1 text-sm text-slate-400">{email}</p>
                   </div>
                 </div>
-                <span className="text-3xl" aria-hidden="true">✨</span>
+                <svg
+                  aria-hidden="true"
+                  className="size-8 shrink-0 text-amber-300"
+                  fill="none"
+                  viewBox="0 0 32 32"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                >
+                  <circle cx="16" cy="16" r="10" />
+                  <circle cx="16" cy="16" r="3" />
+                  <path
+                    strokeLinecap="round"
+                    d="M16 2v5M16 25v5M2 16h5M25 16h5M6 6l3.5 3.5M22.5 22.5 26 26M26 6l-3.5 3.5M9.5 22.5 6 26"
+                  />
+                </svg>
               </div>
               <div className="mt-5 flex flex-wrap gap-3">
                 <button
@@ -478,21 +492,19 @@ export function CuentaUi() {
                     <li>
                       <span className="mr-2 font-bold text-amber-300" aria-hidden="true">✦</span>
                       Descubre el Hilo Rojo: recibe una alerta especial cuando
-                      tú y otra persona con membresía VIP alcancen 100% de
-                      compatibilidad astral.
+                      tú y otra persona alcancen 100% de compatibilidad astral.
                     </li>
                   </ul>
                   <p className="mt-3 text-xs text-slate-400">
-                    Las alertas del Hilo Rojo requieren que ambos perfiles
-                    tengan membresía VIP. Prueba el calendario gratis durante
-                    la beta, sin cobros.
+                    Durante la beta, todas las funciones disponibles son
+                    gratuitas. No hay cobros ni suscripciones activas.
                   </p>
                 </div>
                 <Link
                   href="/calendario"
                   className="shrink-0 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-rose-400 px-6 py-3 text-center text-sm font-extrabold text-slate-950 shadow-lg shadow-amber-950/30 transition hover:scale-[1.02] hover:brightness-110"
                 >
-                  ✨ Probar calendario
+                  Probar calendario
                 </Link>
               </div>
             </section>

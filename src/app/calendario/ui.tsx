@@ -390,8 +390,9 @@ export function CalendarioUi() {
 
         <div className="flex flex-col gap-3 rounded-2xl border border-emerald-300/20 bg-emerald-950/25 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-6 text-emerald-100">
-            <span className="font-bold">Beta gratuita:</span> disfruta y prueba
-            el calendario. No hay cobros ni se activa una membresía VIP.
+            <span className="font-bold">Beta gratuita:</span> las funciones
+            disponibles, incluido el Hilo Rojo, se pueden probar sin costo.
+            No hay cobros ni suscripciones activas.
           </p>
           <span className="shrink-0 rounded-full border border-emerald-300/20 px-3 py-1 text-xs font-semibold text-emerald-200">
             Vista previa activa

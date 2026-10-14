@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
+import { isAtLeastAge } from "@/lib/age";
 import { supabase } from "@/lib/supabase/client";
 
 type Mode = "login" | "signup";
@@ -16,6 +17,8 @@ export function AccesoUi() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -101,6 +104,18 @@ export function AccesoUi() {
       setError("La contraseña debe tener al menos 8 caracteres.");
       return;
     }
+    if (mode === "signup" && !isAtLeastAge(birthDate)) {
+      setError(
+        birthDate
+          ? "AstraRed es para personas mayores de 18 años."
+          : "Selecciona tu fecha de nacimiento para continuar.",
+      );
+      return;
+    }
+    if (mode === "signup" && !acceptedLegal) {
+      setError("Acepta los términos y la política de privacidad para continuar.");
+      return;
+    }
     setBusy(true);
 
     try {
@@ -110,6 +125,10 @@ export function AccesoUi() {
           password,
           options: {
             emailRedirectTo: EMAIL_CONFIRMATION_REDIRECT_URL,
+            data: {
+              birth_date: birthDate,
+              accepted_terms_at: new Date().toISOString(),
+            },
           },
         });
 
@@ -213,6 +232,54 @@ export function AccesoUi() {
           placeholder="Al menos 8 caracteres"
         />
 
+        {mode === "signup" && (
+          <>
+            <label className="text-sm text-muted" htmlFor="access-birth-date">
+              Fecha de nacimiento
+            </label>
+            <input
+              id="access-birth-date"
+              type="date"
+              autoComplete="bday"
+              required
+              value={birthDate}
+              onChange={(event) => setBirthDate(event.target.value)}
+              className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white outline-none focus:ring-2 focus:ring-thread/40"
+            />
+            <p className="-mt-2 text-xs leading-5 text-muted">
+              AstraRed es una beta para personas mayores de 18 años. Tu fecha
+              también se usará para tu carta natal.
+            </p>
+            <label className="flex items-start gap-3 text-sm leading-5 text-muted">
+              <input
+                type="checkbox"
+                checked={acceptedLegal}
+                onChange={(event) => setAcceptedLegal(event.target.checked)}
+                className="mt-1 accent-thread"
+              />
+              <span>
+                Confirmo que tengo 18 años o más y acepto los{" "}
+                <Link
+                  href="/terminos"
+                  target="_blank"
+                  className="text-thread underline underline-offset-4"
+                >
+                  términos de uso
+                </Link>{" "}
+                y la{" "}
+                <Link
+                  href="/privacidad"
+                  target="_blank"
+                  className="text-thread underline underline-offset-4"
+                >
+                  política de privacidad
+                </Link>
+                .
+              </span>
+            </label>
+          </>
+        )}
+
         {error && (
           <p role="alert" className="break-words text-sm text-thread">
             {error}
@@ -227,7 +294,11 @@ export function AccesoUi() {
 
         <button
           type="submit"
-          disabled={busy || (mode === "signup" && hasActiveSession)}
+          disabled={
+            busy ||
+            (mode === "signup" &&
+              (hasActiveSession || !birthDate || !acceptedLegal))
+          }
           className="glow-thread mt-2 rounded-full bg-thread px-6 py-3.5 text-sm font-medium text-white disabled:opacity-50"
         >
           {busy

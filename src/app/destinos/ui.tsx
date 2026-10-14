@@ -242,7 +242,20 @@ export function DestinosUi() {
                 aria-label="Me gusta este perfil"
                 className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-600 text-xl font-bold text-white transition hover:bg-rose-500 disabled:opacity-50"
               >
-                ♥
+                <svg
+                  aria-hidden="true"
+                  className="size-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M20.8 8.8c0 5.1-8.8 10-8.8 10s-8.8-4.9-8.8-10a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2Z"
+                  />
+                </svg>
               </button>
             </div>
 
@@ -255,7 +268,21 @@ export function DestinosUi() {
           </article>
         ) : (
           <section className="space-y-4 text-center">
-            <span className="text-4xl" aria-hidden="true">🌌</span>
+            <svg
+              aria-hidden="true"
+              className="mx-auto size-10 text-thread"
+              fill="none"
+              viewBox="0 0 40 40"
+              stroke="currentColor"
+              strokeWidth="1.2"
+            >
+              <circle cx="20" cy="20" r="13" />
+              <circle cx="20" cy="20" r="4" />
+              <path
+                strokeLinecap="round"
+                d="M20 2v7M20 31v7M2 20h7M31 20h7M7.3 7.3l5 5M27.7 27.7l5 5M32.7 7.3l-5 5M12.3 27.7l-5 5"
+              />
+            </svg>
             <h1 className="font-serif text-2xl font-bold">
               No hay más perfiles compatibles por ahora
             </h1>

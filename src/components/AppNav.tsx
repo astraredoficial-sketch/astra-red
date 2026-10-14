@@ -9,6 +9,59 @@ interface Props {
   active?: "carta" | "destinos" | "calendario" | "mensajes" | "cuenta";
 }
 
+type NavIconName = "carta" | "destinos" | "calendario" | "mensajes" | "cuenta";
+
+function NavIcon({ name }: { name: NavIconName }) {
+  const common = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    strokeWidth: 1.7,
+  };
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-5 w-5 shrink-0"
+      viewBox="0 0 24 24"
+      {...common}
+    >
+      {name === "carta" && (
+        <>
+          <circle cx="12" cy="12" r="8.5" />
+          <circle cx="12" cy="12" r="3.2" />
+          <path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3" />
+        </>
+      )}
+      {name === "destinos" && (
+        <>
+          <path d="M12 20s-7.5-4.3-7.5-10a4.2 4.2 0 0 1 7.5-2.6A4.2 4.2 0 0 1 19.5 10c0 5.7-7.5 10-7.5 10Z" />
+          <path d="M8.5 12h2l1-2 1.5 4 1-2h1.5" />
+        </>
+      )}
+      {name === "calendario" && (
+        <>
+          <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
+          <path d="M7.5 3v4M16.5 3v4M3.5 9.5h17M8 13h.01M12 13h.01M16 13h.01M8 16.5h.01M12 16.5h.01" />
+        </>
+      )}
+      {name === "mensajes" && (
+        <>
+          <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.2-.7L4 20l1.7-4.2A7.3 7.3 0 0 1 5 12a7.5 7.5 0 1 1 15-.5Z" />
+          <path d="M9 11.5h.01M12.5 11.5h.01M16 11.5h.01" />
+        </>
+      )}
+      {name === "cuenta" && (
+        <>
+          <circle cx="12" cy="8" r="3.5" />
+          <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export function AppNav({ active }: Props) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadError, setUnreadError] = useState("");
@@ -128,12 +181,17 @@ export function AppNav({ active }: Props) {
     };
   }, []);
 
-  const navItems = [
-    { id: "carta", label: "Carta Natal", href: "/carta", icon: "✨" },
-    { id: "destinos", label: "Destinos", href: "/destinos", icon: "🔥" },
-    { id: "calendario", label: "Calendario astral", href: "/calendario", icon: "🌙" },
-    { id: "mensajes", label: "Mensajes", href: "/mensajes", icon: "💬" },
-    { id: "cuenta", label: "Cuenta", href: "/cuenta", icon: "👤" },
+  const navItems: {
+    id: NonNullable<Props["active"]>;
+    label: string;
+    href: string;
+    icon: NavIconName;
+  }[] = [
+    { id: "carta", label: "Carta Natal", href: "/carta", icon: "carta" },
+    { id: "destinos", label: "Destinos", href: "/destinos", icon: "destinos" },
+    { id: "calendario", label: "Calendario astral", href: "/calendario", icon: "calendario" },
+    { id: "mensajes", label: "Mensajes", href: "/mensajes", icon: "mensajes" },
+    { id: "cuenta", label: "Cuenta", href: "/cuenta", icon: "cuenta" },
   ];
 
   return (
@@ -160,11 +218,12 @@ export function AppNav({ active }: Props) {
                   "flex min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl px-2 py-2.5 text-sm font-semibold shadow-sm transition sm:flex-none sm:gap-2 sm:px-3 md:px-4 " +
                   (isActive
                     ? "bg-rose-600 text-white shadow-md shadow-rose-950/60"
-                    : "text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800/60")
+                    : "text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800/60") +
+                  " focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 }
               >
-                <span className="relative text-base">
-                  {item.icon}
+                <span className="relative">
+                  <NavIcon name={item.icon} />
                   {item.id === "mensajes" && unreadCount > 0 && (
                     <span
                       aria-hidden="true"

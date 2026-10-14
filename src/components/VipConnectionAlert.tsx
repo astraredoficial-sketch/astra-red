@@ -23,7 +23,7 @@ function ProfilePortrait({ profile }: { profile: UserProfile }) {
           className="size-full object-cover"
         />
       ) : (
-        profile.name.trim().charAt(0).toUpperCase() || "✦"
+        profile.name.trim().charAt(0).toUpperCase() || "A"
       )}
     </div>
   );
@@ -53,7 +53,7 @@ export function VipConnectionAlert({
 
         <div className="space-y-2 pr-7">
           <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-rose-300 sm:text-xs">
-            ✦ Alerta especial · AstraRed VIP ✦
+            Hilo Rojo · Afinidad mutua
           </p>
           <h2
             id="vip-connection-title"
@@ -73,9 +73,21 @@ export function VipConnectionAlert({
           </div>
           <span
             aria-hidden="true"
-            className="shrink-0 text-3xl text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]"
+            className="shrink-0 text-rose-400 drop-shadow-[0_0_12px_rgba(251,113,133,0.8)]"
           >
-            ♥
+            <svg
+              className="size-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M20.8 8.8c0 5.1-8.8 10-8.8 10s-8.8-4.9-8.8-10a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2Z"
+              />
+            </svg>
           </span>
           <div className="min-w-0 space-y-2">
             <ProfilePortrait profile={other} />
@@ -107,8 +119,8 @@ export function VipConnectionAlert({
         </div>
 
         <p className="text-sm leading-6 text-slate-300">
-          Sus cartas natales revelan una afinidad excepcional. Descubre los
-          aspectos que unen sus caminos.
+          La lectura astrológica muestra una afinidad destacada. Explora los
+          aspectos que sus cartas comparten.
         </p>
 
         <div className="space-y-3">

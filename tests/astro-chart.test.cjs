@@ -28,6 +28,7 @@ Module._resolveFilename = function (request, parent, isMain, options) {
 const { computeNatalChart } = require("../src/lib/astro/chart.ts");
 const { computeSynastry } = require("../src/lib/astro/synastry.ts");
 const { civilToUtc } = require("../src/lib/astro/time.ts");
+const { isAtLeastAge } = require("../src/lib/age.ts");
 const { GET: getLocations } = require("../src/app/api/locations/route.ts");
 
 const birth = {
@@ -96,6 +97,29 @@ test("la compatibilidad puede alcanzar el 100 por ciento", () => {
   };
 
   assert.equal(computeSynastry(alignedChart, alignedChart).percent, 100);
+});
+
+test("la edad mínima de 18 años se valida en la fecha exacta del cumpleaños", () => {
+  const referenceDate = new Date(2026, 5, 22);
+
+  assert.equal(isAtLeastAge("2008-06-22", 18, referenceDate), true);
+  assert.equal(isAtLeastAge("2008-06-23", 18, referenceDate), false);
+  assert.equal(isAtLeastAge("2000-01-01", 18, referenceDate), true);
+});
+
+test("el control de edad rechaza fechas futuras o inválidas", () => {
+  const referenceDate = new Date(2026, 5, 22);
+
+  assert.equal(isAtLeastAge("2027-01-01", 18, referenceDate), false);
+  assert.equal(isAtLeastAge("2008-02-30", 18, referenceDate), false);
+  assert.equal(isAtLeastAge("", 18, referenceDate), false);
+});
+
+test("el cumpleaños del 29 de febrero alcanza la mayoría de edad el 28 de febrero no bisiesto", () => {
+  assert.equal(
+    isAtLeastAge("2008-02-29", 18, new Date(2026, 1, 28)),
+    true,
+  );
 });
 
 test("una hora natal desconocida excluye aspectos de Ascendente", () => {

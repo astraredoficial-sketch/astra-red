@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { StepWhere, type CityResult } from "@/components/StepWhere";
 import { computeNatalChart } from "@/lib/astro/chart";
+import { isAtLeastAge } from "@/lib/age";
 import { supabase } from "@/lib/supabase/client";
 import type { Gender, TargetGender } from "@/lib/types";
 
@@ -35,6 +36,13 @@ export default function OnboardingUi() {
         return;
       }
 
+      const savedBirthDate = data.user.user_metadata?.birth_date;
+      if (
+        typeof savedBirthDate === "string" &&
+        isAtLeastAge(savedBirthDate)
+      ) {
+        setBirthDate(savedBirthDate);
+      }
       setAuthReady(true);
     }
 
@@ -54,8 +62,8 @@ export default function OnboardingUi() {
         setError("Selecciona tu fecha de nacimiento.");
         return false;
       }
-      if (Date.parse(`${birthDate}T00:00:00`) > Date.now()) {
-        setError("La fecha de nacimiento no puede estar en el futuro.");
+      if (!isAtLeastAge(birthDate)) {
+        setError("AstraRed es para personas mayores de 18 años.");
         return false;
       }
       if (!birthTimeUnknown && !birthTime) {
@@ -247,6 +255,10 @@ export default function OnboardingUi() {
               onChange={(event) => setBirthDate(event.target.value)}
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
             />
+            <p className="-mt-2 text-xs leading-5 text-slate-400">
+              La beta está disponible únicamente para personas mayores de 18
+              años.
+            </p>
             <label
               htmlFor="birth-time"
               className="block text-sm text-slate-300"

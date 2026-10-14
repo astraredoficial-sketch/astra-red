@@ -156,7 +156,24 @@ export function MensajesUi() {
         ) : conversations.length === 0 ? (
           <section className="mt-8 rounded-3xl border border-white/10 bg-white/[0.04] px-6 py-12 text-center">
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-thread/30 bg-thread/10 text-3xl text-thread">
-              💬
+              <svg
+                aria-hidden="true"
+                className="size-7"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="1.6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5 8 8 0 0 1-3.2-.7L4 20l1.7-4.2A7.3 7.3 0 0 1 5 12a7.5 7.5 0 1 1 15-.5Z"
+                />
+                <path
+                  strokeLinecap="round"
+                  d="M9 11.5h.01M12.5 11.5h.01M16 11.5h.01"
+                />
+              </svg>
             </div>
             <h2 className="mt-5 font-serif text-2xl">
               Tus conversaciones aparecerán aquí
