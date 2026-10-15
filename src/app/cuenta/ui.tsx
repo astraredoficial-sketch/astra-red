@@ -5,10 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/AppNav";
+import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { useSession } from "@/hooks/useSession";
 import { supabase } from "@/lib/supabase/client";
 
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024;
+const MAX_PHOTO_SIZE = 4 * 1024 * 1024;
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 function clearLocalAccountData(userId: string) {
@@ -96,15 +97,11 @@ function clearLocalAccountData(userId: string) {
 
 export function CuentaUi() {
   const router = useRouter();
-  const { ready, store, me, error: sessionError } = useSession();
+  const { ready, store, me, error: sessionError, refresh } = useSession();
   const [email, setEmail] = useState("");
   const [signingOut, setSigningOut] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [updatedAvatar, setUpdatedAvatar] = useState<{
-    profileId: string;
-    url: string;
-  } | null>(null);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -113,11 +110,7 @@ export function CuentaUi() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const profileId = me?.id;
-  const avatarUrl =
-    updatedAvatar && updatedAvatar.profileId === profileId
-      ? updatedAvatar.url
-      : me?.avatarUrl ?? null;
+  const avatarUrl = me?.avatarUrl ?? null;
 
   useEffect(() => {
     if (!ready || sessionError || me) return;
@@ -175,7 +168,7 @@ export function CuentaUi() {
       return;
     }
     if (file.size > MAX_PHOTO_SIZE) {
-      setError("La imagen no puede superar los 5 MB.");
+      setError("La imagen no puede superar los 4 MB.");
       return;
     }
 
@@ -188,33 +181,59 @@ export function CuentaUi() {
         error: authError,
       } = await supabase.auth.getUser();
       if (authError) throw authError;
-      if (!user || user.id !== profileId) {
+      if (!user || !me || user.id !== me.id) {
         throw new Error("Tu sesión ha cambiado. Vuelve a iniciar sesión.");
       }
 
-      const extension =
-        file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-      uploadedPath = `${user.id}/${crypto.randomUUID()}.${extension}`;
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!session?.access_token || session.user.id !== user.id) {
+        throw new Error("Tu sesión ha expirado. Inicia sesión de nuevo.");
+      }
 
-      const { error: uploadError } = await supabase.storage
-        .from("profile-photos")
-        .upload(uploadedPath, file, {
-          contentType: file.type,
-          upsert: false,
-        });
-      if (uploadError) throw uploadError;
+      const uploadResponse = await fetch("/api/profile-photo", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+      const uploadResult: unknown = await uploadResponse.json();
+      if (
+        !uploadResponse.ok ||
+        !uploadResult ||
+        typeof uploadResult !== "object" ||
+        !("path" in uploadResult) ||
+        typeof uploadResult.path !== "string"
+      ) {
+        const responseError =
+          uploadResult &&
+          typeof uploadResult === "object" &&
+          "error" in uploadResult &&
+          typeof uploadResult.error === "string"
+            ? uploadResult.error
+            : "No se pudo procesar la foto.";
+        throw new Error(responseError);
+      }
+      uploadedPath = uploadResult.path;
 
-      const { data } = supabase.storage.from("profile-photos").getPublicUrl(uploadedPath);
       const { data: updatedProfile, error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: data.publicUrl, updated_at: new Date().toISOString() })
+        .update({
+          avatar_url: uploadedPath,
+          updated_at: new Date().toISOString(),
+        })
         .eq("id", user.id)
         .select("id")
         .maybeSingle();
       if (updateError) throw updateError;
       if (!updatedProfile) throw new Error("No se pudo actualizar tu perfil.");
 
-      setUpdatedAvatar({ profileId: user.id, url: data.publicUrl });
+      refresh();
       setNotice("Foto de perfil actualizada.");
     } catch (cause) {
       let message =
@@ -335,14 +354,24 @@ export function CuentaUi() {
 
     setDeleteDialogOpen(false);
     clearLocalAccountData(me.id);
-    const { error: signOutError } = await supabase.auth.signOut({
-      scope: "local",
-    });
-    if (signOutError) {
-      console.error("La cuenta se eliminó, pero no se limpió la sesión local:", signOutError);
+    try {
+      const { error: signOutError } = await supabase.auth.signOut({
+        scope: "local",
+      });
+      if (signOutError) {
+        console.error(
+          "La cuenta se eliminó, pero no se limpió la sesión local:",
+          signOutError,
+        );
+      }
+    } catch (cause) {
+      console.error(
+        "La cuenta se eliminó, pero no se pudo cerrar la sesión local:",
+        cause,
+      );
+    } finally {
+      window.location.replace("/acceso?mode=login&account=deleted");
     }
-    router.replace("/acceso?mode=login");
-    router.refresh();
   }
 
   if (!ready || (!me && !sessionError)) {
@@ -460,10 +489,14 @@ export function CuentaUi() {
                   aria-label="Tomar foto con la cámara del dispositivo"
                 />
                 <p className="self-center text-xs text-slate-400">
-                  JPG, PNG o WebP · máximo 5 MB. Visible para otros usuarios en AstraRed.
+                  JPG, PNG o WebP · máximo 4 MB. El servidor elimina sus
+                  metadatos antes de guardarla. Visible para personas con sesión
+                  en AstraRed.
                 </p>
               </div>
             </section>
+
+            <PushNotificationSettings />
 
             <section className="overflow-hidden rounded-3xl border border-amber-400/40 bg-gradient-to-r from-amber-500/15 via-purple-900/30 to-slate-900 p-6 shadow-xl shadow-amber-950/20">
               <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">

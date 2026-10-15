@@ -39,7 +39,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             Información de perfil que aportas, preferencias de conexión,
-            interacciones y mensajes.
+            interacciones, mensajes y fotos de perfil que eliges compartir.
           </li>
           <li>
             Datos técnicos mínimos necesarios para operar, proteger y
@@ -99,29 +99,23 @@ export default function PrivacyPage() {
         <h2>7. Edad y cambios</h2>
         <p>
           AstraRed está dirigido exclusivamente a personas de 18 años o más.
-          No solicitamos documentos de identidad para verificar la edad. Si
-          detectamos una cuenta de una persona menor de edad, podremos
-          suspenderla y eliminar sus datos. Esta política puede actualizarse
-          cuando cambien el producto o sus prácticas; publicaremos aquí la
-          versión vigente.
+          La edad se declara al registrarse y no se verifica con documentos de
+          identidad. Si detectamos una cuenta de una persona menor de edad,
+          podremos suspenderla y eliminar sus datos. Esta política puede
+          actualizarse cuando cambien el producto o sus prácticas; publicaremos
+          aquí la versión vigente.
         </p>
       </section>
       <section>
-        <h2>8. Búsqueda ampliada de localidades</h2>
+        <h2>8. Fotos de perfil</h2>
         <p>
-          Si eliges buscar una localidad en OpenStreetMap durante el registro,
-          enviamos el nombre que escribiste y el país seleccionado a Nominatim,
-          su servicio de búsqueda geográfica, para encontrar coincidencias. La
-          consulta no incluye tu fecha ni hora de nacimiento. El servicio está
-          sujeto a la{" "}
-          <a href="https://wiki.osmfoundation.org/wiki/Privacy_Policy">
-            política de privacidad de OpenStreetMap Foundation
-          </a>{" "}
-          y sus datos a la{" "}
-          <a href="https://www.openstreetmap.org/copyright">
-            licencia y atribución de OpenStreetMap
-          </a>
-          .
+          Si eliges subir una foto, se envía al servidor de AstraRed para
+          reorientarla, optimizarla y eliminar metadatos incrustados, como la
+          ubicación, antes de guardarla en el almacenamiento privado de
+          Supabase. Las fotos de perfil se muestran a personas con sesión
+          iniciada en AstraRed mediante enlaces temporales. No subas imágenes
+          que incluyan información que no quieras compartir con otras personas
+          usuarias.
         </p>
       </section>
       <p className="text-xs text-muted">

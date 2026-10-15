@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { getProfilePhotoObjectPath } from "@/lib/profilePhotos";
 import type {
   NatalChart,
   PlanetId,
@@ -167,9 +168,91 @@ export function useSession() {
         return;
       }
 
-      const profiles = (data as ProfileRow[])
+      const profilesWithoutSignedPhotos = (data as ProfileRow[])
         .map(toUserProfile)
         .filter((profile): profile is UserProfile => profile !== null);
+      const photoPaths = [
+        ...new Set(
+          profilesWithoutSignedPhotos.flatMap((profile) => {
+            const path = getProfilePhotoObjectPath(profile.avatarUrl);
+            return path ? [path] : [];
+          }),
+        ),
+      ];
+      const signedPhotoUrls = new Map<string, string>();
+
+      if (photoPaths.length > 0) {
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+        if (!active) return;
+        if (sessionError || !session?.access_token || session.user.id !== userId) {
+          setState({
+            ready: true,
+            store: null,
+            me: null,
+            error: `No se pudo verificar la sesión para mostrar las fotos${
+              sessionError ? `: ${sessionError.message}` : "."
+            }`,
+          });
+          return;
+        }
+
+        const response = await fetch("/api/profile-photos/urls", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ paths: photoPaths }),
+        });
+        const result: unknown = await response.json();
+        if (!active) return;
+        if (
+          !response.ok ||
+          !result ||
+          typeof result !== "object" ||
+          !("signedUrls" in result) ||
+          !Array.isArray(result.signedUrls)
+        ) {
+          const responseError =
+            result &&
+            typeof result === "object" &&
+            "error" in result &&
+            typeof result.error === "string"
+              ? result.error
+              : "No se pudieron preparar las fotos de perfil.";
+          setState({
+            ready: true,
+            store: null,
+            me: null,
+            error: responseError,
+          });
+          return;
+        }
+
+        for (const photo of result.signedUrls) {
+          if (
+            photo &&
+            typeof photo === "object" &&
+            "path" in photo &&
+            typeof photo.path === "string" &&
+            "url" in photo &&
+            typeof photo.url === "string"
+          ) {
+            signedPhotoUrls.set(photo.path, photo.url);
+          }
+        }
+      }
+
+      const profiles = profilesWithoutSignedPhotos.map((profile) => {
+        const path = getProfilePhotoObjectPath(profile.avatarUrl);
+        return {
+          ...profile,
+          avatarUrl: path ? signedPhotoUrls.get(path) ?? null : null,
+        };
+      });
       setState({
         ready: true,
         store: { profiles, currentUserId: userId },
@@ -210,6 +293,13 @@ export function useSession() {
       subscription.unsubscribe();
     };
   }, [revision]);
+
+  useEffect(() => {
+    if (!state.store?.currentUserId) return;
+
+    const refreshTimer = window.setInterval(refresh, 50 * 60 * 1000);
+    return () => window.clearInterval(refreshTimer);
+  }, [refresh, state.store?.currentUserId]);
 
   return { ...state, refresh };
 }

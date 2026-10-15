@@ -11,7 +11,6 @@ export type CityResult = {
   latitude: number;
   longitude: number;
   timeZone: string;
-  source?: "osm";
 };
 
 type CountryOption = {
@@ -25,17 +24,15 @@ type StepWhereProps = {
 };
 
 export function StepWhere({ onSelectCity }: StepWhereProps) {
+  const [activeTab, setActiveTab] = useState<"country" | "city">("country");
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [selectedCountry, setSelectedCountry] = useState("");
   const [countryQuery, setCountryQuery] = useState("");
   const [cityQuery, setCityQuery] = useState("");
   const [cities, setCities] = useState<CityResult[]>([]);
-  const [osmCities, setOsmCities] = useState<CityResult[]>([]);
-  const [osmSearchQuery, setOsmSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState<CityResult | null>(null);
   const [loadingCountries, setLoadingCountries] = useState(true);
   const [loadingCities, setLoadingCities] = useState(false);
-  const [loadingOsm, setLoadingOsm] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -128,10 +125,9 @@ export function StepWhere({ onSelectCity }: StepWhereProps) {
 
   function handleCountryChange(countryCode: string) {
     setSelectedCountry(countryCode);
+    setActiveTab(countryCode ? "city" : "country");
     setCityQuery("");
     setCities([]);
-    setOsmCities([]);
-    setOsmSearchQuery("");
     setSelectedCity(null);
     onSelectCity(null);
     setError("");
@@ -140,8 +136,6 @@ export function StepWhere({ onSelectCity }: StepWhereProps) {
   function handleCityChange(query: string) {
     setCityQuery(query);
     setSelectedCity(null);
-    setOsmCities([]);
-    setOsmSearchQuery("");
     onSelectCity(null);
     if (query.trim().length < 2) {
       setCities([]);
@@ -156,60 +150,6 @@ export function StepWhere({ onSelectCity }: StepWhereProps) {
     onSelectCity(city);
   }
 
-  async function searchOpenStreetMap() {
-    const query = cityQuery.trim();
-    if (!selectedCountry || query.length < 3 || loadingOsm) return;
-
-    setLoadingOsm(true);
-    setError("");
-
-    try {
-      const params = new URLSearchParams({
-        country: selectedCountry,
-        q: query,
-        source: "osm",
-      });
-      const response = await fetch(`/api/locations?${params}`);
-      const payload = (await response.json()) as
-        | CityResult[]
-        | { error?: string };
-      if (!response.ok) {
-        throw new Error(
-          !Array.isArray(payload) && payload.error
-            ? payload.error
-            : "No se pudieron buscar lugares en OpenStreetMap.",
-        );
-      }
-      if (!Array.isArray(payload)) {
-        throw new Error("La respuesta de OpenStreetMap no es válida.");
-      }
-
-      setOsmCities(payload);
-      setOsmSearchQuery(query);
-    } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "No se pudieron buscar lugares en OpenStreetMap.",
-      );
-    } finally {
-      setLoadingOsm(false);
-    }
-  }
-
-  const displayedCities = [
-    ...cities,
-    ...osmCities.filter(
-      (osmCity) =>
-        !cities.some(
-          (city) =>
-            city.id === osmCity.id ||
-            (city.name === osmCity.name &&
-              city.countryCode === osmCity.countryCode),
-        ),
-    ),
-  ];
-
   return (
     <section className="space-y-5">
       <div className="space-y-1">
@@ -223,8 +163,35 @@ export function StepWhere({ onSelectCity }: StepWhereProps) {
         </p>
       </div>
 
-      <div className="space-y-5">
-        <div className="space-y-2">
+      <div
+        role="tablist"
+        aria-label="Ubicación de nacimiento"
+        className="grid grid-cols-2 rounded-xl border border-slate-800 bg-slate-950 p-1"
+      >
+        {([
+          { id: "country", label: "1. País" },
+          { id: "city", label: "2. Ciudad" },
+        ] as const).map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === tab.id}
+            disabled={tab.id === "city" && !selectedCountry}
+            onClick={() => setActiveTab(tab.id)}
+            className={`rounded-lg px-3 py-2 text-sm transition ${
+              activeTab === tab.id
+                ? "bg-purple-900/70 text-white"
+                : "text-slate-400 hover:text-white"
+            } disabled:cursor-not-allowed disabled:opacity-40`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "country" ? (
+        <div role="tabpanel" className="space-y-2">
           <label
             htmlFor="birth-country-search"
             className="block text-xs font-bold uppercase tracking-wider text-amber-400"
@@ -237,7 +204,7 @@ export function StepWhere({ onSelectCity }: StepWhereProps) {
             onChange={(event) => setCountryQuery(event.target.value)}
             placeholder="Filtra entre los países del mundo"
             autoComplete="country-name"
-            className="min-h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-amber-500 focus:outline-none"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-white focus:border-amber-500 focus:outline-none"
           />
           <select
             aria-label="Seleccionar país de nacimiento"
@@ -267,12 +234,13 @@ export function StepWhere({ onSelectCity }: StepWhereProps) {
             </p>
           )}
         </div>
-        <div className="space-y-2">
+      ) : (
+        <div role="tabpanel" className="space-y-2">
           <label
             htmlFor="birth-city-search"
             className="block text-xs font-bold uppercase tracking-wider text-amber-400"
           >
-            Localidad{currentCountry ? ` · ${currentCountry.name}` : ""}
+            Ciudad{currentCountry ? ` · ${currentCountry.name}` : ""}
           </label>
           <input
             id="birth-city-search"
@@ -280,72 +248,34 @@ export function StepWhere({ onSelectCity }: StepWhereProps) {
             onChange={(event) => handleCityChange(event.target.value)}
             placeholder={
               selectedCountry
-                ? "Escribe el nombre de tu localidad"
+                ? "Escribe al menos dos letras de tu ciudad"
                 : "Selecciona primero un país"
             }
             autoComplete="off"
             disabled={!selectedCountry}
-            className="min-h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-white focus:border-rose-500 focus:outline-none disabled:opacity-50"
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-3 text-sm text-white focus:border-rose-500 focus:outline-none disabled:opacity-50"
           />
-          {!selectedCountry && (
-            <p className="text-xs leading-5 text-slate-400">
-              Primero elige el país donde naciste para buscar la localidad.
-            </p>
-          )}
-
           {loadingCities && (
-            <p role="status" className="text-xs text-slate-400">
-              Buscando localidades...
-            </p>
-          )}
-          {cityQuery.trim().length >= 3 && (
-            <div className="space-y-1.5">
-              <button
-                type="button"
-                disabled={loadingOsm || osmSearchQuery === cityQuery.trim()}
-                onClick={() => void searchOpenStreetMap()}
-                className="min-h-12 rounded-lg border border-slate-700 px-3 py-2 text-left text-sm text-slate-200 transition-colors hover:border-rose-400/60 hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {loadingOsm
-                  ? "Buscando en OpenStreetMap..."
-                  : osmSearchQuery === cityQuery.trim()
-                    ? "Búsqueda ampliada completada"
-                    : "Buscar más localidades en OpenStreetMap"}
-              </button>
-              <p className="text-xs leading-5 text-slate-400">
-                Búsqueda ampliada bajo demanda; solo se envían el nombre
-                escrito y el país, no tu fecha ni hora de nacimiento.
-              </p>
-            </div>
+            <p className="text-xs text-slate-400">Buscando ciudades...</p>
           )}
           {!loadingCities &&
             cityQuery.trim().length >= 2 &&
-            displayedCities.length === 0 &&
+            cities.length === 0 &&
             !selectedCity &&
-            !error &&
-            osmSearchQuery !== cityQuery.trim() && (
-              <p className="text-xs text-slate-400">
-                No encontramos coincidencias en la lista inicial. Revisa la
-                escritura o amplía la búsqueda con OpenStreetMap.
-              </p>
-            )}
-          {osmSearchQuery === cityQuery.trim() &&
-            osmCities.length === 0 &&
-            !loadingOsm &&
             !error && (
-              <p role="status" className="text-xs text-slate-400">
-                OpenStreetMap no encontró coincidencias. Prueba otro nombre o
-                revisa la localidad.
+              <p className="text-xs text-slate-400">
+                No encontramos coincidencias. Revisa la escritura o prueba otra
+                parte del nombre.
               </p>
             )}
-          {displayedCities.length > 0 && (
+          {cities.length > 0 && (
             <ul className="max-h-48 overflow-y-auto rounded-xl border border-slate-800 bg-slate-950">
-              {displayedCities.map((city) => (
+              {cities.map((city) => (
                 <li key={city.id}>
                   <button
                     type="button"
                     onClick={() => handleCitySelect(city)}
-                    className="min-h-11 w-full border-b border-slate-800 px-3 py-2.5 text-left text-sm text-slate-200 last:border-0 hover:bg-purple-950/60"
+                    className="w-full border-b border-slate-800 px-3 py-2.5 text-left text-sm text-slate-200 last:border-0 hover:bg-purple-950/60"
                   >
                     {city.name}
                     {city.state && (
@@ -358,24 +288,8 @@ export function StepWhere({ onSelectCity }: StepWhereProps) {
               ))}
             </ul>
           )}
-          {osmCities.length > 0 &&
-            (osmSearchQuery === cityQuery.trim() ||
-              selectedCity?.source === "osm") && (
-              <p className="text-xs text-slate-400">
-                Datos de localidades ©{" "}
-                <a
-                  href="https://www.openstreetmap.org/copyright"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline underline-offset-2 hover:text-white"
-                >
-                  OpenStreetMap contributors
-                </a>
-                .
-              </p>
-            )}
         </div>
-      </div>
+      )}
 
       {selectedCity && (
         <p role="status" className="text-xs leading-5 text-emerald-300">

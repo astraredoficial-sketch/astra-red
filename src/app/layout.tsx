@@ -1,6 +1,7 @@
 ﻿import type { Metadata } from "next";
 import { Outfit, Cormorant_Garamond } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
+import { NativePushRuntime } from "@/components/NativePushRuntime";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -51,6 +52,7 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${outfit.variable} ${cormorant.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col bg-slate-950 text-white" suppressHydrationWarning>
+        <NativePushRuntime />
         {children}
         <SiteFooter />
       </body>

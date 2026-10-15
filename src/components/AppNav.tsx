@@ -6,10 +6,10 @@ import { BrandMark } from "@/components/BrandMark";
 import { supabase } from "@/lib/supabase/client";
 
 interface Props {
-  active?: "carta" | "destinos" | "calendario" | "mensajes" | "cuenta";
+  active?: "carta" | "destinos" | "calendario" | "mensajes" | "notificaciones" | "cuenta";
 }
 
-type NavIconName = "carta" | "destinos" | "calendario" | "mensajes" | "cuenta";
+type NavIconName = "carta" | "destinos" | "calendario" | "mensajes" | "notificaciones" | "cuenta";
 
 function NavIcon({ name }: { name: NavIconName }) {
   const common = {
@@ -52,6 +52,11 @@ function NavIcon({ name }: { name: NavIconName }) {
           <path d="M9 11.5h.01M12.5 11.5h.01M16 11.5h.01" />
         </>
       )}
+      {name === "notificaciones" && (
+        <>
+          <path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4" />
+        </>
+      )}
       {name === "cuenta" && (
         <>
           <circle cx="12" cy="8" r="3.5" />
@@ -65,6 +70,8 @@ function NavIcon({ name }: { name: NavIconName }) {
 export function AppNav({ active }: Props) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadError, setUnreadError] = useState("");
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const [notificationError, setNotificationError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -163,14 +170,14 @@ export function AppNav({ active }: Props) {
       }, 0);
     });
 
-    void supabase.auth.getUser().then(({ data, error }) => {
+    void supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
       if (error) {
         console.error("No se pudo verificar la sesión para los mensajes:", error);
         setUnreadError("No se pudieron actualizar los mensajes sin leer.");
         return;
       }
-      void watchUnreadMessages(data.user?.id ?? null);
+      void watchUnreadMessages(data.session?.user.id ?? null);
     });
 
     return () => {
@@ -178,6 +185,106 @@ export function AppNav({ active }: Props) {
       subscription.unsubscribe();
       if (pollingTimer !== null) window.clearInterval(pollingTimer);
       if (channel) void supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    let currentUserId: string | null = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let pollingTimer: number | null = null;
+
+    async function watchNotifications(userId: string | null) {
+      if (currentUserId === userId && (channel || !userId)) return;
+      currentUserId = userId;
+      if (channel) {
+        void supabase.removeChannel(channel);
+        channel = null;
+      }
+      if (pollingTimer !== null) {
+        window.clearInterval(pollingTimer);
+        pollingTimer = null;
+      }
+      setUnreadNotificationCount(0);
+      setNotificationError("");
+      if (!userId) return;
+
+      async function refresh() {
+        const { count, error } = await supabase
+          .from("app_notifications")
+          .select("id", { count: "exact", head: true })
+          .is("read_at", null);
+        if (!active || currentUserId !== userId) return;
+        if (error) {
+          console.error("No se pudo consultar el contador de notificaciones:", error);
+          setNotificationError("No se pudieron actualizar las notificaciones.");
+          if (pollingTimer === null) {
+            pollingTimer = window.setInterval(() => void refresh(), 15000);
+          }
+          return;
+        }
+        setNotificationError("");
+        setUnreadNotificationCount(count ?? 0);
+      }
+
+      channel = supabase
+        .channel(`unread-app-notifications:${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "app_notifications",
+            filter: `recipient_id=eq.${userId}`,
+          },
+          () => void refresh(),
+        )
+        .subscribe((status, error) => {
+          if (!active || currentUserId !== userId) return;
+          if (status === "SUBSCRIBED") {
+            if (pollingTimer !== null) {
+              window.clearInterval(pollingTimer);
+              pollingTimer = null;
+            }
+            void refresh();
+          } else if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
+            console.error("No se pudo sincronizar el contador de notificaciones:", error);
+            setNotificationError("No se pudieron actualizar las notificaciones.");
+            if (pollingTimer === null) {
+              pollingTimer = window.setInterval(() => void refresh(), 15000);
+            }
+            void refresh();
+          }
+        });
+      void refresh();
+    }
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      window.setTimeout(() => {
+        if (active) void watchNotifications(session?.user.id ?? null);
+      }, 0);
+    });
+    void supabase.auth.getSession().then(({ data, error }) => {
+      if (!active) return;
+      if (error) {
+        console.error("No se pudo comprobar la sesión para las notificaciones:", error);
+        setNotificationError("No se pudieron actualizar las notificaciones.");
+        return;
+      }
+      void watchNotifications(data.session?.user.id ?? null);
+    });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+      if (channel) void supabase.removeChannel(channel);
+      if (pollingTimer !== null) window.clearInterval(pollingTimer);
     };
   }, []);
 
@@ -191,6 +298,7 @@ export function AppNav({ active }: Props) {
     { id: "destinos", label: "Destinos", href: "/destinos", icon: "destinos" },
     { id: "calendario", label: "Calendario astral", href: "/calendario", icon: "calendario" },
     { id: "mensajes", label: "Mensajes", href: "/mensajes", icon: "mensajes" },
+    { id: "notificaciones", label: "Notificaciones", href: "/notificaciones", icon: "notificaciones" },
     { id: "cuenta", label: "Cuenta", href: "/cuenta", icon: "cuenta" },
   ];
 
@@ -215,12 +323,13 @@ export function AppNav({ active }: Props) {
                 aria-label={item.label}
                 title={item.label}
                 className={
-                  "flex min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl px-2 py-2.5 text-sm font-semibold shadow-sm transition sm:flex-none sm:gap-2 sm:px-3 md:px-4 " +
+                  "flex min-w-0 flex-1 cursor-pointer items-center justify-center rounded-xl px-2 py-3 text-sm font-semibold shadow-sm transition sm:flex-none sm:gap-2 sm:px-3 md:px-4 " +
                   (isActive
                     ? "bg-rose-600 text-white shadow-md shadow-rose-950/60"
                     : "text-slate-300 hover:text-white hover:bg-slate-900 border border-slate-800/60") +
                   " focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 }
+                aria-current={isActive ? "page" : undefined}
               >
                 <span className="relative">
                   <NavIcon name={item.icon} />
@@ -232,6 +341,14 @@ export function AppNav({ active }: Props) {
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                   )}
+                  {item.id === "notificaciones" && unreadNotificationCount > 0 && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -right-3 -top-2 grid h-5 min-w-5 place-items-center rounded-full border border-slate-950 bg-rose-400 px-1 text-[10px] font-bold leading-none text-slate-950 shadow-[0_0_10px_rgba(251,113,133,0.6)]"
+                    >
+                      {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
+                    </span>
+                  )}
                 </span>
                 <span className="sr-only sm:not-sr-only">{item.label}</span>
                 {item.id === "mensajes" && (
@@ -239,6 +356,14 @@ export function AppNav({ active }: Props) {
                     {unreadError ||
                       (unreadCount > 0
                         ? `${unreadCount} mensajes sin leer`
+                        : "")}
+                  </span>
+                )}
+                {item.id === "notificaciones" && (
+                  <span className="sr-only" role="status" aria-live="polite">
+                    {notificationError ||
+                      (unreadNotificationCount > 0
+                        ? `${unreadNotificationCount} notificaciones sin leer`
                         : "")}
                   </span>
                 )}

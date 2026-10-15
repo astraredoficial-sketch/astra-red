@@ -27,6 +27,7 @@ Module._resolveFilename = function (request, parent, isMain, options) {
 
 const { computeNatalChart } = require("../src/lib/astro/chart.ts");
 const { computeSynastry } = require("../src/lib/astro/synastry.ts");
+const { compatibilityPercent } = require("../supabase/functions/_shared/synastry.ts");
 const { civilToUtc } = require("../src/lib/astro/time.ts");
 const { isAtLeastAge } = require("../src/lib/age.ts");
 const { GET: getLocations } = require("../src/app/api/locations/route.ts");
@@ -97,6 +98,25 @@ test("la compatibilidad puede alcanzar el 100 por ciento", () => {
   };
 
   assert.equal(computeSynastry(alignedChart, alignedChart).percent, 100);
+});
+
+test("el cálculo de compatibilidad para avisos coincide con la sinastría de la app", () => {
+  const first = computeNatalChart(birth);
+  const second = computeNatalChart({
+    ...birth,
+    date: "1997-07-17",
+    time: "09:30",
+  });
+
+  assert.equal(
+    compatibilityPercent(first, second),
+    computeSynastry(first, second).percent,
+  );
+  assert.equal(
+    compatibilityPercent(first, first),
+    computeSynastry(first, first).percent,
+  );
+  assert.equal(compatibilityPercent({}, second), null);
 });
 
 test("la edad mínima de 18 años se valida en la fecha exacta del cumpleaños", () => {

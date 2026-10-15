@@ -156,6 +156,19 @@ export default function OnboardingUi() {
       );
       if (profileError) throw profileError;
 
+      void supabase.functions
+        .invoke("notify-new-message", {
+          body: { event: "high-compatibility" },
+        })
+        .then(({ error: notificationError }) => {
+          if (notificationError) {
+            console.error(
+              "No se pudo avisar sobre nuevas compatibilidades destacadas:",
+              notificationError,
+            );
+          }
+        });
+
       router.replace("/carta");
     } catch (cause) {
       const detail =

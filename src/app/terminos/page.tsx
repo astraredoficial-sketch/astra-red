@@ -19,8 +19,10 @@ export default function TermsPage() {
         <h2>1. Quién puede usar AstraRed</h2>
         <p>
           Debes tener al menos 18 años y proporcionar información de cuenta
-          veraz. Eres responsable de proteger tus credenciales y de la actividad
-          realizada desde tu cuenta.
+          veraz. Al registrarte, declaras que eres mayor de edad y que la fecha
+          de nacimiento que proporcionas es correcta. Esta declaración no se
+          verifica mediante documentos de identidad. Eres responsable de
+          proteger tus credenciales y de la actividad realizada desde tu cuenta.
         </p>
       </section>
       <section>

@@ -44,9 +44,10 @@ NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable-key>
 ```
 
-No uses la `service_role` key en variables `NEXT_PUBLIC_*` ni en código del
-navegador. En Vercel configura las mismas dos variables para los entornos que
-vayas a desplegar.
+Configura también `SUPABASE_SERVICE_ROLE_KEY` como secreto de servidor para las
+rutas de fotos de perfil. El backend usa esa clave para reprocesar las imágenes
+con Sharp antes de guardarlas y generar enlaces firmados de visualización. No la
+uses en variables `NEXT_PUBLIC_*` ni en código del navegador.
 
 ## Preparar Supabase
 
@@ -59,9 +60,10 @@ migraciones `20261012000300_private_birth_location.sql` y
 mensajes salientes por el filtro del servidor.
 
 En **Authentication → URL Configuration**, usa `https://astrared.vip` como
-Site URL y permite `https://astrared.vip/**`, las URL locales y
-`https://astra-red.vercel.app/**` en Redirect URLs para que funcionen la
-confirmación de correo y los enlaces antiguos.
+Site URL y permite `https://astrared.vip/**` en Redirect URLs. Conserva las URL
+locales solo si necesitas probar confirmaciones durante el desarrollo y elimina
+cualquier URL del antiguo despliegue de Vercel. El registro envía el correo de
+confirmación directamente a `https://astrared.vip/acceso?mode=login`.
 Después de aplicar la migración, vuelve a intentar el registro: el formulario
 mostrará el error de Supabase si falla la escritura y no te enviará a una carta
 que no se haya guardado.

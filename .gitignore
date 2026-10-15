@@ -20,6 +20,7 @@
 /android/local.properties
 /android/.idea/
 /android/app/build/
+/android/app/google-services.json
 /android/capacitor-cordova-android-plugins/
 
 # production

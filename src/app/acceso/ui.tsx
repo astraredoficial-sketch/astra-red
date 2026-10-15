@@ -33,6 +33,9 @@ export function AccesoUi() {
         params.get("mode") === "signup" ? "signup" : "login";
 
       if (active) setMode(requestedMode);
+      if (active && params.get("account") === "deleted") {
+        setNotice("Tu cuenta fue eliminada y cerramos tu sesión.");
+      }
 
       const { data, error: sessionError } = await supabase.auth.getSession();
       if (!active) return;
