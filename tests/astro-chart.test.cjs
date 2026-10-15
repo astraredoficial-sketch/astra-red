@@ -87,7 +87,7 @@ test("la tríada coincide con los planetas correspondientes", () => {
     assert.deepEqual(chart.triad[id], planet);
   }
 
-  assert.ok(Number.isFinite(chart.julianDay));
+  assert.equal("julianDay" in chart, false);
 });
 
 test("la compatibilidad puede alcanzar el 100 por ciento", () => {

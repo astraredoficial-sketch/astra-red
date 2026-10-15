@@ -105,7 +105,6 @@ export function computeNatalChart(birth: BirthData): NatalChart {
 
   return {
     generatedAt: new Date().toISOString(),
-    julianDay: astroTime.ut + 2451545.0,
     houses,
     planets,
     triad: { sun, moon, asc },

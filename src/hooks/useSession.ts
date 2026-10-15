@@ -96,8 +96,6 @@ function isNatalChart(value: unknown): value is NatalChart {
     planets.length === PLANET_IDS.size &&
     houses.length === 12 &&
     typeof chart.generatedAt === "string" &&
-    typeof chart.julianDay === "number" &&
-    Number.isFinite(chart.julianDay) &&
     typeof chart.timeUnknown === "boolean" &&
     isRecord(triad) &&
     isPlacement(triad.sun, "sun") &&

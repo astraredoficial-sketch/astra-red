@@ -12,6 +12,7 @@ import { useSession } from "@/hooks/useSession";
 import { generateLifeSummary, generatePlanetReadings } from "@/lib/astro/interpreter";
 import { createNatalShareCard } from "@/lib/astro/share-card";
 import { PLANET_META } from "@/lib/astro/constants";
+import { supabase } from "@/lib/supabase/client";
 
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -86,10 +87,54 @@ async function createNatalPdf(image: Blob): Promise<Blob> {
 export default function CartaUi() {
   const router = useRouter();
   const { ready, store, me, error } = useSession();
+  const [birthTimeResult, setBirthTimeResult] = useState<{
+    userId: string;
+    time: string | null;
+    unknown: boolean;
+    error: string;
+  } | null>(null);
   const [sharingCard, setSharingCard] = useState(false);
   const [shareError, setShareError] = useState("");
   const [whatsappLink, setWhatsappLink] = useState("");
   const [shareNotice, setShareNotice] = useState("");
+
+  const userId = me?.id;
+  useEffect(() => {
+    if (typeof userId !== "string") return;
+    const currentUserId = userId;
+
+    let active = true;
+
+    async function loadBirthTime() {
+      const { data, error: detailsError } = await supabase
+        .from("birth_details")
+        .select("birth_time, birth_time_unknown")
+        .eq("user_id", currentUserId)
+        .maybeSingle();
+
+      if (!active) return;
+      if (detailsError) {
+        setBirthTimeResult({
+          userId: currentUserId,
+          time: null,
+          unknown: false,
+          error: `No se pudo cargar la hora de nacimiento: ${detailsError.message}`,
+        });
+        return;
+      }
+      setBirthTimeResult({
+        userId: currentUserId,
+        time: data?.birth_time ?? null,
+        unknown: data?.birth_time_unknown ?? false,
+        error: "",
+      });
+    }
+
+    void loadBirthTime();
+    return () => {
+      active = false;
+    };
+  }, [userId]);
 
   useEffect(() => {
     if (!ready || error || me) return;
@@ -210,6 +255,9 @@ export default function CartaUi() {
 
   const chart = me.chart;
   const readings = generatePlanetReadings(chart);
+  const birthTimeForUser =
+    birthTimeResult?.userId === me.id ? birthTimeResult : null;
+  const birthTimeLoading = !birthTimeForUser;
 
   return (
     <div className="flex min-h-screen w-full min-w-0 flex-col bg-[#080d1b] text-slate-100">
@@ -236,6 +284,21 @@ export default function CartaUi() {
               <p className="mt-2 break-words font-serif text-2xl capitalize text-[#35435a] sm:text-3xl">
                 {me.name}
               </p>
+              <p className="mt-2 text-sm text-[#5d6470]">
+                Hora de nacimiento:{" "}
+                {birthTimeLoading
+                  ? "consultando..."
+                  : birthTimeForUser.unknown
+                    ? "desconocida"
+                    : birthTimeForUser.time
+                      ? birthTimeForUser.time.slice(0, 5)
+                      : "no disponible"}
+              </p>
+              {birthTimeForUser?.error && (
+                <p role="alert" className="mt-2 text-xs text-red-800">
+                  {birthTimeForUser.error}
+                </p>
+              )}
               <button
                 type="button"
                 onClick={() => void shareCard()}

@@ -30,7 +30,6 @@ export type Placement = {
 
 export type NatalChart = {
   generatedAt: string;
-  julianDay: number;
   houses: number[];
   planets: Placement[];
   triad: {
