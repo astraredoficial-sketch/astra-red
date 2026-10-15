@@ -43,7 +43,15 @@ export function HomeSessionRedirect() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        authRevision += 1;
+        window.setTimeout(() => {
+          if (active) router.replace("/acceso?mode=reset");
+        }, 0);
+        return;
+      }
+
       window.setTimeout(() => {
         if (!active) return;
         authRevision += 1;

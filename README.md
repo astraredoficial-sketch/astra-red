@@ -203,9 +203,13 @@ actual mediante Supabase Auth antes de usar la clave de servicio en el servidor.
 
 ## Verificación
 
+El workflow de GitHub Actions ejecuta lint, pruebas, TypeScript y build para los
+cambios enviados a `main` mediante push o pull request. Usa valores públicos de
+Supabase ficticios solo para comprobar el build; no despliega la aplicación.
+
 ```bash
 npm test
-npx tsc --noEmit
+npm run typecheck
 npm run lint
 npm run build
 ```
