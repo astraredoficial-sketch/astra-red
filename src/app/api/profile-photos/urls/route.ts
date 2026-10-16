@@ -43,12 +43,15 @@ export async function POST(request: Request) {
       return Response.json({ error: "La ruta de una foto no es válida." }, { status: 400 });
     }
 
-    const { data: profiles, error: profilesError } = await authenticated.admin
+    const { data: profiles, error: profilesError } = await authenticated.viewer
       .from("profiles")
       .select("avatar_url")
       .not("avatar_url", "is", null);
     if (profilesError) {
-      console.error("No se pudieron validar las rutas de fotos:", profilesError);
+      console.error(
+        "No se pudieron validar las fotos de perfiles visibles:",
+        profilesError,
+      );
       return Response.json(
         { error: "No se pudieron validar las fotos del perfil." },
         { status: 500 },

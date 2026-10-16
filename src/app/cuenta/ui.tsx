@@ -8,6 +8,7 @@ import { AppNav } from "@/components/AppNav";
 import { PushNotificationSettings } from "@/components/PushNotificationSettings";
 import { useSession } from "@/hooks/useSession";
 import { supabase } from "@/lib/supabase/client";
+import { isMissingAuthSessionError } from "@/lib/supabase/session";
 
 const MAX_PHOTO_SIZE = 4 * 1024 * 1024;
 const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -124,6 +125,10 @@ export function CuentaUi() {
       const { data, error: userError } = await supabase.auth.getUser();
       if (!active) return;
       if (userError) {
+        if (isMissingAuthSessionError(userError)) {
+          setEmail("");
+          return;
+        }
         setError(`No se pudo cargar tu cuenta: ${userError.message}`);
         return;
       }
@@ -502,7 +507,7 @@ export function CuentaUi() {
               <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
                 <div>
                   <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-wide text-slate-950">
-                    Calendario en beta
+                    Calendario astral
                   </span>
                   <h2 className="mt-3 font-serif text-2xl">
                     Tu universo astral, más cerca
@@ -529,8 +534,10 @@ export function CuentaUi() {
                     </li>
                   </ul>
                   <p className="mt-3 text-xs text-slate-400">
-                    Durante la beta, todas las funciones disponibles son
-                    gratuitas. No hay cobros ni suscripciones activas.
+                    La promoción de inauguración incluye un mes sin costo.
+                    Después, el Calendario astral y Hilo Rojo requerirán VIP:
+                    USD 4.99/mes o USD 34.99/año. No se activará una compra sin
+                    tu aceptación expresa.
                   </p>
                 </div>
                 <Link

@@ -269,7 +269,7 @@ export default function OnboardingUi() {
               className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white"
             />
             <p className="-mt-2 text-xs leading-5 text-slate-400">
-              La beta está disponible únicamente para personas mayores de 18
+              AstraRed está disponible únicamente para personas mayores de 18
               años.
             </p>
             <label

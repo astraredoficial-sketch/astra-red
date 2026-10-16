@@ -390,12 +390,14 @@ export function CalendarioUi() {
 
         <div className="flex flex-col gap-3 rounded-2xl border border-emerald-300/20 bg-emerald-950/25 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-6 text-emerald-100">
-            <span className="font-bold">Beta gratuita:</span> las funciones
-            disponibles, incluido el Hilo Rojo, se pueden probar sin costo.
-            No hay cobros ni suscripciones activas.
+            <span className="font-bold">Promoción de inauguración:</span> un
+            mes sin costo desde la apertura pública. Después, el Calendario
+            astral y Hilo Rojo requerirán VIP. Los planes serán USD 4.99/mes o
+            USD 34.99/año. Solo habrá cobros cuando completes una compra
+            expresa.
           </p>
           <span className="shrink-0 rounded-full border border-emerald-300/20 px-3 py-1 text-xs font-semibold text-emerald-200">
-            Vista previa activa
+            Promoción anunciada
           </span>
         </div>
 
@@ -640,8 +642,8 @@ export function CalendarioUi() {
               </h2>
             </div>
             <p className="max-w-md text-xs leading-5 text-slate-400">
-              Se guardan de forma privada en tu cuenta. En esta beta todavía no
-              enviamos notificaciones automáticas.
+              Se guardan de forma privada en tu cuenta. Las notificaciones
+              automáticas de fechas guardadas aún no están disponibles.
             </p>
           </div>
 

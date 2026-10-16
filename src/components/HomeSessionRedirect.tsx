@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { isMissingAuthSessionError } from "@/lib/supabase/session";
 
 export function HomeSessionRedirect() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export function HomeSessionRedirect() {
     void supabase.auth.getUser().then(({ data, error }) => {
       if (!active || authRevision !== initialRevision) return;
       if (error) {
+        if (isMissingAuthSessionError(error)) return;
         console.error("No se pudo comprobar la sesión:", error);
         return;
       }

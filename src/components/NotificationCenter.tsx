@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { isMissingAuthSessionError } from "@/lib/supabase/session";
 
 interface AppNotification {
   id: string;
@@ -130,6 +131,10 @@ export function NotificationCenter() {
     void supabase.auth.getSession().then(({ data, error: authError }) => {
       if (!active) return;
       if (authError) {
+        if (isMissingAuthSessionError(authError)) {
+          router.replace("/acceso?mode=login");
+          return;
+        }
         console.error("No se pudo comprobar la sesión para las notificaciones:", authError);
         setError("No se pudieron cargar tus notificaciones.");
         setLoading(false);

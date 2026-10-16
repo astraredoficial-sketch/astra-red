@@ -56,9 +56,7 @@ export default function LunarCalendarGuide() {
         <Link href="/guias/sinastria">sinastría</Link>.
       </p>
       <p>
-        <Link href="/acceso?mode=signup">
-          Consulta el calendario astral en la beta gratuita
-        </Link>.
+        <Link href="/acceso?mode=signup">Consulta el calendario astral</Link>.
       </p>
     </PublicDocument>
   );

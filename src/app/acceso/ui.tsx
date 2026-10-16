@@ -6,6 +6,7 @@ import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
 import { isAtLeastAge } from "@/lib/age";
 import { supabase } from "@/lib/supabase/client";
+import { isMissingAuthSessionError } from "@/lib/supabase/session";
 
 type Mode = "login" | "signup" | "recover" | "reset";
 
@@ -67,6 +68,10 @@ export function AccesoUi({
       const { data, error: sessionError } = await supabase.auth.getSession();
       if (!active) return;
       if (sessionError) {
+        if (isMissingAuthSessionError(sessionError)) {
+          setHasActiveSession(false);
+          return;
+        }
         setError(sessionError.message);
         return;
       }
@@ -242,7 +247,7 @@ export function AccesoUi({
             {mode === "login"
               ? "Entra para continuar con tu carta natal y tus conexiones."
               : mode === "signup"
-                ? "Crea tu propia cuenta GRATIS y empieza a descubrir tu carta natal."
+                ? "Crea tu cuenta y empieza a descubrir tu carta natal."
                 : mode === "recover"
                   ? "Te enviaremos un enlace para que puedas volver a entrar."
                   : "Elige una contraseña nueva para proteger tu cuenta."}
@@ -390,8 +395,8 @@ export function AccesoUi({
               className="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-white outline-none focus:ring-2 focus:ring-thread/40"
             />
             <p className="-mt-2 text-xs leading-5 text-muted">
-              AstraRed es una beta para personas mayores de 18 años. Tu fecha
-              también se usará para tu carta natal.
+              AstraRed es para personas mayores de 18 años. Tu fecha también
+              se usará para calcular tu carta natal.
             </p>
             <label className="flex items-start gap-3 text-sm leading-5 text-muted">
               <input
@@ -449,7 +454,7 @@ export function AccesoUi({
             : mode === "login"
               ? "Entrar"
               : mode === "signup"
-                ? "Crear cuenta GRATIS"
+                ? "Crear cuenta"
                 : mode === "recover"
                   ? "Enviar enlace de recuperación"
                   : "Guardar nueva contraseña"}

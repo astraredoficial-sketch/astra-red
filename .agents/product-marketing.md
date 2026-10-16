@@ -5,9 +5,11 @@
 - AstraRed is a Spanish-language astrology, self-reflection, and connection app for a Latin American audience.
 - `https://astrared.vip` is the public canonical URL and email-confirmation destination.
 - Vercel remains the hosting/deployment platform; do not remove it or change DNS as part of domain canonicalization.
-- The current product is a free beta. There are no active subscriptions or charges.
-- All currently available beta features, including Hilo Rojo, should be usable without paid memberships. The `beta_vip_access` Supabase flag is the server-side switch; apply the migration before expecting this change in a deployed database.
-- Potential future pricing is USD $4.99/month and $34.99/year. These are untested plans, not offers, and must not be shown as currently purchasable.
+- AstraRed is positioned as a public product, not a beta.
+- Launch promotion: one month at no cost from the public inauguration date, which is still to be announced.
+- After the promotion, Calendario astral and Hilo Rojo require VIP membership. Approved prices are USD $4.99 for one month or USD $34.99 for one year, as one-time non-renewing purchases. No membership checkout or charges are active yet; never imply that a purchase can already be completed.
+- Before checkout goes live, disclose total price, tax treatment, payment provider, duration, refund conditions, and access rules, and require explicit purchase confirmation. Do not implement recurring billing.
+- During the launch promotion, Hilo Rojo eligibility is controlled by the `beta_vip_access` flag in `public.app_feature_flags`; its Supabase migration must be applied for the server-side RPC to enable it. After the promotion, turn this flag off through the protected server-side table and verify VIP access in production; never bypass the RPC in client code.
 
 ## Audience, content, and UX
 
@@ -26,11 +28,12 @@
 - Public operator name: AstraRed. Contact: `astrared.oficial@gmail.com`. Jurisdictional context: Venezuela.
 - The current infrastructure includes Vercel hosting and Supabase authentication, database, and storage.
 - Ko-fi support page: `https://ko-fi.com/astrared` (PayPal is linked as a payment method on Ko-fi).
-- Legal pages are operational drafts and should receive local legal review before being treated as definitive legal advice.
+- Legal pages are published product policies, but a Venezuela-qualified lawyer should review the operator identity, address, consumer subscription disclosures, and privacy obligations before paid memberships launch.
+- Public legal operator currently identified as AstraRed, based in Barinas, Venezuela; contact: `astrared.oficial@gmail.com`. No street mailing address or incorporated legal entity has been provided.
 
 ## Product and technical safeguards
 
 - Keep email confirmation redirects on `https://astrared.vip`; existing emails may retain their original redirect.
 - Do not claim Search Console indexing, traffic, conversion, retention, revenue, or fundraising results without verified data.
 - Preserve user-owned untracked work and stage only files relevant to a requested change.
-- Change beta access server-side through the protected `public.app_feature_flags` table, never by bypassing the RPC in client code.
+- Change promotional/VIP access server-side through the protected `public.app_feature_flags` table, never by bypassing the RPC in client code.

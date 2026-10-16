@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/astro-chart.test.cjs tests/astronomy-engine.test.cjs tests/chat-safety.test.cjs",
+    "test": "node --test tests/astro-chart.test.cjs tests/astronomy-engine.test.cjs tests/chat-safety.test.cjs tests/session-auth.test.cjs",
     "android:sync": "cap sync android",
     "android:open": "cap open android"
   },

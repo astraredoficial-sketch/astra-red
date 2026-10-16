@@ -59,7 +59,7 @@ export default function SynastryGuide() {
         <Link href="/guias/carta-natal">carta natal</Link>.
       </p>
       <p>
-        <Link href="/acceso?mode=signup">Conoce las funciones de AstraRed en la beta gratuita</Link>.
+        <Link href="/acceso?mode=signup">Explora las funciones de AstraRed</Link>.
       </p>
     </PublicDocument>
   );

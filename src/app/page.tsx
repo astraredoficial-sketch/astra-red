@@ -106,7 +106,7 @@ export default function Home() {
               href="/acceso?mode=signup"
               className="inline-flex min-h-14 items-center justify-center rounded-full bg-thread px-7 py-4 text-base font-semibold text-white transition-colors hover:bg-[#e61f53] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
             >
-              Crear una cuenta gratis
+              Crear una cuenta
             </Link>
             <Link
               href="/acceso?mode=login"
@@ -116,7 +116,8 @@ export default function Home() {
             </Link>
           </div>
           <p className="mt-3 text-xs text-muted">
-            Beta gratuita para personas mayores de 18 años.
+            Para personas mayores de 18 años · Un mes promocional de
+            inauguración sin costo
           </p>
         </section>
 
@@ -136,7 +137,9 @@ export default function Home() {
                 Lo que puedes explorar
               </h2>
             </div>
-            <span className="text-xs text-muted">Funciones de la beta</span>
+            <span className="text-xs text-muted">
+              Herramientas para explorar y conectar
+            </span>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {features.map((feature) => (

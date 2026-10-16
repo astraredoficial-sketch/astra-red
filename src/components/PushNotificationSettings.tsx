@@ -5,6 +5,7 @@ import { Capacitor } from "@capacitor/core";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { enableAndroidPushNotifications } from "@/lib/nativePush";
 import { supabase } from "@/lib/supabase/client";
+import { isMissingAuthSessionError } from "@/lib/supabase/session";
 
 export function PushNotificationSettings() {
   const [enabled, setEnabled] = useState(false);
@@ -25,7 +26,10 @@ export function PushNotificationSettings() {
           data: { user },
           error: authError,
         } = await supabase.auth.getUser();
-        if (authError) throw authError;
+        if (authError) {
+          if (isMissingAuthSessionError(authError)) return;
+          throw authError;
+        }
         if (!user) return;
 
         const { data, error: deviceError } = await supabase

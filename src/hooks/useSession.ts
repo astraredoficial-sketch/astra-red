@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
+import { isMissingAuthSessionError } from "@/lib/supabase/session";
 import { getProfilePhotoObjectPath } from "@/lib/profilePhotos";
 import type {
   NatalChart,
@@ -264,6 +265,11 @@ export function useSession() {
 
       if (!active) return;
       if (error) {
+        if (isMissingAuthSessionError(error)) {
+          setState({ ready: true, store: { profiles: [] }, me: null, error: "" });
+          return;
+        }
+
         setState({
           ready: true,
           store: null,

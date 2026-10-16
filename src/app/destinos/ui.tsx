@@ -16,6 +16,7 @@ export function DestinosUi() {
   const router = useRouter();
   const { ready, store, me, error: sessionError } = useSession();
   const [seenIds, setSeenIds] = useState<Set<string>>(new Set());
+  const [profileIndex, setProfileIndex] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -74,7 +75,11 @@ export function DestinosUi() {
       .sort((a, b) => b.compatibility.percent - a.compatibility.percent);
   }, [me, seenIds, store]);
 
-  const current = availableProfiles[0];
+  const currentProfileIndex = Math.min(
+    profileIndex,
+    Math.max(availableProfiles.length - 1, 0),
+  );
+  const current = availableProfiles[currentProfileIndex];
   const profilePlacements: [string, string][] = [];
   if (current) {
     profilePlacements.push(["Sol", current.profile.chart.triad.sun.sign]);
@@ -125,6 +130,9 @@ export function DestinosUi() {
     setNotice("");
 
     if (action === "pass") {
+      setProfileIndex((index) =>
+        Math.min(index, Math.max(availableProfiles.length - 2, 0)),
+      );
       setSeenIds((previous) => new Set(previous).add(current.profile.id));
       setBusy(false);
       return;
@@ -141,6 +149,9 @@ export function DestinosUi() {
       return;
     }
 
+    setProfileIndex((index) =>
+      Math.min(index, Math.max(availableProfiles.length - 2, 0)),
+    );
     setSeenIds((previous) => new Set(previous).add(current.profile.id));
     if (matched) {
       const { error: notificationError } = await supabase.functions.invoke(
@@ -162,7 +173,7 @@ export function DestinosUi() {
     <div className="flex min-h-screen flex-col bg-slate-950 text-white">
       <AppNav active="destinos" />
 
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center justify-center p-4">
+      <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center justify-center p-4">
         {!ready || (!me && !sessionError) ? (
           <p className="text-sm text-slate-400">Cargando tus destinos astrales...</p>
         ) : sessionError ? (
@@ -170,102 +181,172 @@ export function DestinosUi() {
             {sessionError}
           </p>
         ) : current ? (
-          <article className="relative w-full space-y-6 rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-semibold uppercase tracking-widest text-purple-300">
-                Destinos astrales
-              </span>
-              <span className="rounded-full border border-rose-500/30 bg-rose-950/60 px-3 py-1 text-xs font-bold text-rose-300">
-                {current.compatibility.percent}% afinidad
-              </span>
-            </div>
-            {current.compatibility.timeApproximate && (
-              <p className="-mt-4 text-xs leading-5 text-amber-200/80">
-                Afinidad aproximada: falta una hora de nacimiento; se omiten
-                los aspectos de Luna y Ascendente.
-              </p>
-            )}
-
-            <div className="mx-auto grid size-40 place-items-center overflow-hidden rounded-3xl border border-amber-300/30 bg-slate-950/70 text-5xl font-serif text-amber-200 shadow-lg shadow-black/20">
-              {current.profile.avatarUrl ? (
-                <Image
-                  src={current.profile.avatarUrl}
-                  alt={`Foto de perfil de ${current.profile.name}`}
-                  width={160}
-                  height={160}
-                  unoptimized
-                  className="size-40 object-cover"
-                />
-              ) : (
-                current.profile.name.trim().charAt(0).toUpperCase() || "✦"
-              )}
-            </div>
-
-            <div>
-              <h1 className="font-serif text-3xl font-bold">
-                {current.profile.name}
-              </h1>
-              <p className="mt-3 text-sm text-slate-300">
-                {profilePlacements
-                  .map(([label, sign]) => `${label} en ${sign}`)
-                  .join(" · ")}
-              </p>
-            </div>
-
-            <div
-              className="grid grid-flow-col auto-cols-fr gap-2 rounded-2xl border border-slate-800 bg-slate-950/60 p-3 text-center"
+          <div className="relative w-full max-w-3xl">
+            <article
+              id="destinos-profile-card"
+              role="region"
+              aria-label={`Perfil ${currentProfileIndex + 1} de ${availableProfiles.length}`}
+              aria-live="polite"
+              className="relative mx-auto w-full max-w-2xl space-y-6 rounded-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:p-8"
             >
-              {profilePlacements.map(([label, sign]) => (
-                <div key={label}>
-                  <span className="block text-[10px] font-semibold uppercase text-slate-500">
-                    {label}
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold uppercase tracking-widest text-purple-300">
+                  Destinos astrales
+                </span>
+                <span className="flex items-center gap-3">
+                  {availableProfiles.length > 1 && (
+                    <span className="text-xs tabular-nums text-slate-400">
+                      {currentProfileIndex + 1} / {availableProfiles.length}
+                    </span>
+                  )}
+                  <span className="rounded-full border border-rose-500/30 bg-rose-950/60 px-3 py-1 text-xs font-bold text-rose-300">
+                    {current.compatibility.percent}% afinidad
                   </span>
-                  <span className="text-xs font-bold text-rose-300">{sign}</span>
-                </div>
-              ))}
-            </div>
+                </span>
+              </div>
+              {current.compatibility.timeApproximate && (
+                <p className="-mt-4 text-xs leading-5 text-amber-200/80">
+                  Afinidad aproximada: falta una hora de nacimiento; se omiten
+                  los aspectos de Luna y Ascendente.
+                </p>
+              )}
 
-            <div className="flex items-center justify-center gap-6">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void handleSwipe("pass")}
-                aria-label="Pasar perfil"
-                className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-xl font-bold text-slate-300 transition hover:text-rose-400 disabled:opacity-50"
-              >
-                ×
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => void handleSwipe("like")}
-                aria-label="Me gusta este perfil"
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-600 text-xl font-bold text-white transition hover:bg-rose-500 disabled:opacity-50"
-              >
-                <svg
-                  aria-hidden="true"
-                  className="size-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M20.8 8.8c0 5.1-8.8 10-8.8 10s-8.8-4.9-8.8-10a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2Z"
+              <div className="mx-auto grid size-40 place-items-center overflow-hidden rounded-3xl border border-amber-300/30 bg-slate-950/70 text-5xl font-serif text-amber-200 shadow-lg shadow-black/20">
+                {current.profile.avatarUrl ? (
+                  <Image
+                    src={current.profile.avatarUrl}
+                    alt={`Foto de perfil de ${current.profile.name}`}
+                    width={160}
+                    height={160}
+                    unoptimized
+                    className="size-40 object-cover"
                   />
-                </svg>
-              </button>
-            </div>
+                ) : (
+                  current.profile.name.trim().charAt(0).toUpperCase() || "✦"
+                )}
+              </div>
 
-            <Link
-              href={`/conectar/${current.profile.id}`}
-              className="block text-center text-sm text-purple-300 underline underline-offset-4"
-            >
-              Ver compatibilidad detallada
-            </Link>
-          </article>
+              {availableProfiles.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Ver perfil anterior"
+                    aria-controls="destinos-profile-card"
+                    disabled={busy || currentProfileIndex === 0}
+                    onClick={() => setProfileIndex((index) => Math.max(index - 1, 0))}
+                    className="absolute left-2 top-28 z-10 grid size-11 place-items-center rounded-full border border-slate-600 bg-slate-800/95 text-slate-100 shadow-lg transition hover:border-amber-300/60 hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-not-allowed disabled:opacity-40 sm:left-4"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      className="size-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m15 18-6-6 6-6"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Ver perfil siguiente"
+                    aria-controls="destinos-profile-card"
+                    disabled={busy || currentProfileIndex >= availableProfiles.length - 1}
+                    onClick={() =>
+                      setProfileIndex((index) =>
+                        Math.min(index + 1, availableProfiles.length - 1),
+                      )
+                    }
+                    className="absolute right-2 top-28 z-10 grid size-11 place-items-center rounded-full border border-slate-600 bg-slate-800/95 text-slate-100 shadow-lg transition hover:border-amber-300/60 hover:bg-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200 disabled:cursor-not-allowed disabled:opacity-40 sm:right-4"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      className="size-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m9 18 6-6-6-6"
+                      />
+                    </svg>
+                  </button>
+                </>
+              )}
+
+              <div>
+                <h1 className="font-serif text-3xl font-bold">
+                  {current.profile.name}
+                </h1>
+                <p className="mt-3 text-sm text-slate-300">
+                  {profilePlacements
+                    .map(([label, sign]) => `${label} en ${sign}`)
+                    .join(" · ")}
+                </p>
+              </div>
+
+              <div
+                className="grid grid-flow-col auto-cols-fr gap-2 rounded-2xl border border-slate-800 bg-slate-950/60 p-3 text-center"
+              >
+                {profilePlacements.map(([label, sign]) => (
+                  <div key={label}>
+                    <span className="block text-[10px] font-semibold uppercase text-slate-500">
+                      {label}
+                    </span>
+                    <span className="text-xs font-bold text-rose-300">{sign}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-center gap-6">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void handleSwipe("pass")}
+                  aria-label="Pasar perfil"
+                  className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-700 bg-slate-800 text-xl font-bold text-slate-300 transition hover:text-rose-400 disabled:opacity-50"
+                >
+                  ×
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void handleSwipe("like")}
+                  aria-label="Me gusta este perfil"
+                  className="flex h-14 w-14 items-center justify-center rounded-full bg-rose-600 text-xl font-bold text-white transition hover:bg-rose-500 disabled:opacity-50"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className="size-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M20.8 8.8c0 5.1-8.8 10-8.8 10s-8.8-4.9-8.8-10a4.7 4.7 0 0 1 8.8-2.2 4.7 4.7 0 0 1 8.8 2.2Z"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <Link
+                href={`/conectar/${current.profile.id}`}
+                className="block text-center text-sm text-purple-300 underline underline-offset-4"
+              >
+                Ver compatibilidad detallada
+              </Link>
+            </article>
+          </div>
         ) : (
           <section className="space-y-4 text-center">
             <svg
@@ -322,6 +403,6 @@ export function DestinosUi() {
           onClose={() => setVipAlertProfile(null)}
         />
       )}
-    </div>
+          </div>
   );
 }

@@ -62,7 +62,7 @@ export default function NatalChartGuide() {
         <Link href="/guias/sinastria">qué es la sinastría</Link>.
       </p>
       <p>
-        <Link href="/acceso?mode=signup">Explora tu carta en la beta gratuita</Link>{" "}
+        <Link href="/acceso?mode=signup">Crea tu cuenta en AstraRed</Link>{" "}
         y revisa cómo se tratan tus datos de nacimiento en la{" "}
         <Link href="/privacidad">política de privacidad</Link>.
       </p>

@@ -6,6 +6,7 @@ import { LocalNotifications } from "@capacitor/local-notifications";
 import { PushNotifications } from "@capacitor/push-notifications";
 import type { PluginListenerHandle } from "@capacitor/core";
 import { supabase } from "@/lib/supabase/client";
+import { isMissingAuthSessionError } from "@/lib/supabase/session";
 
 export function NativePushRuntime() {
   useEffect(() => {
@@ -154,6 +155,10 @@ export function NativePushRuntime() {
 
       const { data, error } = await supabase.auth.getUser();
       if (error) {
+        if (isMissingAuthSessionError(error)) {
+          await setUser(null);
+          return;
+        }
         console.error("No se pudo comprobar la sesión para las notificaciones:", error);
         return;
       }

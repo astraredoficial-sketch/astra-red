@@ -10,36 +10,32 @@ async function getCurrentYear() {
 
 const footerGroups = [
   {
-    title: "Producto",
+    title: "Explora",
     links: [
       { label: "Carta natal", href: "/guias/carta-natal" },
-      { label: "Afinidades y Hilo Rojo", href: "/guias/sinastria" },
+      { label: "Afinidades", href: "/guias/sinastria" },
+      { label: "Destinos astrales", href: "/destinos" },
       { label: "Calendario astral", href: "/calendario" },
     ],
   },
   {
-    title: "Explorar",
+    title: "Guías",
     links: [
       { label: "Todas las guías", href: "/guias" },
-      { label: "Entender tu carta natal", href: "/guias/carta-natal" },
       { label: "Fases de la Luna", href: "/guias/calendario-lunar" },
+      { label: "Entender la sinastría", href: "/guias/sinastria" },
     ],
   },
   {
-    title: "Seguridad y ayuda",
+    title: "Ayuda y legal",
     links: [
       { label: "Comunidad segura", href: "/seguridad" },
-      {
-        label: "Escríbenos",
-        href: "mailto:astrared.oficial@gmail.com",
-      },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
       { label: "Privacidad", href: "/privacidad" },
       { label: "Términos de uso", href: "/terminos" },
+      {
+        label: "Contacto",
+        href: "mailto:astrared.oficial@gmail.com",
+      },
     ],
   },
 ];
@@ -49,29 +45,23 @@ export async function SiteFooter() {
 
   return (
     <footer className="relative z-10 border-t border-white/10 bg-[#080711]/95">
-      <div className="mx-auto max-w-6xl px-6 py-10 sm:px-8 sm:py-12">
-        <div className="grid gap-9 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-          {footerGroups.map((group, index) => (
+      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-8 sm:py-14">
+        <div className="grid gap-10 border-b border-white/10 pb-9 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.1fr] lg:gap-12">
+          <div className="space-y-4">
+            <Link href="/" aria-label="AstraRed, inicio">
+              <BrandMark size="sm" />
+            </Link>
+            <p className="max-w-sm text-sm leading-6 text-muted">
+              Carta natal, conexiones y ciclos astrales para conocerte y
+              conectar con intención.
+            </p>
+            <p className="max-w-sm text-xs leading-5 text-muted">
+              La astrología es una herramienta simbólica de reflexión; no es
+              una predicción científica ni asesoría profesional.
+            </p>
+          </div>
+          {footerGroups.map((group) => (
             <nav key={group.title} aria-label={group.title}>
-              {index === 0 && (
-                <div className="mb-5 space-y-3">
-                  <Link href="/" aria-label="AstraRed, inicio">
-                    <BrandMark size="sm" />
-                  </Link>
-                  <p className="max-w-xs text-sm leading-6 text-muted">
-                    Carta natal, afinidades y calendario astral para explorar
-                    tus ciclos y conexiones con curiosidad.
-                  </p>
-                  <p className="max-w-xs text-sm leading-6 text-muted">
-                    La astrología es una herramienta simbólica de reflexión, no
-                    una predicción científica ni asesoría profesional.
-                  </p>
-                  <p className="max-w-xs text-sm leading-6 text-muted">
-                    Beta gratuita para mayores de 18 años. Tus datos precisos de
-                    nacimiento no se muestran en tu perfil público.
-                  </p>
-                </div>
-              )}
               <h2 className="text-sm font-semibold text-white">
                 {group.title}
               </h2>
@@ -80,7 +70,7 @@ export async function SiteFooter() {
                   <li key={link.href + link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      className="inline-flex min-h-9 items-center text-sm text-muted transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       {link.label}
                     </Link>
@@ -91,30 +81,34 @@ export async function SiteFooter() {
           ))}
         </div>
 
-        <div className="mt-9 flex flex-col gap-4 border-t border-white/10 pt-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1">
-            <p>
-              © {currentYear} AstraRed. Beta gratuita para mayores
-              de 18 años.
-            </p>
-            <p>
-              Contacto:{" "}
-              <a
-                href="mailto:astrared.oficial@gmail.com"
-                className="underline underline-offset-2 hover:text-white"
-              >
-                astrared.oficial@gmail.com
-              </a>
-            </p>
+        <div className="flex flex-col gap-6 pt-6">
+          <p className="max-w-4xl text-xs leading-5 text-muted">
+            Promoción de inauguración: un mes sin costo desde la apertura
+            pública. Después, el Calendario astral y Hilo Rojo requerirán VIP.
+            Planes: USD 4.99/mes o USD 34.99/año. La fecha de inauguración y las
+            condiciones de compra se informarán antes de activar cualquier
+            cobro. Cada plan será un pago único por su periodo, sin renovación
+            automática.
+          </p>
+          <div className="flex flex-col gap-4 text-xs text-muted sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-1">
+              <p>
+                © {currentYear} AstraRed · Servicio para personas mayores de 18
+                años · Barinas, Venezuela
+              </p>
+              <p>
+                Las aportaciones son voluntarias y no habilitan funciones VIP.
+              </p>
+            </div>
+            <a
+              href="https://ko-fi.com/astrared"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-11 items-center justify-center self-start rounded-full border border-thread/40 px-4 py-2 font-medium text-[#f0d9e2] transition-colors hover:border-thread hover:bg-thread/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:self-auto"
+            >
+              Apoyar AstraRed
+            </a>
           </div>
-          <a
-            href="https://ko-fi.com/astrared"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-10 items-center justify-center self-start rounded-full border border-thread/40 px-4 py-2 font-medium text-[#f0d9e2] transition-colors hover:border-thread hover:bg-thread/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:self-auto"
-          >
-            Dona un café
-          </a>
         </div>
       </div>
     </footer>

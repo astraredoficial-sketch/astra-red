@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { BrandMark } from "@/components/BrandMark";
 import { supabase } from "@/lib/supabase/client";
+import { isMissingAuthSessionError } from "@/lib/supabase/session";
 
 interface Props {
   active?: "carta" | "destinos" | "calendario" | "mensajes" | "notificaciones" | "cuenta";
@@ -173,6 +174,10 @@ export function AppNav({ active }: Props) {
     void supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
       if (error) {
+        if (isMissingAuthSessionError(error)) {
+          void watchUnreadMessages(null);
+          return;
+        }
         console.error("No se pudo verificar la sesión para los mensajes:", error);
         setUnreadError("No se pudieron actualizar los mensajes sin leer.");
         return;
@@ -273,6 +278,10 @@ export function AppNav({ active }: Props) {
     void supabase.auth.getSession().then(({ data, error }) => {
       if (!active) return;
       if (error) {
+        if (isMissingAuthSessionError(error)) {
+          void watchNotifications(null);
+          return;
+        }
         console.error("No se pudo comprobar la sesión para las notificaciones:", error);
         setNotificationError("No se pudieron actualizar las notificaciones.");
         return;

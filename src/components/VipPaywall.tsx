@@ -17,7 +17,7 @@ export function VipPaywall({ name, onClose }: VipPaywallProps) {
         className="relative my-auto w-full max-w-lg space-y-6 rounded-3xl border border-white/10 bg-slate-900 p-6 text-center shadow-2xl sm:p-8"
       >
         <div className="inline-flex rounded-full border border-thread/30 bg-thread/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-[#f0d9e2]">
-          Acceso beta
+          Promoción de inauguración
         </div>
 
         <div className="space-y-2">
@@ -28,9 +28,10 @@ export function VipPaywall({ name, onClose }: VipPaywallProps) {
             {name}, tu espacio está abierto
           </h2>
           <p className="mx-auto max-w-md text-sm leading-relaxed text-slate-300">
-            Durante la beta puedes probar sin costo todas las funciones
-            disponibles en AstraRed. No se activará ningún cobro ni
-            suscripción.
+            La promoción de inauguración ofrece un mes sin costo. Después, el
+            Calendario astral y Hilo Rojo requerirán VIP. Los planes serán USD
+            4.99/mes o USD 34.99/año. Cada periodo será un pago único, sin
+            renovación automática. Las compras se habilitarán posteriormente.
           </p>
         </div>
 
@@ -41,11 +42,12 @@ export function VipPaywall({ name, onClose }: VipPaywallProps) {
           </p>
           <p>
             <span className="mr-2 font-bold text-thread" aria-hidden="true">✓</span>
-            Calendario astral y fases lunares.
+            Calendario astral y fases lunares (VIP después de la promoción).
           </p>
           <p>
             <span className="mr-2 font-bold text-thread" aria-hidden="true">✓</span>
-            Hilo Rojo y mensajes cuando existe interés mutuo.
+            Hilo Rojo (VIP después de la promoción) y mensajes cuando existe
+            interés mutuo.
           </p>
         </div>
 
