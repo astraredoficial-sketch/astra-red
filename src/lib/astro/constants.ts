@@ -1,4 +1,4 @@
-﻿import type { AspectName, PlanetId } from "@/lib/types";
+import type { AspectName, HouseSystem, PlanetId } from "@/lib/types";
 
 export const SIGNS = [
   "Aries",
@@ -16,6 +16,14 @@ export const SIGNS = [
 ] as const;
 
 export const SIGN_GLYPHS = ["♈", "♉", "♊", "♋", "♌", "♍", "♎", "♏", "♐", "♑", "♒", "♓"];
+
+export function houseSystemLabel(system?: HouseSystem): string {
+  if (system === "placidus") return "Casas Placidus";
+  if (system === "equal-high-latitude") {
+    return "Casas iguales · Placidus no aplicable a esta latitud";
+  }
+  return "Casas iguales";
+}
 
 export const PLANET_META: Record<
   PlanetId,
@@ -70,4 +78,3 @@ export function angleDelta(a: number, b: number): number {
   const d = Math.abs(a - b) % 360;
   return d > 180 ? 360 - d : d;
 }
-

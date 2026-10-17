@@ -1,4 +1,10 @@
-import { formatDegree, PLANET_META, signFromLongitude, SIGN_GLYPHS } from "@/lib/astro/constants";
+import {
+  formatDegree,
+  houseSystemLabel,
+  PLANET_META,
+  SIGN_GLYPHS,
+  signFromLongitude,
+} from "@/lib/astro/constants";
 import type { PlanetReading } from "@/lib/astro/interpreter";
 import type { NatalChart, PlanetId } from "@/lib/types";
 
@@ -97,15 +103,18 @@ function createWheel(chart: NatalChart, centerX: number, centerY: number) {
     .map((longitude, index) => {
       const inner = point(longitude, 190);
       const outer = point(longitude, 355);
-      const glyphPosition = point(longitude + 15, 323);
-      const sign = signFromLongitude(longitude);
       return `
         <line x1="${inner.x}" y1="${inner.y}" x2="${outer.x}" y2="${outer.y}"
-          stroke="#d5b66f" stroke-opacity="${index % 3 === 0 ? "0.8" : "0.35"}" />
-        <text x="${glyphPosition.x}" y="${glyphPosition.y}" text-anchor="middle" dominant-baseline="middle"
-          fill="#e8d59f" font-size="27">${SIGN_GLYPHS[sign.signIndex]}</text>`;
+          stroke="#d5b66f" stroke-opacity="${index % 3 === 0 ? "0.8" : "0.35"}" />`;
     })
     .join("");
+  const signGlyphs = Array.from({ length: 12 }, (_, index) => {
+    const longitude = index * 30 + 15;
+    const position = point(longitude, 323);
+    const sign = signFromLongitude(longitude);
+    return `<text x="${position.x}" y="${position.y}" text-anchor="middle" dominant-baseline="middle"
+      fill="#e8d59f" font-size="27">${SIGN_GLYPHS[sign.signIndex]}</text>`;
+  }).join("");
 
   const aspectLines = aspects
     .map((aspect) => {
@@ -132,6 +141,7 @@ function createWheel(chart: NatalChart, centerX: number, centerY: number) {
     <circle cx="${centerX}" cy="${centerY}" r="190" fill="none" stroke="#d5b66f" stroke-opacity="0.3" />
     ${aspectLines}
     ${houseLines}
+    ${signGlyphs}
     ${planets}
     <circle cx="${centerX}" cy="${centerY}" r="95" fill="#0b1427" stroke="#d5b66f" stroke-opacity="0.72" />
     <text x="${centerX}" y="${centerY - 12}" text-anchor="middle" fill="#e4c77f" font-family="serif" font-size="21" letter-spacing="3">
@@ -285,7 +295,7 @@ function createCardSvg(
     ${createWheel(chart, centerX, wheelCenterY)}
     ${sections.join("")}
     <text x="600" y="${footerY}" text-anchor="middle" fill="#c6bb9c" font-family="serif" font-size="23">
-      Zodiaco tropical · Casas iguales · Astrología para la reflexión
+      Zodiaco tropical · ${houseSystemLabel(chart.houseSystem)} · Astrología para la reflexión
     </text>
   </svg>`;
 }

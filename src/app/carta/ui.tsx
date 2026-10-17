@@ -11,7 +11,7 @@ import { Triad } from "@/components/Triad";
 import { useSession } from "@/hooks/useSession";
 import { generateLifeSummary, generatePlanetReadings } from "@/lib/astro/interpreter";
 import { createNatalShareCard } from "@/lib/astro/share-card";
-import { PLANET_META } from "@/lib/astro/constants";
+import { houseSystemLabel, PLANET_META } from "@/lib/astro/constants";
 import { supabase } from "@/lib/supabase/client";
 
 function blobToBase64(blob: Blob): Promise<string> {
@@ -84,6 +84,28 @@ async function createNatalPdf(image: Blob): Promise<Blob> {
   }
 }
 
+async function createProfileNatalPdf(
+  chart: Parameters<typeof createNatalShareCard>[0],
+  name: string,
+): Promise<Blob> {
+  const image = await createNatalShareCard(
+    chart,
+    name,
+    generateLifeSummary(chart),
+    generatePlanetReadings(chart),
+  );
+  return createNatalPdf(image);
+}
+
+function downloadPdf(pdf: Blob) {
+  const pdfUrl = URL.createObjectURL(pdf);
+  const download = document.createElement("a");
+  download.href = pdfUrl;
+  download.download = "carta-natal-astrared.pdf";
+  download.click();
+  window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+}
+
 export default function CartaUi() {
   const router = useRouter();
   const { ready, store, me, error } = useSession();
@@ -93,7 +115,9 @@ export default function CartaUi() {
     unknown: boolean;
     error: string;
   } | null>(null);
-  const [sharingCard, setSharingCard] = useState(false);
+  const [preparingPdf, setPreparingPdf] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+  const [downloadNotice, setDownloadNotice] = useState("");
   const [shareError, setShareError] = useState("");
   const [whatsappLink, setWhatsappLink] = useState("");
   const [shareNotice, setShareNotice] = useState("");
@@ -141,22 +165,51 @@ export default function CartaUi() {
     router.replace(store?.currentUserId ? "/onboarding" : "/acceso?mode=login");
   }, [error, me, ready, router, store?.currentUserId]);
 
-  async function shareCard() {
+  async function downloadNatalPdf() {
     if (!me) return;
-    setSharingCard(true);
+    setPreparingPdf(true);
+    setDownloadError("");
+    setDownloadNotice("");
     setShareError("");
     setShareNotice("");
     setWhatsappLink("");
 
     try {
-      const chart = me.chart;
-      const image = await createNatalShareCard(
-        chart,
-        me.name,
-        generateLifeSummary(chart),
-        generatePlanetReadings(chart),
+      const pdf = await createProfileNatalPdf(me.chart, me.name);
+      if (Capacitor.isNativePlatform()) {
+        await Filesystem.writeFile({
+          path: "carta-natal-astrared.pdf",
+          data: await blobToBase64(pdf),
+          directory: Directory.Documents,
+          recursive: true,
+        });
+        setDownloadNotice("El PDF se guardó en Documentos.");
+      } else {
+        downloadPdf(pdf);
+        setDownloadNotice("Tu carta natal en PDF se está descargando.");
+      }
+    } catch (cause) {
+      setDownloadError(
+        cause instanceof Error
+          ? cause.message
+          : "No se pudo descargar la carta natal en PDF.",
       );
-      const pdf = await createNatalPdf(image);
+    } finally {
+      setPreparingPdf(false);
+    }
+  }
+
+  async function shareNatalPdfOnWhatsApp() {
+    if (!me) return;
+    setPreparingPdf(true);
+    setDownloadError("");
+    setDownloadNotice("");
+    setShareError("");
+    setShareNotice("");
+    setWhatsappLink("");
+
+    try {
+      const pdf = await createProfileNatalPdf(me.chart, me.name);
       const file = new File([pdf], "carta-natal-astrared.pdf", {
         type: "application/pdf",
       });
@@ -199,18 +252,14 @@ export default function CartaUi() {
             setShareNotice("Se canceló el envío del PDF.");
             return;
           }
+          throw cause;
         }
       }
 
-      const pdfUrl = URL.createObjectURL(pdf);
-      const download = document.createElement("a");
-      download.href = pdfUrl;
-      download.download = file.name;
-      download.click();
-      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+      downloadPdf(pdf);
 
       const waUrl = `https://wa.me/?text=${encodeURIComponent(
-        shareText,
+        `${shareText} Adjuntaré el PDF descargado.`,
       )}`;
       const whatsappWindow = window.open(waUrl, "_blank");
       if (whatsappWindow) {
@@ -231,7 +280,7 @@ export default function CartaUi() {
           : "No se pudo preparar el PDF para compartir.",
       );
     } finally {
-      setSharingCard(false);
+      setPreparingPdf(false);
     }
   }
 
@@ -299,18 +348,51 @@ export default function CartaUi() {
                   {birthTimeForUser.error}
                 </p>
               )}
-              <button
-                type="button"
-                onClick={() => void shareCard()}
-                disabled={sharingCard}
-                className="mt-5 rounded-full border border-[#a88648]/70 bg-[#18243a] px-6 py-3 text-sm font-medium text-[#f2e5c6] shadow-lg transition hover:bg-[#243553] disabled:cursor-wait disabled:opacity-60"
-              >
-                {sharingCard ? "Preparando tu PDF..." : "Compartir carta natal en PDF"}
-              </button>
+              <div className="mx-auto mt-5 flex max-w-xl flex-col justify-center gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => void downloadNatalPdf()}
+                  disabled={preparingPdf}
+                  aria-busy={preparingPdf}
+                  className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-[#a88648]/70 bg-[#18243a] px-5 py-3 text-sm font-semibold text-[#f2e5c6] shadow-lg transition hover:bg-[#243553] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18243a] disabled:cursor-wait disabled:opacity-60"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+                    <path d="M5 17v3h14v-3" />
+                  </svg>
+                  {preparingPdf ? "Preparando PDF..." : "Descargar carta natal (PDF)"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void shareNatalPdfOnWhatsApp()}
+                  disabled={preparingPdf}
+                  aria-busy={preparingPdf}
+                  className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-emerald-800/40 bg-[#16734b] px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-[#12613f] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#16734b] disabled:cursor-wait disabled:opacity-60"
+                >
+                  <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="h-5 w-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="18" cy="5" r="3" />
+                    <circle cx="6" cy="12" r="3" />
+                    <circle cx="18" cy="19" r="3" />
+                    <path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4" />
+                  </svg>
+                  {preparingPdf ? "Preparando PDF..." : "Compartir por WhatsApp"}
+                </button>
+              </div>
               <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-[#64676d]">
-                Comparte un PDF con tu rueda, posiciones,
-                casas y lecturas astrales. No incluye fecha, hora ni lugar de nacimiento.
+                El PDF incluye tu rueda, posiciones, casas y lecturas; no muestra
+                fecha, hora ni lugar de nacimiento. En WhatsApp, adjunta el PDF
+                descargado si tu dispositivo no ofrece compartir archivos.
               </p>
+              {downloadError && (
+                <p role="alert" className="mt-2 text-xs text-red-800">
+                  {downloadError}
+                </p>
+              )}
+              {downloadNotice && (
+                <p role="status" className="mt-2 text-xs text-[#65522e]">
+                  {downloadNotice}
+                </p>
+              )}
               {shareError && (
                 <p role="alert" className="mt-2 text-xs text-red-800">
                   {shareError}
@@ -347,7 +429,7 @@ export default function CartaUi() {
                 className="mx-auto w-full max-w-[560px] drop-shadow-[0_18px_32px_rgba(22,31,50,0.28)]"
               />
               <p className="mt-3 text-center text-[10px] font-semibold uppercase tracking-[0.28em] text-[#897344]">
-                Zodiaco tropical · casas iguales
+                Zodiaco tropical · {houseSystemLabel(chart.houseSystem)}
               </p>
             </section>
 

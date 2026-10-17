@@ -1,4 +1,8 @@
-﻿import { PLANET_META, SIGN_GLYPHS } from "@/lib/astro/constants";
+import {
+  PLANET_META,
+  SIGN_GLYPHS,
+  signFromLongitude,
+} from "@/lib/astro/constants";
 import type { NatalChart, PlanetId } from "@/lib/types";
 
 const RING_PLANETS: PlanetId[] = [
@@ -103,7 +107,6 @@ export function ChartWheel({ chart, className = "" }: { chart: NatalChart; class
         const lon = chart.houses[i];
         const outer = xy(lon, 148);
         const inner = xy(lon, 78);
-        const glyphPos = xy(lon + 15, 133);
         return (
           <g key={i}>
             <line
@@ -115,18 +118,27 @@ export function ChartWheel({ chart, className = "" }: { chart: NatalChart; class
               strokeOpacity={i % 3 === 0 ? 0.78 : 0.3}
               strokeWidth={i % 3 === 0 ? 1.3 : 0.75}
             />
-            <text
-              x={glyphPos.x}
-              y={glyphPos.y}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="#e4cf97"
-              fontSize="12"
-              fontFamily="serif"
-            >
-              {SIGN_GLYPHS[(chart.triad.asc.signIndex + i) % 12]}
-            </text>
           </g>
+        );
+      })}
+
+      {Array.from({ length: 12 }, (_, i) => {
+        const longitude = i * 30 + 15;
+        const glyphPos = xy(longitude, 133);
+        const sign = signFromLongitude(longitude);
+        return (
+          <text
+            key={i}
+            x={glyphPos.x}
+            y={glyphPos.y}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fill="#e4cf97"
+            fontSize="12"
+            fontFamily="serif"
+          >
+            {SIGN_GLYPHS[sign.signIndex]}
+          </text>
         );
       })}
 

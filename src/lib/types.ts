@@ -19,6 +19,8 @@ export type AspectName =
   | "trine"
   | "opposition";
 
+export type HouseSystem = "placidus" | "equal" | "equal-high-latitude";
+
 export type Placement = {
   id: PlanetId;
   longitude: number;
@@ -30,6 +32,7 @@ export type Placement = {
 
 export type NatalChart = {
   generatedAt: string;
+  houseSystem?: HouseSystem;
   houses: number[];
   planets: Placement[];
   triad: {

@@ -65,17 +65,26 @@ test("las longitudes, los signos, los grados y las casas están dentro de rango"
   }
 });
 
-test("las doce casas actuales están separadas por treinta grados", () => {
+test("la carta usa Placidus y conserva los ejes opuestos de las casas", () => {
   const chart = computeNatalChart(birth);
 
+  assert.equal(chart.houseSystem, "placidus");
   assert.equal(chart.houses.length, 12);
   assert.ok(Math.abs(chart.houses[0] - chart.triad.asc.longitude) < 1e-8);
 
-  for (let i = 0; i < 12; i++) {
-    const next = chart.houses[(i + 1) % 12];
-    const distance = (next - chart.houses[i] + 360) % 360;
-    assert.ok(Math.abs(distance - 30) < 1e-8, `Separación incorrecta en la casa ${i + 1}`);
+  for (let i = 0; i < 6; i++) {
+    const opposite = chart.houses[i + 6];
+    const distance = (opposite - chart.houses[i] + 360) % 360;
+    assert.ok(Math.abs(distance - 180) < 1e-8, `Eje incorrecto en la casa ${i + 1}`);
   }
+  assert.ok(
+    chart.houses.some((cusp, index) => {
+      const next = chart.houses[(index + 1) % 12];
+      const distance = (next - cusp + 360) % 360;
+      return Math.abs(distance - 30) > 1e-5;
+    }),
+    "Placidus no debe forzar doce casas de treinta grados",
+  );
 });
 
 test("la tríada coincide con los planetas correspondientes", () => {
@@ -233,6 +242,53 @@ test("referencias angulares guardadas del Sol y la Luna", () => {
       angularDifference <= toleranceDegrees,
       `${id}: diferencia ${(angularDifference * 3600).toFixed(3)} segundos de arco`
     );
+  }
+});
+
+test("Placidus conserva los grados de referencia del ejemplo de Barinas", () => {
+  const chart = computeNatalChart({
+    date: "1985-12-15",
+    time: "09:00",
+    cityId: "barinas",
+    timeUnknown: false,
+    location: {
+      latitude: 8.627,
+      longitude: -70.2075,
+      timeZone: "America/Caracas",
+    },
+  });
+  const sun = chart.planets.find((planet) => planet.id === "sun");
+  const moon = chart.planets.find((planet) => planet.id === "moon");
+  const asc = chart.planets.find((planet) => planet.id === "asc");
+
+  assert.equal(chart.houseSystem, "placidus");
+  assert.ok(sun && moon && asc);
+  assert.ok(Math.abs(sun.longitude - (240 + 23.5)) < 0.01);
+  assert.ok(Math.abs(asc.longitude - (270 + 23 + 39 / 60)) < 0.01);
+  assert.equal(sun.house, 11);
+  assert.equal(moon.house, 1);
+  assert.ok(Math.abs(chart.houses[10] - 240.0364) < 0.01);
+  assert.ok(Math.abs(chart.houses[11] - 266.7065) < 0.01);
+});
+
+test("en latitudes donde Placidus no está definido se identifica el uso de casas iguales", () => {
+  const chart = computeNatalChart({
+    date: "2000-01-01",
+    time: "12:00",
+    cityId: "tromso",
+    timeUnknown: false,
+    location: {
+      latitude: 69.6492,
+      longitude: 18.9553,
+      timeZone: "Europe/Oslo",
+    },
+  });
+
+  assert.equal(chart.houseSystem, "equal-high-latitude");
+  for (let i = 0; i < 12; i++) {
+    const next = chart.houses[(i + 1) % 12];
+    const distance = (next - chart.houses[i] + 360) % 360;
+    assert.ok(Math.abs(distance - 30) < 1e-8);
   }
 });
 

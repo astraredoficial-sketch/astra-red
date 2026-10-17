@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { isMissingAuthSessionError } from "@/lib/supabase/session";
 import { getProfilePhotoObjectPath } from "@/lib/profilePhotos";
+import { computeNatalChart } from "@/lib/astro/chart";
 import type {
+  BirthData,
   NatalChart,
   PlanetId,
   TargetGender,
@@ -33,6 +35,16 @@ type ProfileRow = {
   chart: unknown;
 };
 
+type BirthDetailsRow = {
+  birth_date: string;
+  birth_time: string | null;
+  birth_time_unknown: boolean;
+  city_id: string;
+  birth_latitude: number;
+  birth_longitude: number;
+  birth_timezone: string;
+};
+
 const PLANET_IDS = new Set<PlanetId>([
   "sun",
   "moon",
@@ -50,6 +62,21 @@ const PLANET_IDS = new Set<PlanetId>([
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object";
+}
+
+function isBirthDetails(value: unknown): value is BirthDetailsRow {
+  if (!isRecord(value)) return false;
+  return (
+    typeof value.birth_date === "string" &&
+    (typeof value.birth_time === "string" || value.birth_time === null) &&
+    typeof value.birth_time_unknown === "boolean" &&
+    typeof value.city_id === "string" &&
+    typeof value.birth_latitude === "number" &&
+    Number.isFinite(value.birth_latitude) &&
+    typeof value.birth_longitude === "number" &&
+    Number.isFinite(value.birth_longitude) &&
+    typeof value.birth_timezone === "string"
+  );
 }
 
 function isNatalChart(value: unknown): value is NatalChart {
@@ -80,6 +107,10 @@ function isNatalChart(value: unknown): value is NatalChart {
   );
   if (
     new Set(planetIds).size !== PLANET_IDS.size ||
+    (chart.houseSystem !== undefined &&
+      !["placidus", "equal", "equal-high-latitude"].includes(
+        chart.houseSystem as string,
+      )) ||
     !planets.every(
       (planet) =>
         isRecord(planet) &&
@@ -167,9 +198,111 @@ export function useSession() {
         return;
       }
 
-      const profilesWithoutSignedPhotos = (data as ProfileRow[])
+      let profilesWithoutSignedPhotos = (data as ProfileRow[])
         .map(toUserProfile)
         .filter((profile): profile is UserProfile => profile !== null);
+      const currentProfile = profilesWithoutSignedPhotos.find(
+        (profile) => profile.id === userId,
+      );
+
+      if (
+        currentProfile &&
+        (!currentProfile.chart.houseSystem ||
+          currentProfile.chart.houseSystem === "equal")
+      ) {
+        const {
+          data: birthDetailsData,
+          error: birthDetailsError,
+        } = await supabase
+          .from("birth_details")
+          .select(
+            "birth_date, birth_time, birth_time_unknown, city_id, birth_latitude, birth_longitude, birth_timezone",
+          )
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (!active) return;
+        if (birthDetailsError) {
+          setState({
+            ready: true,
+            store: null,
+            me: null,
+            error: `No se pudieron cargar los datos privados para actualizar tu carta: ${birthDetailsError.message}`,
+          });
+          return;
+        }
+
+        if (birthDetailsData) {
+          if (!isBirthDetails(birthDetailsData)) {
+            setState({
+              ready: true,
+              store: null,
+              me: null,
+              error:
+                "Los datos privados de nacimiento no tienen un formato válido para actualizar tu carta.",
+            });
+            return;
+          }
+          if (!birthDetailsData.birth_time_unknown && !birthDetailsData.birth_time) {
+            setState({
+              ready: true,
+              store: null,
+              me: null,
+              error:
+                "Falta la hora de nacimiento guardada; actualiza tus datos para recalcular tu carta.",
+            });
+            return;
+          }
+
+          const birth: BirthData = {
+            date: birthDetailsData.birth_date,
+            time: birthDetailsData.birth_time?.slice(0, 5) ?? "12:00",
+            cityId: birthDetailsData.city_id,
+            timeUnknown: birthDetailsData.birth_time_unknown,
+            location: {
+              latitude: birthDetailsData.birth_latitude,
+              longitude: birthDetailsData.birth_longitude,
+              timeZone: birthDetailsData.birth_timezone,
+            },
+          };
+          let updatedChart: NatalChart;
+          try {
+            updatedChart = computeNatalChart(birth);
+          } catch (cause) {
+            setState({
+              ready: true,
+              store: null,
+              me: null,
+              error: `No se pudo recalcular tu carta con Placidus: ${
+                cause instanceof Error ? cause.message : "error desconocido."
+              }`,
+            });
+            return;
+          }
+
+          const { error: chartUpdateError } = await supabase
+            .from("profiles")
+            .update({ chart: updatedChart, updated_at: new Date().toISOString() })
+            .eq("id", userId);
+          if (!active) return;
+          if (chartUpdateError) {
+            setState({
+              ready: true,
+              store: null,
+              me: null,
+              error: `No se pudo guardar la versión actualizada de tu carta: ${chartUpdateError.message}`,
+            });
+            return;
+          }
+
+          profilesWithoutSignedPhotos = profilesWithoutSignedPhotos.map(
+            (profile) =>
+              profile.id === userId
+                ? { ...profile, chart: updatedChart }
+                : profile,
+          );
+        }
+      }
+
       const photoPaths = [
         ...new Set(
           profilesWithoutSignedPhotos.flatMap((profile) => {
@@ -222,25 +355,31 @@ export function useSession() {
             typeof result.error === "string"
               ? result.error
               : "No se pudieron preparar las fotos de perfil.";
-          setState({
-            ready: true,
-            store: null,
-            me: null,
-            error: responseError,
-          });
-          return;
-        }
-
-        for (const photo of result.signedUrls) {
-          if (
-            photo &&
-            typeof photo === "object" &&
-            "path" in photo &&
-            typeof photo.path === "string" &&
-            "url" in photo &&
-            typeof photo.url === "string"
-          ) {
-            signedPhotoUrls.set(photo.path, photo.url);
+          if (response.status === 401) {
+            setState({
+              ready: true,
+              store: null,
+              me: null,
+              error: responseError,
+            });
+            return;
+          }
+          console.error(
+            `No se pudieron cargar las fotos de perfil (HTTP ${response.status}); se continuará sin ellas:`,
+            responseError,
+          );
+        } else {
+          for (const photo of result.signedUrls) {
+            if (
+              photo &&
+              typeof photo === "object" &&
+              "path" in photo &&
+              typeof photo.path === "string" &&
+              "url" in photo &&
+              typeof photo.url === "string"
+            ) {
+              signedPhotoUrls.set(photo.path, photo.url);
+            }
           }
         }
       }
