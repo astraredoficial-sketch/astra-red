@@ -1,12 +1,12 @@
 # AstraRed
 
-> AstraRed es una aplicación en español de astrología, autoconocimiento y conexiones para personas adultas de 18 años o más. Su beta es gratuita. El contenido astrológico es simbólico y no constituye una predicción científica ni asesoramiento profesional.
+> AstraRed es una aplicación pública en español de astrología, reflexión personal y conexiones para personas adultas de 18 años o más. La astrología se presenta como una práctica simbólica; no es una predicción científica ni asesoramiento profesional.
 
-AstraRed permite explorar cartas natales, comparar afinidades astrológicas y consultar ciclos lunares. La fecha, hora y lugar de nacimiento son datos privados para calcular la carta; no forman parte de los datos públicos del perfil.
+AstraRed permite explorar cartas natales, comparar afinidades astrológicas y usar el calendario astral para consultar ciclos lunares, planificar fechas y guardar una agenda personal. La fecha, hora y lugar de nacimiento son datos privados para calcular la carta; no forman parte de los datos públicos del perfil.
 
 ## Producto
 
-- [Inicio de AstraRed](https://astrared.vip/): Descripción del producto y acceso al registro de la beta gratuita.
+- [Inicio de AstraRed](https://astrared.vip/): Descripción del producto y acceso a la creación de cuenta o inicio de sesión.
 - [Guías de astrología](https://astrared.vip/guias): Guías originales en español sobre carta natal, sinastría y ciclos lunares.
 
 ## Guías
@@ -15,17 +15,24 @@ AstraRed permite explorar cartas natales, comparar afinidades astrológicas y co
 - [Qué es la sinastría](https://astrared.vip/guias/sinastria): Cómo se comparan dos cartas natales y cuáles son los límites de una lectura de afinidad.
 - [Fases lunares y calendario astral](https://astrared.vip/guias/calendario-lunar): Descripción de las fases lunares y del calendario como herramienta de reflexión.
 
+## Acceso y precios
+
+- La promoción de inauguración ofrecerá un mes sin costo desde una fecha que AstraRed anunciará públicamente.
+- Después de la promoción, el Calendario astral y Hilo Rojo requerirán acceso VIP.
+- Precios previstos: USD 4.99 por un mes o USD 34.99 por un año, como pagos únicos por el periodo y sin renovación automática.
+- AstraRed aún no tiene activo el checkout ni procesa cobros por membresías. No se puede comprar acceso VIP hasta que se anuncie expresamente su disponibilidad.
+
 ## Seguridad y políticas
 
 - [Seguridad de la comunidad](https://astrared.vip/seguridad): Recomendaciones de privacidad y conexiones respetuosas.
 - [Política de privacidad](https://astrared.vip/privacidad): Tratamiento de datos de cuenta, perfil, carta natal y conversaciones.
-- [Términos de uso](https://astrared.vip/terminos): Condiciones de la beta y del uso del servicio.
-- [Contacto de AstraRed](mailto:astraared.oficial@gmail.com): Consultas generales y de privacidad.
+- [Términos de uso](https://astrared.vip/terminos): Condiciones de uso del servicio.
+- [Contacto de AstraRed](mailto:astrared.oficial@gmail.com): Consultas generales y de privacidad.
 
 ## Información del producto
 
 - Público: personas adultas hispanohablantes de 18 años o más.
-- Beta: gratuita; AstraRed no ofrece actualmente suscripciones pagadas.
 - Astrología: tradición simbólica para la reflexión, no método científico ni garantía sobre relaciones o resultados.
 - Dominio canónico: https://astrared.vip
 - Operador: AstraRed.
+- Correo de contacto: astrared.oficial@gmail.com.
