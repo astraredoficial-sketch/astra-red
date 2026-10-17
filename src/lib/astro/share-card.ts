@@ -1,10 +1,17 @@
 import {
+  ASPECT_META,
   formatDegree,
   houseSystemLabel,
   PLANET_META,
+  roundedPosition,
   SIGN_GLYPHS,
   signFromLongitude,
 } from "@/lib/astro/constants";
+import {
+  describeAspect,
+  formatArcMinutes,
+  getNatalAspects,
+} from "@/lib/astro/aspects";
 import type { PlanetReading } from "@/lib/astro/interpreter";
 import type { NatalChart, PlanetId } from "@/lib/types";
 
@@ -75,6 +82,13 @@ function textBlock(
 
 function createWheel(chart: NatalChart, centerX: number, centerY: number) {
   const ascendant = chart.triad.asc.longitude;
+  const aspectColors = {
+    conjunction: "#dca878",
+    sextile: "#8fb7ad",
+    square: "#ce8881",
+    trine: "#8aacc5",
+    opposition: "#b39bc9",
+  } as const;
   const point = (longitude: number, radius: number) => {
     const angle = ((longitude - ascendant) * Math.PI) / 180;
     return {
@@ -83,21 +97,13 @@ function createWheel(chart: NatalChart, centerX: number, centerY: number) {
     };
   };
 
-  const aspects = chart.planets.flatMap((planet, index) =>
-    chart.planets.slice(index + 1).flatMap((other) => {
-      const separation = Math.abs(planet.longitude - other.longitude);
-      const angle = Math.min(separation, 360 - separation);
-      const aspect = [
-        { angle: 0, color: "#dca878" },
-        { angle: 60, color: "#8fb7ad" },
-        { angle: 90, color: "#ce8881" },
-        { angle: 120, color: "#8aacc5" },
-        { angle: 180, color: "#b39bc9" },
-      ].find((target) => Math.abs(angle - target.angle) <= 5);
-      if (!aspect) return [];
-      return [{ from: planet.longitude, to: other.longitude, color: aspect.color }];
-    }),
-  );
+  const aspects = getNatalAspects(chart)
+    .filter((aspect) => aspect.orb <= 5)
+    .map((aspect) => ({
+      from: chart.planets.find((planet) => planet.id === aspect.a)!.longitude,
+      to: chart.planets.find((planet) => planet.id === aspect.b)!.longitude,
+      color: aspectColors[aspect.type],
+    }));
 
   const houseLines = chart.houses
     .map((longitude, index) => {
@@ -179,11 +185,12 @@ function createCardSvg(
   cursorY += 70;
   triad.forEach((item, index) => {
     const x = firstCellX + index * (cellWidth + 30);
+    const position = roundedPosition(item.placement.longitude);
     sections.push(`
       <rect x="${x}" y="${cursorY}" width="${cellWidth}" height="155" rx="22" fill="#111b31" stroke="#d5b66f" stroke-opacity="0.55" />
       <text x="${x + cellWidth / 2}" y="${cursorY + 42}" text-anchor="middle" fill="#d9bd7c" font-family="serif" font-size="25">${item.name.toUpperCase()}</text>
-      <text x="${x + cellWidth / 2}" y="${cursorY + 92}" text-anchor="middle" fill="#f5e8c4" font-family="serif" font-size="35">${escapeXml(item.placement.sign)}</text>
-      <text x="${x + cellWidth / 2}" y="${cursorY + 130}" text-anchor="middle" fill="#c6bb9c" font-family="serif" font-size="23">${formatDegree(item.placement.degreeInSign)}</text>`);
+      <text x="${x + cellWidth / 2}" y="${cursorY + 92}" text-anchor="middle" fill="#f5e8c4" font-family="serif" font-size="35">${escapeXml(position.sign)}</text>
+      <text x="${x + cellWidth / 2}" y="${cursorY + 130}" text-anchor="middle" fill="#c6bb9c" font-family="serif" font-size="23">${formatDegree(position.degreeInSign)}</text>`);
   });
   cursorY += 205;
 
@@ -195,11 +202,12 @@ function createCardSvg(
   cursorY += 58;
   chart.planets.forEach((planet, index) => {
     const rowY = cursorY + index * 55;
+    const position = roundedPosition(planet.longitude);
     const planetName = PLANET_META[planet.id].name;
     sections.push(`
       <rect x="80" y="${rowY - 28}" width="1040" height="48" rx="12" fill="${index % 2 ? "#111b31" : "#18243a"}" fill-opacity="0.86" />
       <text x="105" y="${rowY + 4}" fill="#e8dfca" font-family="serif" font-size="23">${PLANET_META[planet.id].glyph}  ${escapeXml(planetName)}</text>
-      <text x="520" y="${rowY + 4}" fill="#f5e8c4" font-family="serif" font-size="23">${escapeXml(planet.sign)} · ${formatDegree(planet.degreeInSign)}</text>
+      <text x="520" y="${rowY + 4}" fill="#f5e8c4" font-family="serif" font-size="23">${escapeXml(position.sign)} · ${formatDegree(position.degreeInSign)}</text>
       <text x="1040" y="${rowY + 4}" text-anchor="end" fill="#c6bb9c" font-family="serif" font-size="23">Casa ${planet.house}</text>`);
   });
   cursorY += chart.planets.length * 55 + 45;
@@ -211,7 +219,7 @@ function createCardSvg(
     <line x1="80" y1="${cursorY + 19}" x2="1120" y2="${cursorY + 19}" stroke="#d5b66f" stroke-opacity="0.55" />`);
   cursorY += 60;
   chart.houses.forEach((longitude, index) => {
-    const house = signFromLongitude(longitude);
+    const house = roundedPosition(longitude);
     const column = index % 2;
     const row = Math.floor(index / 2);
     const x = 90 + column * 530;
@@ -222,6 +230,58 @@ function createCardSvg(
       </text>`);
   });
   cursorY += Math.ceil(chart.houses.length / 2) * 48 + 45;
+
+  const natalAspects = getNatalAspects(chart);
+  sections.push(`
+    <text x="80" y="${cursorY}" fill="#d9bd7c" font-family="serif" font-size="31" letter-spacing="3">
+      ASPECTOS DESTACADOS · LECTURA SIMBÓLICA
+    </text>
+    <line x1="80" y1="${cursorY + 19}" x2="1120" y2="${cursorY + 19}" stroke="#d5b66f" stroke-opacity="0.55" />`);
+  cursorY += 60;
+  if (natalAspects.length === 0) {
+    sections.push(textBlock("No se encontraron aspectos mayores dentro de los orbes definidos.", 82, cursorY, 79, 23, 34).svg);
+    cursorY += 58;
+  } else {
+    natalAspects.slice(0, 3).forEach((aspect) => {
+      const aspectName = ASPECT_META[aspect.type].name;
+      const firstName = PLANET_META[aspect.a].name;
+      const secondName = PLANET_META[aspect.b].name;
+      const block = textBlock(
+        `${firstName} · ${secondName} — ${aspectName}, orbe ${formatArcMinutes(aspect.orb)}. ${describeAspect(aspect.type)}`,
+        82,
+        cursorY,
+        79,
+        23,
+        34,
+      );
+      sections.push(block.svg);
+      cursorY += block.height + 12;
+    });
+  }
+  cursorY += 24;
+
+  sections.push(`
+    <text x="80" y="${cursorY}" fill="#d9bd7c" font-family="serif" font-size="28" letter-spacing="2">
+      ASPECTOS MAYORES · DATOS TÉCNICOS
+    </text>
+    <line x1="80" y1="${cursorY + 19}" x2="1120" y2="${cursorY + 19}" stroke="#d5b66f" stroke-opacity="0.55" />`);
+  cursorY += 55;
+  if (natalAspects.length === 0) {
+    sections.push(textBlock("No se encontraron aspectos mayores dentro de los orbes definidos.", 82, cursorY, 79, 23, 34).svg);
+    cursorY += 58;
+  } else {
+    natalAspects.forEach((aspect, index) => {
+      const rowY = cursorY + index * 42;
+      sections.push(`
+        <text x="90" y="${rowY}" fill="#e8dfca" font-family="serif" font-size="22">
+          ${escapeXml(PLANET_META[aspect.a].name)} · ${escapeXml(PLANET_META[aspect.b].name)} — ${ASPECT_META[aspect.type].name}
+        </text>
+        <text x="1110" y="${rowY}" text-anchor="end" fill="#c6bb9c" font-family="serif" font-size="22">
+          ${formatArcMinutes(aspect.separation)} · orbe ${formatArcMinutes(aspect.orb)}
+        </text>`);
+    });
+    cursorY += natalAspects.length * 42 + 20;
+  }
 
   sections.push(`
     <text x="80" y="${cursorY}" fill="#d9bd7c" font-family="serif" font-size="31" letter-spacing="3">
@@ -257,6 +317,28 @@ function createCardSvg(
     const block = textBlock(note, 82, cursorY + 8, 79, 22, 34);
     sections.push(block.svg);
     cursorY += block.height + 24;
+  }
+  const aspectOrbSummary = Object.values(ASPECT_META)
+    .map(({ name, orb }) => `${name} ${orb}°`)
+    .join(" · ");
+  const conventions = [
+    `Convenciones: zodiaco tropical; longitudes geocéntricas en la eclíptica calculadas con Astronomy Engine (aberración corregida en planetas y cálculo geocéntrico específico para la Luna); Nodo Norte medio; ${houseSystemLabel(chart.houseSystem)}.`,
+    `Aspectos mayores y orbes máximos: ${aspectOrbSummary}. Lilith y Quirón no están calculados en esta carta.`,
+    chart.timeUnknown
+      ? "Al desconocerse la hora, se omiten los aspectos de Luna y Ascendente; la Luna, el Ascendente y las casas usan el mediodía como referencia y pueden variar."
+      : "",
+    "Los aspectos y sus lecturas son convenciones astrológicas simbólicas para la reflexión, no predicciones ni validación científica.",
+  ].filter(Boolean);
+  sections.push(`
+    <text x="80" y="${cursorY}" fill="#d9bd7c" font-family="serif" font-size="28" letter-spacing="2">
+      CONVENCIONES Y ALCANCE
+    </text>
+    <line x1="80" y1="${cursorY + 19}" x2="1120" y2="${cursorY + 19}" stroke="#d5b66f" stroke-opacity="0.55" />`);
+  cursorY += 55;
+  for (const convention of conventions) {
+    const block = textBlock(convention, 82, cursorY, 79, 20, 30);
+    sections.push(block.svg);
+    cursorY += block.height + 10;
   }
   const footerY = cursorY + 54;
   const cardHeight = footerY + 110;

@@ -3,6 +3,7 @@ import {
   SIGN_GLYPHS,
   signFromLongitude,
 } from "@/lib/astro/constants";
+import { getNatalAspects } from "@/lib/astro/aspects";
 import type { NatalChart, PlanetId } from "@/lib/types";
 
 const RING_PLANETS: PlanetId[] = [
@@ -23,13 +24,13 @@ export function ChartWheel({ chart, className = "" }: { chart: NatalChart; class
   const cx = 160;
   const cy = 160;
   const asc = chart.triad.asc.longitude;
-  const aspectTargets = [
-    { angle: 0, color: "#dca878" },
-    { angle: 60, color: "#8fb7ad" },
-    { angle: 90, color: "#ce8881" },
-    { angle: 120, color: "#8aacc5" },
-    { angle: 180, color: "#b39bc9" },
-  ];
+  const aspectColors = {
+    conjunction: "#dca878",
+    sextile: "#8fb7ad",
+    square: "#ce8881",
+    trine: "#8aacc5",
+    opposition: "#b39bc9",
+  } as const;
 
   const xy = (lon: number, r: number) => {
     const angle = ((lon - asc) * Math.PI) / 180;
@@ -39,15 +40,19 @@ export function ChartWheel({ chart, className = "" }: { chart: NatalChart; class
     };
   };
 
-  const aspects = chart.planets.flatMap((planet, index) =>
-    chart.planets.slice(index + 1).flatMap((other) => {
-      const separation = Math.abs(planet.longitude - other.longitude);
-      const angle = Math.min(separation, 360 - separation);
-      const aspect = aspectTargets.find((target) => Math.abs(angle - target.angle) <= 5);
-      if (!aspect) return [];
-      return [{ from: planet.longitude, to: other.longitude, color: aspect.color }];
-    }),
-  );
+  const planetsById = new Map(chart.planets.map((planet) => [planet.id, planet]));
+  const aspects = getNatalAspects(chart)
+    .filter((aspect) => aspect.orb <= 5)
+    .flatMap((aspect) => {
+      const first = planetsById.get(aspect.a);
+      const second = planetsById.get(aspect.b);
+      if (!first || !second) return [];
+      return [{
+        from: first.longitude,
+        to: second.longitude,
+        color: aspectColors[aspect.type],
+      }];
+    });
 
   const stars = [
     [60, 67], [94, 43], [205, 48], [261, 72], [43, 130], [282, 119],

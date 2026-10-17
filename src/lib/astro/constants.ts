@@ -68,9 +68,20 @@ export function signFromLongitude(longitude: number): {
   };
 }
 
+export function roundedPosition(longitude: number): {
+  sign: string;
+  signIndex: number;
+  degreeInSign: number;
+} {
+  const normalized = ((longitude % 360) + 360) % 360;
+  const roundedLongitude = (Math.round(normalized * 60) % 21600) / 60;
+  return signFromLongitude(roundedLongitude);
+}
+
 export function formatDegree(degreeInSign: number): string {
-  const deg = Math.floor(degreeInSign);
-  const minutes = Math.round((degreeInSign - deg) * 60);
+  const totalMinutes = Math.round(degreeInSign * 60);
+  const deg = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
   return `${deg}°${String(minutes).padStart(2, "0")}′`;
 }
 

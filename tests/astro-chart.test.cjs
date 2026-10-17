@@ -26,6 +26,8 @@ Module._resolveFilename = function (request, parent, isMain, options) {
 };
 
 const { computeNatalChart } = require("../src/lib/astro/chart.ts");
+const { getNatalAspects, formatArcMinutes } = require("../src/lib/astro/aspects.ts");
+const { formatDegree, roundedPosition } = require("../src/lib/astro/constants.ts");
 const { computeSynastry } = require("../src/lib/astro/synastry.ts");
 const { compatibilityPercent } = require("../supabase/functions/_shared/synastry.ts");
 const { civilToUtc } = require("../src/lib/astro/time.ts");
@@ -63,6 +65,80 @@ test("las longitudes, los signos, los grados y las casas están dentro de rango"
     assert.ok(planet.degreeInSign >= 0 && planet.degreeInSign < 30);
     assert.ok(Number.isInteger(planet.house) && planet.house >= 1 && planet.house <= 12);
   }
+});
+
+test("los aspectos natales detectan conjunciones cruzando 0 grados", () => {
+  const aspects = getNatalAspects({
+    planets: [
+      { id: "sun", longitude: 359 },
+      { id: "moon", longitude: 2 },
+    ],
+    timeUnknown: false,
+  });
+
+  assert.deepEqual(aspects, [
+    {
+      a: "sun",
+      b: "moon",
+      type: "conjunction",
+      separation: 3,
+      orb: 3,
+    },
+  ]);
+});
+
+test("los aspectos respetan los orbes máximos y se ordenan por exactitud", () => {
+  const included = getNatalAspects({
+    planets: [
+      { id: "sun", longitude: 0 },
+      { id: "moon", longitude: 66 },
+      { id: "mercury", longitude: 66.001 },
+    ],
+    timeUnknown: false,
+  });
+
+  assert.equal(included.length, 2);
+  assert.equal(included[0].a, "moon");
+  assert.equal(included[0].b, "mercury");
+  assert.ok(Math.abs(included[0].orb - 0.001) < 1e-9);
+  assert.equal(included[1].a, "sun");
+  assert.equal(included[1].b, "moon");
+  assert.equal(included[1].orb, 6);
+  assert.equal(included.some(({ a, b }) => a === "sun" && b === "mercury"), false);
+});
+
+test("se omiten los aspectos de Luna y Ascendente cuando la hora es desconocida", () => {
+  const aspects = getNatalAspects({
+    planets: [
+      { id: "sun", longitude: 0 },
+      { id: "moon", longitude: 60 },
+      { id: "asc", longitude: 1 },
+      { id: "mercury", longitude: 120 },
+    ],
+    timeUnknown: true,
+  });
+
+  assert.ok(aspects.length > 0);
+  assert.ok(
+    aspects.every(
+      ({ a, b }) => a !== "moon" && b !== "moon" && a !== "asc" && b !== "asc",
+    ),
+  );
+});
+
+test("los grados y orbes se muestran en grados y minutos sin minutos inválidos", () => {
+  assert.equal(formatDegree(1.9999), "2°00′");
+  assert.equal(formatArcMinutes(1.25), "1°15′");
+  assert.deepEqual(roundedPosition(29 + 59.6 / 60), {
+    sign: "Tauro",
+    signIndex: 1,
+    degreeInSign: 0,
+  });
+  assert.deepEqual(roundedPosition(359 + 59.6 / 60), {
+    sign: "Aries",
+    signIndex: 0,
+    degreeInSign: 0,
+  });
 });
 
 test("la carta usa Placidus y conserva los ejes opuestos de las casas", () => {

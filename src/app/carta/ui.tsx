@@ -9,9 +9,20 @@ import { AppNav } from "@/components/AppNav";
 import { ChartWheel } from "@/components/ChartWheel";
 import { Triad } from "@/components/Triad";
 import { useSession } from "@/hooks/useSession";
+import {
+  describeAspect,
+  formatArcMinutes,
+  getNatalAspects,
+} from "@/lib/astro/aspects";
 import { generateLifeSummary, generatePlanetReadings } from "@/lib/astro/interpreter";
 import { createNatalShareCard } from "@/lib/astro/share-card";
-import { houseSystemLabel, PLANET_META } from "@/lib/astro/constants";
+import {
+  ASPECT_META,
+  formatDegree,
+  houseSystemLabel,
+  PLANET_META,
+  roundedPosition,
+} from "@/lib/astro/constants";
 import { supabase } from "@/lib/supabase/client";
 
 function blobToBase64(blob: Blob): Promise<string> {
@@ -304,6 +315,7 @@ export default function CartaUi() {
 
   const chart = me.chart;
   const readings = generatePlanetReadings(chart);
+  const natalAspects = getNatalAspects(chart);
   const birthTimeForUser =
     birthTimeResult?.userId === me.id ? birthTimeResult : null;
   const birthTimeLoading = !birthTimeForUser;
@@ -379,9 +391,10 @@ export default function CartaUi() {
                 </button>
               </div>
               <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-[#64676d]">
-                El PDF incluye tu rueda, posiciones, casas y lecturas; no muestra
-                fecha, hora ni lugar de nacimiento. En WhatsApp, adjunta el PDF
-                descargado si tu dispositivo no ofrece compartir archivos.
+                El PDF incluye tu rueda, posiciones, casas, aspectos y
+                convenciones; no muestra fecha, hora ni lugar de nacimiento.
+                En WhatsApp, adjunta el PDF descargado si tu dispositivo no
+                ofrece compartir archivos.
               </p>
               {downloadError && (
                 <p role="alert" className="mt-2 text-xs text-red-800">
@@ -476,22 +489,203 @@ export default function CartaUi() {
                 </tr>
               </thead>
               <tbody>
-                {chart.planets.map((planet) => (
-                  <tr key={planet.id} className="border-t border-white/5 bg-[#0c1322]">
-                    <th className="px-4 py-3 font-medium text-[#f2e5c6]">
-                      {PLANET_META[planet.id].name}
-                    </th>
-                    <td className="px-4 py-3 text-slate-300">{planet.sign}</td>
-                    <td className="px-4 py-3 text-slate-300">
-                      {planet.degreeInSign.toFixed(2)}°
-                    </td>
-                    <td className="px-4 py-3 text-slate-300">{planet.house}</td>
-                  </tr>
-                ))}
+                {chart.planets.map((planet) => {
+                  const position = roundedPosition(planet.longitude);
+                  return (
+                    <tr key={planet.id} className="border-t border-white/5 bg-[#0c1322]">
+                      <th className="px-4 py-3 font-medium text-[#f2e5c6]">
+                        {PLANET_META[planet.id].name}
+                      </th>
+                      <td className="px-4 py-3 text-slate-300">{position.sign}</td>
+                      <td className="px-4 py-3 text-slate-300">
+                        {formatDegree(position.degreeInSign)}
+                      </td>
+                      <td className="px-4 py-3 text-slate-300">{planet.house}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </section>
+
+        <section
+          aria-labelledby="natal-aspects-heading"
+          className="rounded-3xl border border-[#c9a964]/25 bg-[#10182a] p-5 shadow-xl sm:p-8"
+        >
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-[#d2b675]">
+              Lectura guiada
+            </p>
+            <h2
+              id="natal-aspects-heading"
+              className="mt-2 font-serif text-3xl text-[#f2e5c6]"
+            >
+              Aspectos más exactos
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+              Un aspecto describe una relación angular entre dos puntos de la
+              carta. El orbe indica cuánto se aleja del ángulo exacto; aquí se
+              muestran primero los más cerrados. Estas descripciones son una
+              lectura astrológica simbólica, no una predicción.
+            </p>
+          </div>
+          {natalAspects.length > 0 ? (
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {natalAspects.slice(0, 6).map((aspect) => (
+                <article
+                  key={`${aspect.a}-${aspect.b}-${aspect.type}`}
+                  className="rounded-2xl border border-[#c9a964]/20 bg-[#0c1322] p-4"
+                >
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <h3 className="font-semibold text-[#f2e5c6]">
+                      {PLANET_META[aspect.a].name} · {PLANET_META[aspect.b].name}
+                    </h3>
+                    <p className="text-sm text-[#e4c77f]">
+                      {ASPECT_META[aspect.type].name} · orbe{" "}
+                      {formatArcMinutes(aspect.orb)}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    {describeAspect(aspect.type)}
+                  </p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-5 text-sm text-slate-300">
+              No se encontraron aspectos mayores dentro de los orbes definidos.
+            </p>
+          )}
+        </section>
+
+        <details className="group rounded-3xl border border-[#c9a964]/25 bg-[#10182a] shadow-xl">
+          <summary className="flex min-h-16 cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#d2b675] sm:px-8 [&::-webkit-details-marker]:hidden">
+            <span>
+              <span className="block text-xs uppercase tracking-[0.25em] text-[#d2b675]">
+                Transparencia
+              </span>
+              <span className="mt-1 block font-serif text-2xl text-[#f2e5c6]">
+                Ver datos técnicos
+              </span>
+            </span>
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              className="h-5 w-5 shrink-0 text-[#d2b675] transition-transform group-open:rotate-180 motion-reduce:transition-none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </summary>
+          <div className="space-y-8 border-t border-[#c9a964]/15 px-5 py-6 sm:px-8">
+            <section aria-labelledby="calculation-method-heading">
+              <h3
+                id="calculation-method-heading"
+                className="font-semibold text-[#e4c77f]"
+              >
+                Convenciones del cálculo
+              </h3>
+              <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-6 text-slate-300 marker:text-[#d2b675]">
+                <li>
+                  Zodiaco tropical; longitudes planetarias geocéntricas en la
+                  eclíptica. Los planetas se calculan con Astronomy Engine y
+                  corrección de aberración; la Luna usa su cálculo geocéntrico
+                  específico.
+                </li>
+                <li>
+                  Casas {houseSystemLabel(chart.houseSystem)}. El Nodo Norte es
+                  medio y se calcula con una fórmula basada en el tiempo
+                  terrestre.
+                </li>
+                <li>
+                  Se incluyen conjunción, sextil, cuadratura, trígono y
+                  oposición. Los orbes máximos de AstraRed son 8°, 6°, 7°, 8°
+                  y 8°, respectivamente; otras cartas pueden usar límites
+                  distintos.
+                </li>
+                <li>
+                  Lilith y Quirón no se calculan todavía. El Medio Cielo no
+                  aparece como punto planetario independiente; en Placidus
+                  corresponde a la cúspide de la casa 10.
+                </li>
+                <li>
+                  Las posiciones visibles se redondean al minuto de arco.
+                  Diferencias de coordenadas, efemérides o redondeo pueden
+                  cambiar el último minuto frente a otra plataforma.
+                </li>
+                {chart.timeUnknown && (
+                  <li>
+                    Como no se conoce la hora, los aspectos de la Luna y el
+                    Ascendente se omiten; la Luna, el Ascendente y las casas se
+                    calculan usando el mediodía como referencia y pueden variar.
+                  </li>
+                )}
+              </ul>
+            </section>
+
+            <section aria-labelledby="house-cusps-heading">
+              <h3
+                id="house-cusps-heading"
+                className="font-semibold text-[#e4c77f]"
+              >
+                Cúspides de las casas
+              </h3>
+              <ol className="mt-3 grid gap-2 sm:grid-cols-2">
+                {chart.houses.map((longitude, index) => {
+                  const cusp = roundedPosition(longitude);
+                  return (
+                    <li
+                      key={index}
+                      className="flex items-center justify-between gap-3 rounded-xl bg-[#0c1322] px-4 py-3 text-sm"
+                    >
+                      <span className="text-slate-300">Casa {index + 1}</span>
+                      <span className="text-[#f2e5c6]">
+                        {cusp.sign} {formatDegree(cusp.degreeInSign)}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ol>
+            </section>
+
+            <section aria-labelledby="all-aspects-heading">
+              <h3
+                id="all-aspects-heading"
+                className="font-semibold text-[#e4c77f]"
+              >
+                Aspectos mayores y orbes
+              </h3>
+              {natalAspects.length > 0 ? (
+                <ul className="mt-3 divide-y divide-white/5 rounded-xl border border-white/5">
+                  {natalAspects.map((aspect) => (
+                    <li
+                      key={`${aspect.a}-${aspect.b}-${aspect.type}`}
+                      className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-4 py-3 text-sm"
+                    >
+                      <span className="text-slate-300">
+                        {PLANET_META[aspect.a].name} · {PLANET_META[aspect.b].name}
+                      </span>
+                      <span className="text-[#f2e5c6]">
+                        {ASPECT_META[aspect.type].name} ·{" "}
+                        {formatArcMinutes(aspect.separation)} · orbe{" "}
+                        {formatArcMinutes(aspect.orb)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-slate-300">
+                  No se encontraron aspectos mayores dentro de los orbes definidos.
+                </p>
+              )}
+            </section>
+          </div>
+        </details>
 
         <section className="space-y-5">
           <div>
