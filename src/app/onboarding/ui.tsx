@@ -254,6 +254,37 @@ export default function OnboardingUi() {
                 La hora ayuda a calcular el ascendente y las casas.
               </p>
             </div>
+            <aside
+              aria-labelledby="birth-privacy-heading"
+              className="rounded-xl border border-purple-400/30 bg-purple-950/30 p-4 text-sm leading-6 text-slate-200"
+            >
+              <h2
+                id="birth-privacy-heading"
+                className="font-semibold text-amber-300"
+              >
+                Privacidad de tus datos de nacimiento
+              </h2>
+              <p className="mt-1">
+                Usamos tu fecha para verificar que tienes 18 años o más y para
+                calcular tu carta. La hora y el lugar se solicitarán en los
+                siguientes pasos para calcular el Ascendente y las casas.
+                Guardamos esos datos de forma privada: no aparecen en tu perfil
+                público. Tu perfil sí puede mostrar posiciones astrológicas
+                calculadas a otras personas usuarias con sesión.
+              </p>
+              <p className="mt-2">
+                Puedes consultar{" "}
+                <a
+                  href="/privacidad"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-amber-300 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+                >
+                  cómo usamos y protegemos tus datos
+                </a>{" "}
+                y solicitar la eliminación de tu cuenta desde sus ajustes.
+              </p>
+            </aside>
             <label
               htmlFor="birth-date"
               className="block text-sm text-slate-300"
