@@ -40,24 +40,30 @@ export default function PrivacyPage() {
         <ul>
           <li>
             <strong>Cuenta y edad:</strong> correo electrónico, credenciales
-            gestionadas por Supabase y fecha de nacimiento declarada para
-            confirmar que tienes 18 años o más.
+            gestionadas por Supabase y fecha de nacimiento declarada al crear la
+            cuenta para confirmar que tienes 18 años o más. Esa fecha también
+            se utiliza para calcular tu carta.
           </li>
           <li>
             <strong>Datos de nacimiento:</strong> fecha, hora (si la conoces),
             ciudad, país, coordenadas y zona horaria. Se usan para calcular tu
-            carta. Son datos privados y no se muestran en tu perfil público.
+            carta y se guardan por separado de la información visible de tu
+            perfil. No mostramos estos datos de entrada en tu perfil.
           </li>
           <li>
             <strong>Perfil:</strong> nombre que eliges mostrar, identidad,
             preferencias de conexión, búsqueda, foto y posiciones astrológicas
-            calculadas. El perfil y la información que incluyes en él son
-            visibles para personas autenticadas que exploran AstraRed.
+            calculadas a partir de tus datos de nacimiento. El perfil y la
+            información que incluyes en él son visibles para personas
+            autenticadas que exploran AstraRed.
           </li>
           <li>
             <strong>Actividad y comunicaciones:</strong> gustos, conexiones,
-            mensajes entre personas conectadas, fechas que guardas, avisos,
-            preferencias y reportes de seguridad.
+            mensajes entre personas conectadas, fechas que guardas en el
+            calendario astral junto con la zona horaria del dispositivo usada
+            para calcularlas, avisos, preferencias y reportes de seguridad. La
+            lectura “Tu cielo de hoy” calcula tránsitos en el instante de
+            consulta según esa zona horaria y no se guarda como historial.
           </li>
           <li>
             <strong>Datos técnicos:</strong> información de sesión, navegador o
@@ -75,6 +81,15 @@ export default function PrivacyPage() {
           La carta y las preferencias de conexión pueden revelar o permitir
           inferir aspectos personales. No compartas información en tu perfil o
           mensajes que no quieras comunicar a otras personas.
+        </p>
+        <p>
+          La fecha, hora y ubicación de nacimiento no forman parte de tu perfil
+          visible. El perfil puede mostrar las posiciones astrológicas
+          calculadas, que sí pueden ser vistas por otras personas autenticadas.
+          Puedes solicitar la eliminación de tu cuenta y de los datos asociados
+          desde los ajustes de la cuenta o escribiéndonos; las copias de
+          respaldo y ciertos registros técnicos pueden permanecer durante los
+          periodos limitados descritos en esta política.
         </p>
       </section>
 

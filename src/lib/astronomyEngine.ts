@@ -1,6 +1,7 @@
 import * as SunCalc from "suncalc";
 import * as Astronomy from "astronomy-engine";
-import { signFromLongitude } from "./astro/constants";
+import { angleDelta, ASPECT_META, signFromLongitude } from "./astro/constants";
+import type { AspectName, NatalChart, PlanetId } from "./types";
 
 export const ASTRAL_ACTIVITIES = [
   "hair-growth",
@@ -39,8 +40,122 @@ export interface AstralCalendarDay extends AstralCalculationResult {
   day: number;
 }
 
+export interface CurrentSkyTransitAspect {
+  transit: Exclude<PlanetId, "node" | "asc">;
+  natal: PlanetId;
+  aspect: AspectName;
+  orb: number;
+}
+
+export interface CurrentSkyReading {
+  calculatedAt: string;
+  phaseName: string;
+  illumination: number;
+  moonSign: string;
+  transits: {
+    id: Exclude<PlanetId, "node" | "asc">;
+    longitude: number;
+    sign: string;
+  }[];
+  aspects: CurrentSkyTransitAspect[];
+  mercuryRetrograde: boolean;
+  venusRetrograde: boolean;
+}
+
 function toIsoDate(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+function dateKey(year: number, month: number, day: number): string {
+  return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function datePartsInTimeZone(
+  instant: Date,
+  timeZone: string,
+): Record<string, string> {
+  if (!Number.isFinite(instant.getTime())) {
+    throw new RangeError("La fecha seleccionada no es válida.");
+  }
+  if (!timeZone) {
+    throw new RangeError("Indica una zona horaria válida.");
+  }
+
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone,
+    calendar: "gregory",
+    numberingSystem: "latn",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(instant);
+  return Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map(({ type, value }) => [type, value]),
+  );
+}
+
+export function getDateKeyInTimeZone(instant: Date, timeZone: string): string {
+  const parts = datePartsInTimeZone(instant, timeZone);
+  return dateKey(Number(parts.year), Number(parts.month), Number(parts.day));
+}
+
+export function getUtcInstantAtLocalNoon(
+  date: string,
+  timeZone: string,
+): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new RangeError("Indica una fecha válida con formato AAAA-MM-DD.");
+  }
+  const [year, month, day] = date.split("-").map(Number);
+  if (year < 1) {
+    throw new RangeError("El año debe ser un entero entre 1 y 9999.");
+  }
+  const anchor = new Date(0);
+  anchor.setUTCFullYear(year, month - 1, day);
+  anchor.setUTCHours(12, 0, 0, 0);
+  if (getDateKeyInTimeZone(anchor, "UTC") !== date) {
+    throw new RangeError("La fecha indicada no existe.");
+  }
+
+  const desiredLocalTimestamp = anchor.getTime();
+  let instant = new Date(desiredLocalTimestamp);
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const parts = datePartsInTimeZone(instant, timeZone);
+    const localAsUtc = new Date(0);
+    localAsUtc.setUTCFullYear(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day),
+    );
+    localAsUtc.setUTCHours(
+      Number(parts.hour),
+      Number(parts.minute),
+      Number(parts.second),
+      0,
+    );
+    const difference = desiredLocalTimestamp - localAsUtc.getTime();
+    if (difference === 0) return instant;
+    instant = new Date(instant.getTime() + difference);
+  }
+
+  const result = datePartsInTimeZone(instant, timeZone);
+  if (
+    dateKey(Number(result.year), Number(result.month), Number(result.day)) !==
+      date ||
+    result.hour !== "12" ||
+    result.minute !== "00"
+  ) {
+    throw new RangeError(
+      `No se pudo calcular el mediodía local para ${date} en ${timeZone}.`,
+    );
+  }
+  return instant;
 }
 
 type ActivityGuidance = {
@@ -104,6 +219,14 @@ const ACTIVITY_GUIDANCE: Record<AstralActivity, ActivityGuidance> = {
     mercurySensitive: true,
   },
 };
+
+const CURRENT_SKY_BODIES = [
+  { id: "sun", body: Astronomy.Body.Sun },
+  { id: "moon", body: Astronomy.Body.Moon },
+  { id: "mercury", body: Astronomy.Body.Mercury },
+  { id: "venus", body: Astronomy.Body.Venus },
+  { id: "mars", body: Astronomy.Body.Mars },
+] as const;
 
 function normalizeLongitude(longitude: number): number {
   return ((longitude % 360) + 360) % 360;
@@ -256,6 +379,7 @@ function assertMonthRange(
 function calculateForDate(
   targetDate: Date,
   activity: AstralActivity,
+  dateLabel = toIsoDate(targetDate),
 ): AstralCalculationResult {
   const illumination = SunCalc.getMoonIllumination(targetDate);
   const moonLongitude = geocentricLongitude(Astronomy.Body.Moon, targetDate);
@@ -267,7 +391,7 @@ function calculateForDate(
   const venusRetrograde = isRetrograde(Astronomy.Body.Venus, targetDate);
 
   return {
-    date: toIsoDate(targetDate),
+    date: dateLabel,
     phaseName: getPhaseName(illumination.phase),
     phaseValue: illumination.phase,
     illumination: Math.round(illumination.fraction * 100),
@@ -292,6 +416,79 @@ function calculateForDate(
   };
 }
 
+export function calculateCurrentSky(
+  chart: NatalChart,
+  instant: Date,
+): CurrentSkyReading {
+  if (!Number.isFinite(instant.getTime())) {
+    throw new RangeError("La fecha y hora actuales no son válidas.");
+  }
+
+  const transits: CurrentSkyReading["transits"] = CURRENT_SKY_BODIES.map(
+    ({ id, body }) => {
+      const longitude = geocentricLongitude(body, instant);
+      return {
+        id,
+        longitude,
+        sign: signFromLongitude(longitude).sign,
+      };
+    },
+  );
+  const natalPlanets = chart.timeUnknown
+    ? chart.planets.filter(
+        (planet) => planet.id !== "moon" && planet.id !== "asc",
+      )
+    : chart.planets;
+  const aspects: CurrentSkyTransitAspect[] = [];
+
+  for (const transit of transits) {
+    for (const natal of natalPlanets) {
+      const separation = angleDelta(transit.longitude, natal.longitude);
+      const match = (Object.keys(ASPECT_META) as AspectName[])
+        .map((aspect) => ({
+          aspect,
+          orb: Math.abs(separation - ASPECT_META[aspect].angle),
+        }))
+        .find(({ aspect, orb }) => orb <= Math.min(3, ASPECT_META[aspect].orb));
+
+      if (match) {
+        aspects.push({
+          transit: transit.id,
+          natal: natal.id,
+          aspect: match.aspect,
+          orb: match.orb,
+        });
+      }
+    }
+  }
+
+  const moonLongitude =
+    transits.find((transit) => transit.id === "moon")?.longitude;
+  if (moonLongitude === undefined) {
+    throw new Error("No se pudo calcular la longitud lunar.");
+  }
+  const illumination = SunCalc.getMoonIllumination(instant);
+
+  return {
+    calculatedAt: instant.toISOString(),
+    phaseName: getPhaseName(illumination.phase),
+    illumination: Math.round(illumination.fraction * 100),
+    moonSign: signFromLongitude(moonLongitude).sign,
+    transits,
+    aspects: aspects.sort((a, b) => a.orb - b.orb),
+    mercuryRetrograde: isRetrograde(Astronomy.Body.Mercury, instant),
+    venusRetrograde: isRetrograde(Astronomy.Body.Venus, instant),
+  };
+}
+
+function calculateForLocalDate(
+  date: string,
+  activity: AstralActivity,
+  timeZone: string,
+): AstralCalculationResult {
+  return calculateForDate(getUtcInstantAtLocalNoon(date, timeZone), activity, date);
+}
+
 export function calculateRealAstralData(
   targetDate: Date,
   activity: AstralActivity,
@@ -305,16 +502,15 @@ export function calculateRealAstralData(
 export function getAstralCalendarDays(
   year: number,
   month: number,
+  timeZone = "UTC",
 ): AstralCalendarDay[] {
   assertMonthRange(year, month, month);
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
 
   return Array.from({ length: daysInMonth }, (_, index) => {
     const day = index + 1;
-    const result = calculateForDate(
-      new Date(Date.UTC(year, month - 1, day, 12)),
-      "moon-observation",
-    );
+    const date = dateKey(year, month, day);
+    const result = calculateForLocalDate(date, "moon-observation", timeZone);
     return { ...result, day };
   });
 }
@@ -324,6 +520,7 @@ export function findOptimalAstralDates(
   year: number,
   startMonth: number,
   endMonth: number,
+  timeZone = "UTC",
 ): AstralCalculationResult[] {
   assertMonthRange(year, startMonth, endMonth);
   const results: AstralCalculationResult[] = [];
@@ -334,8 +531,8 @@ export function findOptimalAstralDates(
     const guidance = ACTIVITY_GUIDANCE[activity];
 
     for (let day = 1; day <= daysInMonth; day += 1) {
-      const date = new Date(Date.UTC(year, month - 1, day, 12));
-      const result = calculateForDate(date, activity);
+      const date = dateKey(year, month, day);
+      const result = calculateForLocalDate(date, activity, timeZone);
       const phaseIsWaxing =
         result.phaseValue >= 0.03 && result.phaseValue < 0.5;
       const phaseIsWaning =

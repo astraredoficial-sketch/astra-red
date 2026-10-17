@@ -17,10 +17,31 @@ require.extensions[".ts"] = function (module, filename) {
 
 const {
   ASTRAL_ACTIVITIES,
+  calculateCurrentSky,
   calculateRealAstralData,
   findOptimalAstralDates,
+  getDateKeyInTimeZone,
   getAstralCalendarDays,
+  getUtcInstantAtLocalNoon,
 } = require("../src/lib/astronomyEngine.ts");
+
+function createTestChart(timeUnknown = false) {
+  const ids = [
+    "sun", "moon", "mercury", "venus", "mars", "jupiter",
+    "saturn", "uranus", "neptune", "pluto", "node", "asc",
+  ];
+  return {
+    timeUnknown,
+    planets: ids.map((id, index) => ({
+      id,
+      longitude: index * 29.7,
+      sign: "Aries",
+      signIndex: 0,
+      degreeInSign: index,
+      house: index + 1,
+    })),
+  };
+}
 
 test("el calendario lunar muestra todos los días del mes, incluso en año bisiesto", () => {
   const days = getAstralCalendarDays(2028, 2);
@@ -57,6 +78,117 @@ test("las fechas se calculan sin desplazamiento de día por zona horaria", () =>
   );
 
   assert.equal(result.date, "2027-01-01");
+});
+
+test("el mediodía del calendario respeta zona horaria y cambios estacionales", () => {
+  assert.equal(
+    getUtcInstantAtLocalNoon("2026-10-16", "America/Caracas").toISOString(),
+    "2026-10-16T16:00:00.000Z",
+  );
+  assert.equal(
+    getUtcInstantAtLocalNoon("2026-03-07", "America/New_York").toISOString(),
+    "2026-03-07T17:00:00.000Z",
+  );
+  assert.equal(
+    getUtcInstantAtLocalNoon("2026-03-09", "America/New_York").toISOString(),
+    "2026-03-09T16:00:00.000Z",
+  );
+  assert.equal(
+    getUtcInstantAtLocalNoon("2026-10-16", "Pacific/Kiritimati").toISOString(),
+    "2026-10-15T22:00:00.000Z",
+  );
+});
+
+test("las fechas lunares del calendario conservan el día civil y usan mediodía local", () => {
+  const date = getAstralCalendarDays(2026, 10, "America/Caracas")[15];
+  const localNoon = calculateRealAstralData(
+    getUtcInstantAtLocalNoon("2026-10-16", "America/Caracas"),
+    "moon-observation",
+  );
+
+  assert.equal(date.date, "2026-10-16");
+  assert.equal(date.phaseValue, localNoon.phaseValue);
+  assert.equal(date.illumination, localNoon.illumination);
+  assert.equal(date.moonSign, localNoon.moonSign);
+  assert.equal(
+    getDateKeyInTimeZone(
+      new Date("2026-10-17T01:30:00.000Z"),
+      "America/Caracas",
+    ),
+    "2026-10-16",
+  );
+});
+
+test("las fechas sugeridas también se calculan al mediodía de la zona elegida", () => {
+  const suggestedDates = findOptimalAstralDates(
+    "moon-observation",
+    2026,
+    10,
+    10,
+    "America/Caracas",
+  );
+
+  assert.ok(suggestedDates.length > 0);
+  for (const suggestedDate of suggestedDates) {
+    const localNoon = calculateRealAstralData(
+      getUtcInstantAtLocalNoon(suggestedDate.date, "America/Caracas"),
+      "moon-observation",
+    );
+    assert.equal(suggestedDate.phaseValue, localNoon.phaseValue);
+    assert.equal(suggestedDate.illumination, localNoon.illumination);
+    assert.equal(suggestedDate.moonSign, localNoon.moonSign);
+  }
+});
+
+test("el mediodía local rechaza fechas y zonas horarias inválidas", () => {
+  assert.throws(
+    () => getUtcInstantAtLocalNoon("2026-02-30", "UTC"),
+    RangeError,
+  );
+  assert.throws(
+    () => getUtcInstantAtLocalNoon("0000-10-16", "UTC"),
+    RangeError,
+  );
+  assert.throws(
+    () => getUtcInstantAtLocalNoon("2026-10-16", "Invalid/Zone"),
+    RangeError,
+  );
+});
+
+test("la lectura actual usa la hora exacta y destaca tránsitos cercanos a la carta", () => {
+  const instant = new Date("2026-10-16T16:00:00.000Z");
+  const chart = createTestChart();
+  const todaySky = calculateCurrentSky(chart, instant);
+  const lunarData = calculateRealAstralData(instant, "moon-observation");
+
+  assert.equal(todaySky.calculatedAt, instant.toISOString());
+  assert.equal(todaySky.phaseName, lunarData.phaseName);
+  assert.equal(todaySky.illumination, lunarData.illumination);
+  assert.equal(todaySky.moonSign, lunarData.moonSign);
+  assert.deepEqual(
+    todaySky.transits.map(({ id }) => id),
+    ["sun", "moon", "mercury", "venus", "mars"],
+  );
+  assert.ok(todaySky.aspects.every((aspect) => aspect.orb <= 3));
+  assert.ok(
+    todaySky.aspects.every(
+      (aspect, index, aspects) =>
+        index === 0 || aspects[index - 1].orb <= aspect.orb,
+    ),
+  );
+});
+
+test("la hora desconocida excluye tránsitos sobre Luna y Ascendente natales", () => {
+  const todaySky = calculateCurrentSky(
+    createTestChart(true),
+    new Date("2026-10-16T16:00:00.000Z"),
+  );
+
+  assert.ok(
+    todaySky.aspects.every(
+      ({ natal }) => natal !== "moon" && natal !== "asc",
+    ),
+  );
 });
 
 test("las fases lunares concuerdan con referencias de luna nueva y llena", () => {

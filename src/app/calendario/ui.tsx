@@ -10,9 +10,14 @@ import {
   type AstralActivity,
   type AstralCalendarDay,
   type AstralCalculationResult,
+  calculateCurrentSky,
   findOptimalAstralDates,
+  getDateKeyInTimeZone,
   getAstralCalendarDays,
+  type CurrentSkyReading,
 } from "@/lib/astronomyEngine";
+import { describeAspect, formatArcMinutes } from "@/lib/astro/aspects";
+import { ASPECT_META, PLANET_META } from "@/lib/astro/constants";
 import { useSession } from "@/hooks/useSession";
 import { supabase } from "@/lib/supabase/client";
 
@@ -21,6 +26,7 @@ interface AstralEvent {
   title: string;
   activity: AstralActivity;
   eventDate: string;
+  referenceTimeZone: string;
   lunarPhase: string;
   illumination: number;
   recommendation: string;
@@ -78,7 +84,7 @@ const ACTIVITY_GROUPS: {
 ];
 
 const EVENT_COLUMNS =
-  "id, user_id, title, activity, event_date, lunar_phase, illumination, recommendation";
+  "id, user_id, title, activity, event_date, reference_timezone, lunar_phase, illumination, recommendation";
 
 const WEEKDAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 const ASTRAL_ACTIVITY_SET = new Set<string>(ASTRAL_ACTIVITIES);
@@ -97,6 +103,8 @@ function toAstralEvent(value: unknown): AstralEvent | null {
     !isAstralActivity(row.activity) ||
     typeof row.event_date !== "string" ||
     !/^\d{4}-\d{2}-\d{2}$/.test(row.event_date) ||
+    typeof row.reference_timezone !== "string" ||
+    !row.reference_timezone.trim() ||
     typeof row.lunar_phase !== "string" ||
     typeof row.illumination !== "number" ||
     !Number.isInteger(row.illumination) ||
@@ -112,9 +120,66 @@ function toAstralEvent(value: unknown): AstralEvent | null {
     title: row.title,
     activity: row.activity,
     eventDate: row.event_date,
+    referenceTimeZone: row.reference_timezone,
     lunarPhase: row.lunar_phase,
     illumination: row.illumination,
     recommendation: row.recommendation,
+  };
+}
+
+function formatCurrentInstant(instant: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("es", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone,
+  }).format(instant);
+}
+
+function getCurrentSkyError(cause: unknown): string {
+  return cause instanceof Error
+    ? `No se pudo calcular tu cielo actual: ${cause.message}`
+    : "No se pudo calcular tu cielo actual.";
+}
+
+function getInitialCalendarContext(): {
+  instant: Date;
+  timeZone: string;
+  date: string;
+} {
+  const instant = new Date();
+  const timeZone =
+    Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  return {
+    instant,
+    timeZone,
+    date: getDateKeyInTimeZone(instant, timeZone),
+  };
+}
+
+function createDailyReflection(reading: CurrentSkyReading): {
+  text: string;
+  question: string;
+} {
+  const closestAspect = reading.aspects[0];
+  if (!closestAspect) {
+    return {
+      text: "En esta lectura no aparecen contactos principales cerrados entre los tránsitos consultados y tus puntos natales. Es una observación limitada a los aspectos y al orbe definidos, no una señal de que el día carezca de significado.",
+      question: "¿Qué merece hoy tu atención, más allá de cualquier pronóstico?",
+    };
+  }
+
+  const transitName = PLANET_META[closestAspect.transit].name;
+  const natalName = PLANET_META[closestAspect.natal].name;
+  const transit = reading.transits.find(
+    (item) => item.id === closestAspect.transit,
+  );
+  if (!transit) {
+    throw new Error("No se encontró el tránsito de la lectura destacada.");
+  }
+
+  return {
+    text: `${transitName} en ${transit.sign} forma un aspecto de ${ASPECT_META[closestAspect.aspect].name} con tu ${natalName} natal (orbe ${formatArcMinutes(closestAspect.orb)}). ${describeAspect(closestAspect.aspect)}`,
+    question: `¿Cómo puedes atender hoy el tema de ${natalName.toLocaleLowerCase()} con intención y calma?`,
   };
 }
 
@@ -148,11 +213,16 @@ export function CalendarioUi() {
   use(io());
   const router = useRouter();
   const { ready, me, store, error: sessionError } = useSession();
+  const [initialCalendarContext] = useState(getInitialCalendarContext);
   const [monthValue, setMonthValue] = useState(() =>
-    new Date().toISOString().slice(0, 7),
+    initialCalendarContext.date.slice(0, 7),
   );
   const [selectedDate, setSelectedDate] = useState(() =>
-    new Date().toISOString().slice(0, 10),
+    initialCalendarContext.date,
+  );
+  const [referenceTimeZone] = useState(initialCalendarContext.timeZone);
+  const [currentInstant, setCurrentInstant] = useState<Date>(
+    initialCalendarContext.instant,
   );
   const [activity, setActivity] = useState<AstralActivity>("hair-growth");
   const [savedEvents, setSavedEvents] = useState<AstralEvent[]>([]);
@@ -163,6 +233,29 @@ export function CalendarioUi() {
   const [calendarError, setCalendarError] = useState("");
   const [actionError, setActionError] = useState("");
 
+  const userId = me?.id;
+
+  useEffect(() => {
+    if (!userId) return;
+    const interval = window.setInterval(
+      () => setCurrentInstant(new Date()),
+      60_000,
+    );
+    return () => window.clearInterval(interval);
+  }, [userId]);
+
+  const currentSky = useMemo(() => {
+    if (!me) return null;
+    try {
+      return {
+        reading: calculateCurrentSky(me.chart, currentInstant),
+        error: "",
+      };
+    } catch (cause) {
+      return { reading: null, error: getCurrentSkyError(cause) };
+    }
+  }, [currentInstant, me]);
+
   useEffect(() => {
     if (!ready || sessionError || me) return;
     router.replace(
@@ -170,7 +263,6 @@ export function CalendarioUi() {
     );
   }, [me, ready, router, sessionError, store?.currentUserId]);
 
-  const userId = me?.id;
   useEffect(() => {
     if (!userId) return;
     const authenticatedUserId = userId;
@@ -232,16 +324,25 @@ export function CalendarioUi() {
     : "";
 
   const calendarDays = useMemo(
-    () => (monthIsValid ? getAstralCalendarDays(year, month) : []),
-    [monthIsValid, month, year],
+    () =>
+      monthIsValid
+        ? getAstralCalendarDays(year, month, referenceTimeZone)
+        : [],
+    [monthIsValid, month, referenceTimeZone, year],
   );
 
   const recommendations = useMemo(
     () =>
       monthIsValid
-        ? findOptimalAstralDates(activity, year, month, month)
+        ? findOptimalAstralDates(
+            activity,
+            year,
+            month,
+            month,
+            referenceTimeZone,
+          )
         : [],
-    [activity, monthIsValid, month, year],
+    [activity, monthIsValid, month, referenceTimeZone, year],
   );
 
   const selectedDay = calendarDays.find(
@@ -271,6 +372,7 @@ export function CalendarioUi() {
         title,
         activity,
         event_date: result.date,
+        reference_timezone: referenceTimeZone,
         lunar_phase: result.phaseName,
         illumination: result.illumination,
         recommendation: result.recommendation,
@@ -349,6 +451,10 @@ export function CalendarioUi() {
     monthIsValid
       ? new Date(Date.UTC(year, month - 1, 1)).getUTCDay()
       : 0;
+  const dailyReading = currentSky?.reading ?? null;
+  const dailyReflection = dailyReading
+    ? createDailyReflection(dailyReading)
+    : null;
 
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden bg-slate-950 text-white">
@@ -401,7 +507,165 @@ export function CalendarioUi() {
           </span>
         </div>
 
-        <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <section
+          aria-labelledby="today-sky-heading"
+          className="overflow-hidden rounded-3xl border border-violet-300/25 bg-gradient-to-br from-violet-950/80 via-slate-900 to-indigo-950/70 p-5 shadow-xl sm:p-7"
+        >
+          <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+            <div className="max-w-2xl">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-violet-200">
+                Lectura del momento
+              </p>
+              <h2
+                id="today-sky-heading"
+                className="mt-2 font-serif text-3xl text-white"
+              >
+                Tu cielo de hoy
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                El cielo actual se compara con tu carta natal guardada. Es una
+                lectura astrológica simbólica para reflexionar, no una
+                predicción.
+              </p>
+            </div>
+            {dailyReading && (
+              <p className="rounded-xl border border-white/10 bg-slate-950/40 px-4 py-3 text-xs leading-5 text-slate-300 sm:max-w-xs sm:text-right">
+                Calculado{" "}
+                {formatCurrentInstant(
+                  new Date(dailyReading.calculatedAt),
+                  referenceTimeZone,
+                )}
+                <span className="mt-1 block text-violet-200">
+                  Hora local del dispositivo · {referenceTimeZone}
+                </span>
+              </p>
+            )}
+          </div>
+
+          {currentSky?.error ? (
+            <p
+              role="alert"
+              className="mt-5 rounded-xl border border-rose-300/20 bg-rose-950/40 p-4 text-sm text-rose-100"
+            >
+              {currentSky.error}
+            </p>
+          ) : dailyReading && dailyReflection ? (
+            <>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+                  <span className="text-4xl" aria-hidden="true">
+                    {getMoonSymbol(dailyReading.phaseName)}
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                      Luna ahora
+                    </p>
+                    <p className="mt-1 font-serif text-xl text-white">
+                      {dailyReading.phaseName}
+                    </p>
+                    <p className="text-sm text-slate-300">
+                      En {dailyReading.moonSign} · {dailyReading.illumination}%
+                      iluminada
+                    </p>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                    Movimiento aparente
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-200">
+                    Mercurio{" "}
+                    {dailyReading.mercuryRetrograde
+                      ? "retrógrado"
+                      : "directo"}{" "}
+                    · Venus{" "}
+                    {dailyReading.venusRetrograde
+                      ? "retrógrado"
+                      : "directo"}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {dailyReading.transits.map((transit) => (
+                      <span
+                        key={transit.id}
+                        className="rounded-full border border-violet-200/15 bg-violet-950/45 px-2.5 py-1 text-xs text-violet-100"
+                      >
+                        {PLANET_META[transit.id].name} en {transit.sign}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-violet-200/15 bg-slate-950/45 p-4 sm:p-5">
+                <p className="text-xs font-semibold uppercase tracking-wider text-violet-200">
+                  Contactos más cercanos
+                </p>
+                {dailyReading.aspects.length > 0 ? (
+                  <ul className="mt-2 flex flex-wrap gap-2">
+                    {dailyReading.aspects.slice(0, 3).map((aspect, index) => (
+                      <li
+                        key={`${aspect.transit}-${aspect.natal}-${aspect.aspect}-${index}`}
+                        className="rounded-xl border border-violet-200/15 bg-violet-950/45 px-3 py-2 text-xs leading-5 text-slate-200"
+                      >
+                        {PLANET_META[aspect.transit].name}{" "}
+                        {ASPECT_META[aspect.aspect].name} tu{" "}
+                        {PLANET_META[aspect.natal].name} natal · orbe{" "}
+                        {formatArcMinutes(aspect.orb)}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm leading-6 text-slate-300">
+                    No aparecen contactos principales dentro del orbe de 3°
+                    considerado.
+                  </p>
+                )}
+                <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-violet-200">
+                  Reflexión personalizada
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-200">
+                  {dailyReflection.text}
+                </p>
+                <p className="mt-4 border-l-2 border-amber-300/70 pl-3 text-sm font-medium leading-6 text-amber-100">
+                  {dailyReflection.question}
+                </p>
+                <p className="mt-3 text-xs leading-5 text-slate-400">
+                  Se destacan los contactos entre Sol, Luna, Mercurio, Venus y
+                  Marte actuales y tus puntos natales con un orbe máximo de 3°.
+                  Si la hora de nacimiento es desconocida, se excluyen los
+                  contactos con Luna y Ascendente natales.
+                </p>
+              </div>
+
+              <nav
+                aria-label="Continuar explorando el cielo"
+                className="mt-5 flex flex-wrap gap-3"
+              >
+                <a
+                  href="#planificador-lunar"
+                  className="inline-flex min-h-11 items-center rounded-xl border border-violet-200/25 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-200"
+                >
+                  Ir al planificador lunar
+                </a>
+                <a
+                  href="#sinastria-astral"
+                  className="inline-flex min-h-11 items-center rounded-xl border border-violet-200/25 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-200"
+                >
+                  Explorar sinastría
+                </a>
+              </nav>
+            </>
+          ) : (
+            <p className="mt-5 text-sm text-slate-300" role="status">
+              Preparando la lectura del cielo actual…
+            </p>
+          )}
+        </section>
+
+        <section
+          id="planificador-lunar"
+          className="grid scroll-mt-24 gap-6 lg:grid-cols-[1.15fr_0.85fr]"
+        >
           <div className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-4 shadow-xl sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -491,7 +755,8 @@ export function CalendarioUi() {
               <span>🌕 Llena</span>
               <span>🌗 Menguante</span>
               <span className="basis-full text-slate-500">
-                Fase, signo lunar y tránsitos estimados para el mediodía UTC.
+                Fase, signo lunar y tránsitos calculados para las 12:00 de tu
+                zona horaria local ({referenceTimeZone}).
               </span>
             </div>
 
@@ -629,7 +894,9 @@ export function CalendarioUi() {
           </div>
         </section>
 
-        <SynastryTool me={me} />
+        <div id="sinastria-astral" className="scroll-mt-24">
+          <SynastryTool me={me} />
+        </div>
 
         <section className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 shadow-xl sm:p-6">
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -680,6 +947,9 @@ export function CalendarioUi() {
                       </h3>
                       <p className="text-xs capitalize text-slate-400">
                         {event.lunarPhase} · {event.illumination}% iluminada
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Referencia: 12:00 · {event.referenceTimeZone}
                       </p>
                     </div>
                   </div>
