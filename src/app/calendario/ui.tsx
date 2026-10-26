@@ -16,6 +16,7 @@ import {
   getAstralCalendarDays,
   type CurrentSkyReading,
 } from "@/lib/astronomyEngine";
+import { findNextLunarReturn } from "@/lib/lunarReturn";
 import { describeAspect, formatArcMinutes } from "@/lib/astro/aspects";
 import { ASPECT_META, PLANET_META } from "@/lib/astro/constants";
 import { useSession } from "@/hooks/useSession";
@@ -253,6 +254,55 @@ export function CalendarioUi() {
       };
     } catch (cause) {
       return { reading: null, error: getCurrentSkyError(cause) };
+    }
+  }, [currentInstant, me]);
+  const lunarReturn = useMemo(() => {
+    if (!me) return null;
+
+    const natalMoonLongitude = me.chart.triad.moon.longitude;
+
+    if (
+      typeof natalMoonLongitude !== "number" ||
+      !Number.isFinite(natalMoonLongitude) ||
+      natalMoonLongitude < 0 ||
+      natalMoonLongitude >= 360
+    ) {
+      return {
+        instant: null as Date | null,
+        error: "No encontramos una longitud lunar natal válida.",
+        days: 0,
+        hours: 0,
+        minutes: 0,
+      };
+    }
+
+    try {
+      const instant = findNextLunarReturn(
+        natalMoonLongitude,
+        currentInstant,
+      );
+      const totalMinutes = Math.max(
+        0,
+        Math.floor(
+          (instant.getTime() - currentInstant.getTime()) / 60000,
+        ),
+      );
+
+      return {
+        instant,
+        error: "",
+        days: Math.floor(totalMinutes / 1440),
+        hours: Math.floor((totalMinutes % 1440) / 60),
+        minutes: totalMinutes % 60,
+      };
+    } catch {
+      return {
+        instant: null as Date | null,
+        error: "No pudimos calcular el próximo retorno lunar.",
+        days: 0,
+        hours: 0,
+        minutes: 0,
+      };
     }
   }, [currentInstant, me]);
 
@@ -662,6 +712,40 @@ export function CalendarioUi() {
           )}
         </section>
 
+        <section
+          aria-labelledby="lunar-return-heading"
+          className="mb-6 rounded-3xl border border-violet-500/30 bg-slate-900/80 p-5 shadow-xl sm:p-6"
+        >
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-violet-300">
+            Ciclo personal
+          </p>
+          <h2 id="lunar-return-heading" className="mt-2 text-xl font-semibold text-white sm:text-2xl">
+            Tu próximo retorno lunar
+          </h2>
+          {lunarReturn?.instant ? (
+            <>
+              <p className="mt-3 text-base text-slate-200">
+                {formatCurrentInstant(lunarReturn.instant, referenceTimeZone)}
+              </p>
+              <p className="mt-2 text-sm text-violet-200">
+                Faltan {lunarReturn.days} d · {lunarReturn.hours} h · {lunarReturn.minutes} min
+              </p>
+              {me?.chart.timeUnknown ? (
+                <p className="mt-3 text-sm leading-6 text-amber-200">
+                  La hora de nacimiento es desconocida. Este retorno es aproximado y su hora puede variar.
+                </p>
+              ) : (
+                <p className="mt-3 text-sm leading-6 text-slate-400">
+                  Fecha calculada para cuando la Luna vuelva a la longitud lunar de tu carta natal.
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="mt-3 text-sm text-slate-300" role="status">
+              {lunarReturn?.error || "Calculando tu próximo retorno lunar…"}
+            </p>
+          )}
+        </section>
         <section
           id="planificador-lunar"
           className="grid scroll-mt-24 gap-6 lg:grid-cols-[1.15fr_0.85fr]"
