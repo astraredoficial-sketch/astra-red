@@ -7,10 +7,10 @@ import { supabase } from "@/lib/supabase/client";
 import { isMissingAuthSessionError } from "@/lib/supabase/session";
 
 interface Props {
-  active?: "carta" | "destinos" | "calendario" | "mensajes" | "notificaciones" | "cuenta";
+  active?: "carta" | "destinos" | "calendario" | "ciclo-personal" | "mensajes" | "notificaciones" | "cuenta";
 }
 
-type NavIconName = "carta" | "destinos" | "calendario" | "mensajes" | "notificaciones" | "cuenta";
+type NavIconName = "carta" | "destinos" | "calendario" | "ciclo-personal" | "mensajes" | "notificaciones" | "cuenta";
 
 function NavIcon({ name }: { name: NavIconName }) {
   const common = {

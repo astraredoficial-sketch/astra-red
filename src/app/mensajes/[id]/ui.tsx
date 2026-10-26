@@ -67,7 +67,7 @@ export function ConversacionUi() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { ready, store, me, error: sessionError } = useSession();
-  const otherId = params.id;
+  const otherId = params?.id ?? "";
   const other = useMemo(
     () => store?.profiles.find((profile) => profile.id === otherId),
     [otherId, store],

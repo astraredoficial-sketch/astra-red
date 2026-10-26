@@ -16,8 +16,8 @@ export function ConectarUi() {
   const { ready, store, me, error: sessionError } = useSession();
 
   const other = useMemo(
-    () => store?.profiles.find((profile) => profile.id === params.id),
-    [params.id, store],
+    () => store?.profiles.find((profile) => profile.id === (params?.id ?? "")),
+    [params?.id, store],
   );
   const syn = me && other ? computeSynastry(me.chart, other.chart) : null;
   const [isMatch, setIsMatch] = useState(false);
