@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -45,6 +45,13 @@ function NavIcon({ name }: { name: NavIconName }) {
         <>
           <rect x="3.5" y="5" width="17" height="15" rx="2.5" />
           <path d="M7.5 3v4M16.5 3v4M3.5 9.5h17M8 13h.01M12 13h.01M16 13h.01M8 16.5h.01M12 16.5h.01" />
+        </>
+      )}
+      {name === "ciclo-personal" && (
+        <>
+          <circle cx="12" cy="12" r="8.5" />
+          <path d="M14.5 3.8a8.5 8.5 0 1 0 5.7 12.8A7.5 7.5 0 0 1 14.5 3.8Z" />
+          <path d="m17.5 3 .7 1.7 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.7Z" />
         </>
       )}
       {name === "mensajes" && (
@@ -306,6 +313,7 @@ export function AppNav({ active }: Props) {
     { id: "carta", label: "Carta Natal", href: "/carta", icon: "carta" },
     { id: "destinos", label: "Destinos", href: "/destinos", icon: "destinos" },
     { id: "calendario", label: "Calendario astral", href: "/calendario", icon: "calendario" },
+    { id: "ciclo-personal", label: "Ciclo personal", href: "/ciclo-personal", icon: "ciclo-personal" },
     { id: "mensajes", label: "Mensajes", href: "/mensajes", icon: "mensajes" },
     { id: "notificaciones", label: "Notificaciones", href: "/notificaciones", icon: "notificaciones" },
     { id: "cuenta", label: "Cuenta", href: "/cuenta", icon: "cuenta" },
