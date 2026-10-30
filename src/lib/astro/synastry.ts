@@ -1,4 +1,4 @@
-﻿import type {
+import type {
   AspectName,
   NatalChart,
   PlanetId,
@@ -105,7 +105,7 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryResult {
 
   return {
     percent,
-    aspects: aspects.slice(0, 12),
+    aspects,
     hasNodalAspect,
     hiloRojo: percent > 90 && hasNodalAspect,
     timeApproximate: a.timeUnknown || b.timeUnknown,

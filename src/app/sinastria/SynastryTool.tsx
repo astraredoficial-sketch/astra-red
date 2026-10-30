@@ -25,6 +25,14 @@ type SynastryEntry = {
 };
 
 const HISTORY_COLUMNS = "id, user_id, other_name, result, created_at";
+
+const ASPECT_ORDER: AspectName[] = [
+  "conjunction",
+  "opposition",
+  "trine",
+  "sextile",
+  "square",
+];
 const PLANET_IDS = new Set<PlanetId>([
   "sun",
   "moon",
@@ -140,6 +148,7 @@ export function SynastryTool({ me }: SynastryToolProps) {
   const [historyError, setHistoryError] = useState("");
   const [actionError, setActionError] = useState("");
   const [preview, setPreview] = useState<Omit<SynastryEntry, "id" | "createdAt"> | null>(null);
+  const [selectedReport, setSelectedReport] = useState<SynastryEntry | null>(null);
   const [calculating, setCalculating] = useState(false);
   const [deletingId, setDeletingId] = useState("");
   const [sharingId, setSharingId] = useState("");
@@ -189,6 +198,7 @@ export function SynastryTool({ me }: SynastryToolProps) {
     setActionError("");
     setShareNotice("");
     setPreview(null);
+    setSelectedReport(null);
 
     const name = otherName.trim();
     if (!name || name.length > 80) {
@@ -252,6 +262,7 @@ export function SynastryTool({ me }: SynastryToolProps) {
 
       setHistory((current) => [entry, ...current]);
       setPreview(null);
+      setSelectedReport(entry);
     } catch (cause) {
       setActionError(
         cause instanceof Error
@@ -284,6 +295,7 @@ export function SynastryTool({ me }: SynastryToolProps) {
       return;
     }
     setHistory((current) => current.filter((entry) => entry.id !== id));
+    setSelectedReport((current) => current?.id === id ? null : current);
   }
 
   async function shareEntry(entry: Omit<SynastryEntry, "id" | "createdAt">, id: string) {
@@ -458,6 +470,15 @@ export function SynastryTool({ me }: SynastryToolProps) {
           sharing={sharingId === "preview"}
           onDelete={() => undefined}
           onShare={() => void shareEntry(previewEntry, "preview")}
+          onView={() => setSelectedReport(previewEntry)}
+        />
+      )}
+
+      {selectedReport && (
+        <SynastryFullReport
+          entry={selectedReport}
+          ownerName={me.name}
+          onClose={() => setSelectedReport(null)}
         />
       )}
 
@@ -487,6 +508,7 @@ export function SynastryTool({ me }: SynastryToolProps) {
                 sharing={sharingId === entry.id}
                 onDelete={() => void deleteEntry(entry.id)}
                 onShare={() => void shareEntry(entry, entry.id)}
+                onView={() => setSelectedReport(entry)}
               />
             ))}
           </div>
@@ -507,6 +529,7 @@ type SynastryResultCardProps = {
   sharing: boolean;
   onDelete: () => void;
   onShare: () => void;
+  onView: () => void;
 };
 
 function SynastryResultCard({
@@ -516,6 +539,7 @@ function SynastryResultCard({
   sharing,
   onDelete,
   onShare,
+  onView,
 }: SynastryResultCardProps) {
   return (
     <article className="space-y-3 rounded-2xl border border-fuchsia-300/15 bg-slate-950/65 p-4">
@@ -549,6 +573,14 @@ function SynastryResultCard({
       <div className="flex flex-wrap gap-2 border-t border-slate-800 pt-3">
         <button
           type="button"
+          onClick={onView}
+          disabled={deleting}
+          className="rounded-lg border border-fuchsia-300/40 px-3 py-2 text-xs font-bold text-fuchsia-100 hover:bg-fuchsia-300/10 disabled:opacity-50"
+        >
+          Ver informe completo
+        </button>
+        <button
+          type="button"
           onClick={onShare}
           disabled={sharing || deleting}
           className="rounded-lg bg-fuchsia-300 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-fuchsia-200 disabled:opacity-50"
@@ -567,5 +599,140 @@ function SynastryResultCard({
         )}
       </div>
     </article>
+  );
+}
+
+type SynastryFullReportProps = {
+  entry: SynastryEntry;
+  ownerName: string;
+  onClose: () => void;
+};
+
+function SynastryFullReport({
+  entry,
+  ownerName,
+  onClose,
+}: SynastryFullReportProps) {
+  const aspects = entry.result.aspects;
+
+  return (
+    <section className="space-y-5 rounded-3xl border border-fuchsia-300/25 bg-slate-950/90 p-5 shadow-xl sm:p-7">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-fuchsia-200">
+            Informe completo de sinastria
+          </p>
+          <h3 className="mt-2 font-serif text-2xl text-white">
+            {ownerName} y {entry.otherName}
+          </h3>
+          <p className="mt-1 text-xs text-slate-400">
+            Calculado: {formatHistoryDate(entry.createdAt)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-fuchsia-200/30 px-4 py-2 text-center">
+          <p className="text-2xl font-bold text-fuchsia-100">
+            {entry.result.percent}%
+          </p>
+          <p className="text-xs text-slate-400">Resultado</p>
+        </div>
+      </div>
+
+      {entry.id === "preview" && (
+        <p className="rounded-xl border border-amber-300/30 bg-amber-950/30 p-3 text-sm text-amber-100">
+          Vista previa: este resultado todavia no esta guardado en el historial.
+        </p>
+      )}
+
+      <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+        <h4 className="font-semibold text-white">Indicadores calculados</h4>
+        <ul className="space-y-2 text-sm text-slate-300">
+          <li>
+            {entry.result.hasNodalAspect
+              ? "Se detecto al menos un aspecto con el Nodo Norte."
+              : "No se detectaron aspectos con el Nodo Norte."}
+          </li>
+          <li>
+            Indicador Hilo Rojo: {entry.result.hiloRojo ? "activado" : "no activado"}.
+          </li>
+          <li>
+            {entry.result.timeApproximate
+              ? "La hora de nacimiento es desconocida o aproximada; algunos factores dependientes de la hora requieren cautela."
+              : "Las horas de nacimiento fueron tratadas como conocidas."}
+          </li>
+        </ul>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="font-serif text-xl text-white">Aspectos encontrados</h4>
+        <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
+          {aspects.length} aspectos registrados
+        </span>
+      </div>
+
+      {aspects.length === 0 ? (
+        <p className="rounded-xl border border-slate-800 p-4 text-sm text-slate-400">
+          Este resultado no contiene aspectos registrados.
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {ASPECT_ORDER.map((type) => {
+            const grouped = aspects.filter((aspect) => aspect.type === type);
+
+            if (grouped.length === 0) return null;
+
+            return (
+              <section
+                key={type}
+                className="overflow-hidden rounded-2xl border border-slate-800"
+              >
+                <div className="flex items-center justify-between gap-3 bg-slate-900 px-4 py-3">
+                  <h5 className="font-semibold text-fuchsia-100">
+                    {ASPECT_META[type].name}
+                  </h5>
+                  <span className="text-xs text-slate-400">
+                    {grouped.length} {grouped.length === 1 ? "aspecto" : "aspectos"}
+                  </span>
+                </div>
+
+                <div className="divide-y divide-slate-800">
+                  {grouped.map((aspect, index) => (
+                    <div
+                      key={`${aspect.a}-${aspect.b}-${type}-${index}`}
+                      className="space-y-2 p-4"
+                    >
+                      <p className="font-medium text-white">
+                        {PLANET_META[aspect.a].name}
+                        <span className="px-2 text-fuchsia-300">con</span>
+                        {PLANET_META[aspect.b].name}
+                      </p>
+                      <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-400">
+                        <span>Orbe: {aspect.orb.toFixed(2)}°</span>
+                        <span>Angulo registrado: {aspect.exactAngle.toFixed(2)}°</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="text-xs leading-5 text-slate-500">
+        El informe presenta los aspectos almacenados por el motor de sinastria.
+        Los registros antiguos muestran unicamente los aspectos que fueron
+        guardados originalmente; no se reconstruyen datos ausentes.
+      </p>
+
+      <div className="border-t border-slate-800 pt-4">
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-xl border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 hover:border-fuchsia-300/50 hover:text-white"
+        >
+          Cerrar informe
+        </button>
+      </div>
+    </section>
   );
 }
