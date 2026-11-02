@@ -71,8 +71,28 @@ export default function Home() {
   return (
     <div className="starfield starfield-home flex min-h-screen flex-col overflow-hidden bg-[#07060c] text-ink">
       <HomeSessionRedirect />
-      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center px-6 py-6 sm:px-8">
-        <BrandMark />
+      <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-5 sm:px-8 sm:py-6">
+        <BrandMark size="sm" />
+        <Link
+          href="/android"
+          aria-label="Descargar AstraRed para Android"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-full border border-thread/50 bg-thread/10 px-3 py-2 text-sm font-semibold text-[#f0d9e2] transition-colors hover:border-thread hover:bg-thread/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white sm:px-4"
+        >
+          <svg
+            aria-hidden="true"
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="1.8"
+          >
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+            <path d="M5 17v3h14v-3" />
+          </svg>
+          Descargar APK
+        </Link>
       </header>
 
       <main className="relative z-10 mx-auto flex w-full max-w-6xl flex-1 flex-col items-center px-6 pb-14 pt-5 sm:px-8 sm:pt-8">

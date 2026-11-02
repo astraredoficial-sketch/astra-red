@@ -95,7 +95,7 @@ export async function SiteFooter() {
             <div className="space-y-1">
               <p>
                 © {currentYear} AstraRed · Servicio para personas mayores de 18
-                años · Barinas, Venezuela
+                años · Venezuela
               </p>
               <p>
                 Las aportaciones son voluntarias y no habilitan funciones VIP.
