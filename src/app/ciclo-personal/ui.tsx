@@ -14,15 +14,6 @@ function formatInstant(instant: Date, timeZone: string): string {
   }).format(instant);
 }
 
-function formatShortDate(instant: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat("es", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-    timeZone,
-  }).format(instant);
-}
-
 export function CicloPersonalUi() {
   const router = useRouter();
   const { ready, me, store, error: sessionError } = useSession();
