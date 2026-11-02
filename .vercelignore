@@ -2,6 +2,7 @@
 /android-web/
 /AstraRed-debug.apk
 *.apk
+!public/downloads/astrared-android-v1.1.apk
 **/*.bak*
 /.agents/
 /supabase/.temp/
