@@ -8,6 +8,7 @@ const publicRoutes = [
   "/guias/sinastria",
   "/privacidad",
   "/terminos",
+  "/android",
   "/seguridad",
 ];
 

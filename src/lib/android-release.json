@@ -1,0 +1,15 @@
+{
+    "available":  true,
+    "packageName":  "com.astrared.app",
+    "versionName":  "1.1",
+    "versionCode":  2,
+    "fileName":  "astrared-android-v1.1.apk",
+    "releasedAt": "2026-11-01",
+    "sizeBytes":  5478188,
+    "sha256":  "ee4cc39626b71b56683cd6224610196a37ac0bb75f0c59914a2102e927a9980a",
+    "certificateSha256":  "73069de0095588ddf69289973c8cb83f75607a3c6817b2458722bdbda053352c",
+    "permissions":  [
+                        "android.permission.INTERNET",
+                        "android.permission.POST_NOTIFICATIONS"
+                    ]
+}

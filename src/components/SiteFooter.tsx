@@ -32,6 +32,7 @@ const footerGroups = [
       { label: "Comunidad segura", href: "/seguridad" },
       { label: "Privacidad", href: "/privacidad" },
       { label: "Términos de uso", href: "/terminos" },
+      { label: "AstraRed para Android", href: "/android" },
       {
         label: "Contacto",
         href: "mailto:astrared.oficial@gmail.com",
@@ -56,8 +57,8 @@ export async function SiteFooter() {
               conectar con intención.
             </p>
             <p className="max-w-sm text-xs leading-5 text-muted">
-              La astrología es una herramienta simbólica de reflexión; no es
-              una predicción científica ni asesoría profesional.
+              Una mirada astrológica y simbólica para explorar tus ciclos, tu
+              carta y tus conexiones.
             </p>
           </div>
           {footerGroups.map((group) => (

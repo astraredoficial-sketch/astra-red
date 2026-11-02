@@ -6,7 +6,10 @@ def releaseSigningProperties = [
     'ASTRARED_UPLOAD_KEY_ALIAS',
     'ASTRARED_UPLOAD_KEY_PASSWORD'
 ]
-def hasReleaseSigning = releaseSigningProperties.every { project.findProperty(it) }
+def releaseSigningValues = releaseSigningProperties.collectEntries { propertyName ->
+    [(propertyName): System.getenv(propertyName) ?: project.findProperty(propertyName)]
+}
+def hasReleaseSigning = releaseSigningProperties.every { releaseSigningValues[it] }
 def requestedReleasePackage = gradle.startParameter.taskNames.any { taskName ->
     def normalizedName = taskName.toLowerCase()
     normalizedName.contains('assemblerelease') || normalizedName.contains('bundlerelease')
@@ -14,7 +17,7 @@ def requestedReleasePackage = gradle.startParameter.taskNames.any { taskName ->
 
 if (requestedReleasePackage && !hasReleaseSigning) {
     throw new GradleException(
-        'Release signing is not configured. Set the AstraRed upload-key properties in your user-level Gradle gradle.properties.'
+        'Release signing is not configured. Run npm run android:release to enter the signing password locally.'
     )
 }
 
@@ -24,11 +27,14 @@ android {
     signingConfigs {
         release {
             if (hasReleaseSigning) {
-                storeFile file(project.findProperty('ASTRARED_UPLOAD_STORE_FILE'))
-                storePassword project.findProperty('ASTRARED_UPLOAD_STORE_PASSWORD')
-                keyAlias project.findProperty('ASTRARED_UPLOAD_KEY_ALIAS')
-                keyPassword project.findProperty('ASTRARED_UPLOAD_KEY_PASSWORD')
+                storeFile file(releaseSigningValues['ASTRARED_UPLOAD_STORE_FILE'])
+                storePassword releaseSigningValues['ASTRARED_UPLOAD_STORE_PASSWORD']
+                keyAlias releaseSigningValues['ASTRARED_UPLOAD_KEY_ALIAS']
+                keyPassword releaseSigningValues['ASTRARED_UPLOAD_KEY_PASSWORD']
             }
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
         }
     }
     defaultConfig {
