@@ -42,10 +42,10 @@ export function SinastriaUi() {
       <main className="mx-auto w-full max-w-7xl space-y-6 px-4 py-8 sm:px-6">
         <header className="space-y-3">
           <p className="text-xs font-bold uppercase tracking-[0.25em] text-rose-300">
-            AstraRed | Compatibilidad astrologica
+            AstraRed | Compatibilidad astrológica
           </p>
           <h1 className="font-serif text-3xl text-white sm:text-4xl">
-            Sinastria
+            Sinastría
           </h1>
           <p className="max-w-3xl text-sm leading-6 text-slate-300">
             Compara tu carta natal con la de otra persona mediante sus datos

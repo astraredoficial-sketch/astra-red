@@ -29,6 +29,7 @@ const { computeNatalChart } = require("../src/lib/astro/chart.ts");
 const { getNatalAspects, formatArcMinutes } = require("../src/lib/astro/aspects.ts");
 const { formatDegree, roundedPosition } = require("../src/lib/astro/constants.ts");
 const { computeSynastry } = require("../src/lib/astro/synastry.ts");
+const { createSynastryPdf } = require("../src/lib/astro/synastry-pdf.ts");
 const { compatibilityPercent } = require("../supabase/functions/_shared/synastry.ts");
 const { civilToUtc } = require("../src/lib/astro/time.ts");
 const { isAtLeastAge } = require("../src/lib/age.ts");
@@ -248,6 +249,33 @@ test("una hora natal desconocida excluye aspectos de Ascendente", () => {
   );
 });
 
+test("la sinastría registra el tipo, orbe y separación angulares exactos en los límites admitidos", () => {
+  const base = computeNatalChart(birth);
+  const singlePlanetChart = (id, longitude) => ({
+    ...base,
+    planets: [{ id, longitude }],
+  });
+  const cases = [
+    { type: "conjunction", angle: 8, outside: 8.01, orb: 8 },
+    { type: "sextile", angle: 66, outside: 66.01, orb: 6 },
+    { type: "square", angle: 97, outside: 97.01, orb: 7 },
+    { type: "trine", angle: 128, outside: 128.01, orb: 8 },
+    { type: "opposition", angle: 188, outside: 188.01, orb: 8 },
+  ];
+
+  for (const { type, angle, outside, orb } of cases) {
+    const first = singlePlanetChart("sun", 0);
+    const exact = computeSynastry(first, singlePlanetChart("moon", angle));
+    assert.equal(exact.aspects.length, 1, `${type}: debe aceptar el límite`);
+    assert.equal(exact.aspects[0].type, type);
+    assert.equal(exact.aspects[0].exactAngle, Math.min(angle, 360 - angle));
+    assert.equal(exact.aspects[0].orb, orb);
+
+    const beyond = computeSynastry(first, singlePlanetChart("moon", outside));
+    assert.equal(beyond.aspects.length, 0, `${type}: debe rechazar el exceso`);
+  }
+});
+
 test("la hora local respeta cambios de horario y rechaza horas inexistentes", () => {
   assert.equal(
     civilToUtc("2024-01-01", "12:00", "America/New_York").toISOString(),
@@ -398,4 +426,281 @@ test("el catálogo expone todos los países y ciudades con coordenadas y zona ho
     },
   });
   assert.equal(chart.planets.length, 12);
+});
+
+const {
+  buildSynastryInterpretation,
+} = require("../src/lib/astro/synastry-interpretation.ts");
+
+function interpretationFixture(overrides = {}) {
+  return {
+    percent: 72,
+    aspects: [],
+    hasNodalAspect: false,
+    hiloRojo: false,
+    timeApproximate: false,
+    charts: undefined,
+    ...overrides,
+  };
+}
+
+test("la interpretación conserva trazabilidad exacta hacia los aspectos originales", () => {
+  const aspect = {
+    a: "sun",
+    b: "moon",
+    type: "trine",
+    orb: 1.2,
+    exactAngle: 118.8,
+  };
+
+  const report = buildSynastryInterpretation(
+    interpretationFixture({ aspects: [aspect] }),
+  );
+
+  const emotional = report.sections.find(
+    (section) => section.id === "emotional",
+  );
+
+  assert.ok(emotional);
+  assert.equal(emotional.evidence.length, 1);
+  assert.equal(emotional.evidence[0].aspectIndex, 0);
+  assert.equal(emotional.evidence[0].planetA, "sun");
+  assert.equal(emotional.evidence[0].planetB, "moon");
+  assert.equal(emotional.evidence[0].aspect, "trine");
+  assert.equal(emotional.evidence[0].orb, 1.2);
+  assert.equal(emotional.evidence[0].exactAngle, 118.8);
+});
+
+test("la interpretación agrupa cada contacto una sola vez y conserva sus conteos", () => {
+  const report = buildSynastryInterpretation(
+    interpretationFixture({
+      aspects: [
+        {
+          a: "venus",
+          b: "mars",
+          type: "trine",
+          orb: 2,
+          exactAngle: 118,
+        },
+        {
+          a: "sun",
+          b: "saturn",
+          type: "square",
+          orb: 3,
+          exactAngle: 87,
+        },
+      ],
+    }),
+  );
+
+  const groupedIndexes = report.sections.flatMap((section) =>
+    section.evidence.map((item) => item.aspectIndex),
+  );
+  assert.deepEqual(groupedIndexes.sort(), [0, 1]);
+  assert.equal(report.counts.harmonious, 1);
+  assert.equal(report.counts.tense, 1);
+});
+
+test("la hora desconocida excluye Luna y Ascendente incluso en registros históricos", () => {
+  const report = buildSynastryInterpretation(
+    interpretationFixture({
+      timeApproximate: true,
+      aspects: [
+        {
+          a: "moon",
+          b: "venus",
+          type: "trine",
+          orb: 1,
+          exactAngle: 119,
+        },
+        {
+          a: "asc",
+          b: "sun",
+          type: "conjunction",
+          orb: 2,
+          exactAngle: 2,
+        },
+        {
+          a: "sun",
+          b: "venus",
+          type: "sextile",
+          orb: 2,
+          exactAngle: 62,
+        },
+      ],
+    }),
+  );
+
+  assert.equal(report.counts.total, 1);
+  assert.ok(
+    report.sections.every((section) =>
+      section.evidence.every(
+        (item) =>
+          item.planetA !== "moon" &&
+          item.planetB !== "moon" &&
+          item.planetA !== "asc" &&
+          item.planetB !== "asc",
+      ),
+    ),
+  );
+  assert.ok(report.notes.some((note) => note.includes("hora de nacimiento")));
+});
+
+test("sin aspectos no inventa interpretaciones ni conclusiones de compatibilidad", () => {
+  const report = buildSynastryInterpretation(
+    interpretationFixture(),
+  );
+
+  assert.equal(report.sections.length, 0);
+  assert.equal(report.counts.total, 0);
+  assert.match(report.conclusion, /No hay aspectos cruzados registrados/);
+});
+
+test("los registros históricos sin cartas advierten que no reconstruyen posiciones", () => {
+  const report = buildSynastryInterpretation(
+    interpretationFixture({
+      aspects: [
+        {
+          a: "mercury",
+          b: "mercury",
+          type: "sextile",
+          orb: 1,
+          exactAngle: 59,
+        },
+      ],
+    }),
+  );
+
+  assert.equal(report.hasChartData, false);
+  assert.ok(
+    report.notes.some((note) => note.includes("no conserva las cartas natales")),
+  );
+  assert.equal(
+    report.sections.find((section) => section.id === "common")
+      .evidence[0].aspectIndex,
+    0,
+  );
+});
+
+const {
+  buildSynastryCompatibilityOverview,
+  buildSynastrySummary,
+  buildSynastrySummaryText,
+  describeSynastryAspect,
+} = require("../src/lib/astro/synastry-summary.ts");
+
+test("el resumen conserva los conteos y prioriza contactos por la misma ponderación del cálculo", () => {
+  const aspects = [
+    { a: "sun", b: "moon", type: "trine", orb: 5, exactAngle: 125 },
+    { a: "venus", b: "mars", type: "sextile", orb: 0.5, exactAngle: 60.5 },
+    { a: "mercury", b: "jupiter", type: "square", orb: 2, exactAngle: 92 },
+    { a: "sun", b: "saturn", type: "conjunction", orb: 1, exactAngle: 1 },
+  ];
+  const summary = buildSynastrySummary(
+    interpretationFixture({ aspects }),
+  );
+
+  assert.equal(summary.total, 4);
+  assert.equal(summary.harmonious, 2);
+  assert.equal(summary.challenging, 1);
+  assert.equal(summary.conjunctions, 1);
+  assert.equal(summary.highlights[0].a, "venus");
+  assert.equal(summary.highlights.length, 3);
+});
+
+test("el resumen omite Luna y Ascendente de registros históricos con hora aproximada", () => {
+  const summary = buildSynastrySummary(
+    interpretationFixture({
+      timeApproximate: true,
+      aspects: [
+        { a: "moon", b: "venus", type: "trine", orb: 1, exactAngle: 119 },
+        { a: "asc", b: "sun", type: "conjunction", orb: 2, exactAngle: 2 },
+        { a: "sun", b: "venus", type: "sextile", orb: 2, exactAngle: 62 },
+      ],
+    }),
+  );
+
+  assert.equal(summary.total, 1);
+  assert.deepEqual(summary.aspects.map((aspect) => aspect.a), ["sun"]);
+});
+
+test("los textos de conexión explican los contactos y resumen fortalezas y retos reales", () => {
+  const aspects = [
+    { a: "sun", b: "moon", type: "trine", orb: 1, exactAngle: 119 },
+    { a: "mercury", b: "jupiter", type: "square", orb: 2, exactAngle: 92 },
+    { a: "venus", b: "mars", type: "sextile", orb: 1, exactAngle: 61 },
+  ];
+  const summary = buildSynastrySummary(
+    interpretationFixture({ percent: 89, aspects }),
+  );
+  const overview = buildSynastryCompatibilityOverview(summary);
+  const insight = describeSynastryAspect(aspects[0]);
+
+  assert.equal(overview.compatibility, "Excelente");
+  assert.match(overview.challenges, /comunicación y crecimiento/i);
+  assert.match(overview.strengths, /pasión y romance/i);
+  assert.equal(insight.title, "Compatibilidad profunda y emocional");
+  assert.match(insight.explanation, /Favorece la armonía/);
+});
+
+test("el texto compartido presenta la compatibilidad sin mensajes que la desacrediten", () => {
+  const text = buildSynastrySummaryText(
+    "Persona A",
+    "Persona B",
+    interpretationFixture({
+      aspects: [
+        { a: "sun", b: "moon", type: "trine", orb: 1, exactAngle: 119 },
+      ],
+    }),
+  );
+
+  assert.match(text, /Compatibilidad astrológica: \d+\/100/);
+  assert.match(text, /identidad y las necesidades emocionales/);
+  assert.match(text, /Favorece la armonía/);
+  assert.doesNotMatch(text, /no es una probabilidad|medida científica|no predice/i);
+});
+
+test("el PDF de sinastría se genera con resumen y detalles registrados", async () => {
+  const chartA = computeNatalChart(birth);
+  const chartB = computeNatalChart({
+    ...birth,
+    date: "1997-07-17",
+    time: "09:30",
+  });
+  const result = {
+    ...computeSynastry(chartA, chartB),
+    charts: { a: chartA, b: chartB },
+  };
+  const pdf = await createSynastryPdf(
+    "Persona A",
+    "Persona B",
+    result,
+    "2026-11-01T22:00:00.000Z",
+  );
+
+  assert.equal(pdf.type, "application/pdf");
+  assert.ok(pdf.size > 1000);
+});
+
+test("el catálogo no convierte una conjunción en armonía automática", () => {
+  const report = buildSynastryInterpretation(
+    interpretationFixture({
+      aspects: [
+        {
+          a: "sun",
+          b: "sun",
+          type: "conjunction",
+          orb: 0.4,
+          exactAngle: 0.4,
+        },
+      ],
+    }),
+  );
+
+  assert.equal(report.counts.conjunctions, 1);
+  assert.equal(report.counts.harmonious, 0);
+  assert.equal(report.counts.tense, 0);
+  assert.ok(
+    report.sections.some((section) => section.id === "common"),
+  );
 });

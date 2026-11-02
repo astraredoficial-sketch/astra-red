@@ -84,10 +84,16 @@ export type SynastryAspect = {
   exactAngle: number;
 };
 
+export type SynastryChartSnapshots = {
+  a: NatalChart;
+  b: NatalChart;
+};
+
 export type SynastryResult = {
   percent: number;
   aspects: SynastryAspect[];
   hasNodalAspect: boolean;
   hiloRojo: boolean;
   timeApproximate: boolean;
+  charts?: SynastryChartSnapshots;
 };

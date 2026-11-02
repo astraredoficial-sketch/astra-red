@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import { SinastriaUi } from "./ui";
 
 export const metadata: Metadata = {
-  title: "Sinastria | AstraRed",
+  title: "Sinastría | AstraRed",
   description:
-    "Compara dos cartas natales y explora sus aspectos astrologicos con AstraRed.",
+    "Compara dos cartas natales y explora sus aspectos astrológicos con AstraRed.",
 };
 
 export default function SinastriaPage() {

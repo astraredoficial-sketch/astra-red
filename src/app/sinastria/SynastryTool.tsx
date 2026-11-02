@@ -1,17 +1,26 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { StepWhere, type CityResult } from "@/components/StepWhere";
+import { SynastryWheel } from "@/components/SynastryWheel";
 import { computeNatalChart } from "@/lib/astro/chart";
 import { computeSynastry } from "@/lib/astro/synastry";
+import { buildSynastryInterpretation } from "@/lib/astro/synastry-interpretation";
+import { createSynastryPdf } from "@/lib/astro/synastry-pdf";
 import { createSynastryShareCard } from "@/lib/astro/synastry-share-card";
-import { ASPECT_META, PLANET_META } from "@/lib/astro/constants";
+import {
+  buildSynastrySummary,
+  buildSynastrySummaryText,
+} from "@/lib/astro/synastry-summary";
+import { ASPECT_META, PLANET_META, SIGNS } from "@/lib/astro/constants";
 import { supabase } from "@/lib/supabase/client";
 import type {
   AspectName,
+  NatalChart,
+  Placement,
   PlanetId,
   SynastryResult,
   UserProfile,
@@ -59,6 +68,86 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function isPlacement(value: unknown): value is Placement {
+  if (!isRecord(value)) return false;
+
+  const longitude = value.longitude;
+  const signIndex = value.signIndex;
+  const degreeInSign = value.degreeInSign;
+  const house = value.house;
+
+  if (
+    typeof value.id !== "string" ||
+    !PLANET_IDS.has(value.id as PlanetId) ||
+    typeof longitude !== "number" ||
+    !Number.isFinite(longitude) ||
+    longitude < 0 ||
+    longitude >= 360 ||
+    typeof signIndex !== "number" ||
+    !Number.isInteger(signIndex) ||
+    signIndex < 0 ||
+    signIndex > 11 ||
+    typeof value.sign !== "string" ||
+    typeof degreeInSign !== "number" ||
+    !Number.isFinite(degreeInSign) ||
+    typeof house !== "number" ||
+    !Number.isInteger(house) ||
+    house < 1 ||
+    house > 12
+  ) {
+    return false;
+  }
+
+  const expectedSignIndex = Math.floor(longitude / 30);
+  const expectedDegree = longitude - expectedSignIndex * 30;
+
+  return (
+    signIndex === expectedSignIndex &&
+    value.sign === SIGNS[expectedSignIndex] &&
+    Math.abs(degreeInSign - expectedDegree) < 0.00001
+  );
+}
+
+function isNatalChart(value: unknown): value is NatalChart {
+  if (!isRecord(value)) return false;
+
+  const validHouseSystem =
+    value.houseSystem === undefined ||
+    value.houseSystem === "placidus" ||
+    value.houseSystem === "equal" ||
+    value.houseSystem === "equal-high-latitude";
+
+  if (
+    typeof value.generatedAt !== "string" ||
+    !Number.isFinite(Date.parse(value.generatedAt)) ||
+    typeof value.timeUnknown !== "boolean" ||
+    !validHouseSystem ||
+    !Array.isArray(value.houses) ||
+    value.houses.length !== 12 ||
+    !value.houses.every(
+      (house) =>
+        typeof house === "number" &&
+        Number.isFinite(house) &&
+        house >= 0 &&
+        house < 360,
+    ) ||
+    !Array.isArray(value.planets) ||
+    value.planets.length === 0 ||
+    !value.planets.every(isPlacement) ||
+    !isRecord(value.triad) ||
+    !isPlacement(value.triad.sun) ||
+    value.triad.sun.id !== "sun" ||
+    !isPlacement(value.triad.moon) ||
+    value.triad.moon.id !== "moon" ||
+    !isPlacement(value.triad.asc) ||
+    value.triad.asc.id !== "asc"
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 function isSynastryResult(value: unknown): value is SynastryResult {
   if (!isRecord(value) || !Array.isArray(value.aspects)) return false;
   return (
@@ -69,6 +158,10 @@ function isSynastryResult(value: unknown): value is SynastryResult {
     typeof value.hasNodalAspect === "boolean" &&
     typeof value.hiloRojo === "boolean" &&
     typeof value.timeApproximate === "boolean" &&
+    (value.charts === undefined ||
+      (isRecord(value.charts) &&
+        isNatalChart(value.charts.a) &&
+        isNatalChart(value.charts.b))) &&
     value.aspects.every(
       (aspect) =>
         isRecord(aspect) &&
@@ -152,6 +245,7 @@ export function SynastryTool({ me }: SynastryToolProps) {
   const [calculating, setCalculating] = useState(false);
   const [deletingId, setDeletingId] = useState("");
   const [sharingId, setSharingId] = useState("");
+  const [sharingSummaryId, setSharingSummaryId] = useState("");
   const [shareNotice, setShareNotice] = useState("");
   const [shareError, setShareError] = useState("");
 
@@ -236,7 +330,14 @@ export function SynastryTool({ me }: SynastryToolProps) {
           timeZone: city.timeZone,
         },
       });
-      const result = computeSynastry(me.chart, otherChart);
+      const synastry = computeSynastry(me.chart, otherChart);
+      const result: SynastryResult = {
+        ...synastry,
+        charts: {
+          a: me.chart,
+          b: otherChart,
+        },
+      };
       setPreview({ otherName: name, result });
 
       const { data, error } = await supabase
@@ -304,43 +405,172 @@ export function SynastryTool({ me }: SynastryToolProps) {
     setShareNotice("");
 
     try {
-      const image = await createSynastryShareCard(me.name, entry.otherName, entry.result);
-      const file = new File([image], "sinastria-astrared.png", { type: "image/png" });
-      const shareText = `Te comparto nuestra sinastría de AstraRed: ${me.name} y ${entry.otherName}.`;
+      const pdf = await createSynastryPdf(
+        me.name,
+        entry.otherName,
+        entry.result,
+        id === "preview" ? new Date().toISOString() : (
+          history.find((item) => item.id === id)?.createdAt ??
+          new Date().toISOString()
+        ),
+      );
+
+      const file = new File(
+        [pdf],
+        "sinastria-astrared.pdf",
+        { type: "application/pdf" },
+      );
+
+      const shareText =
+        `Te comparto el informe completo de nuestra sinastría de AstraRed: ${me.name} y ${entry.otherName}.`;
 
       if (Capacitor.isNativePlatform()) {
         const { value: canShare } = await Share.canShare();
-        if (!canShare) throw new Error("Este dispositivo no permite compartir archivos.");
+
+        if (!canShare) {
+          throw new Error("Este dispositivo no permite compartir archivos.");
+        }
+
         const { uri } = await Filesystem.writeFile({
-          path: `sinastria-astrared-${id || "actual"}.png`,
+          path: `sinastria-astrared-${id || "actual"}.pdf`,
+          data: await blobToBase64(pdf),
+          directory: Directory.Cache,
+          recursive: true,
+        });
+
+        await Share.share({
+          title: "Informe de sinastría de AstraRed",
+          text: shareText,
+          files: [uri],
+          dialogTitle: "Compartir informe PDF",
+        });
+
+        setShareNotice(
+          "El PDF está preparado. Selecciona WhatsApp u otra aplicación para compartirlo.",
+        );
+        return;
+      }
+
+      if (
+        typeof navigator.share === "function" &&
+        navigator.canShare?.({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: "Informe de sinastría de AstraRed",
+            text: shareText,
+          });
+
+          setShareNotice("El menú de compartir recibió el PDF.");
+          return;
+        } catch (cause) {
+          if (cause instanceof DOMException && cause.name === "AbortError") {
+            setShareNotice("Se canceló el envío del PDF.");
+            return;
+          }
+
+          throw cause;
+        }
+      }
+
+      const pdfUrl = URL.createObjectURL(pdf);
+      const download = document.createElement("a");
+      download.href = pdfUrl;
+      download.download = file.name;
+      download.click();
+
+      window.setTimeout(() => URL.revokeObjectURL(pdfUrl), 1500);
+
+      const whatsappUrl =
+        `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+
+      const whatsappWindow = window.open(whatsappUrl, "_blank");
+
+      if (whatsappWindow) {
+        whatsappWindow.opener = null;
+        setShareNotice(
+          "El PDF se descargó. Adjunta sinastria-astrared.pdf en WhatsApp.",
+        );
+      } else {
+        setShareNotice(
+          "El PDF se descargó. Abre WhatsApp y adjunta sinastria-astrared.pdf.",
+        );
+      }
+    } catch (cause) {
+      setShareError(
+        cause instanceof Error
+          ? cause.message
+          : "No se pudo preparar el informe PDF.",
+      );
+    } finally {
+      setSharingId("");
+    }
+  }
+
+  async function shareSummaryWhatsApp(
+    entry: Omit<SynastryEntry, "id" | "createdAt">,
+    id: string,
+  ) {
+    setSharingSummaryId(id);
+    setShareError("");
+    setShareNotice("");
+
+    try {
+      const image = await createSynastryShareCard(
+        me.name,
+        entry.otherName,
+        entry.result,
+      );
+      const text = buildSynastrySummaryText(
+        me.name,
+        entry.otherName,
+        entry.result,
+      );
+      const file = new File([image], "resumen-sinastria-astrared.png", {
+        type: "image/png",
+      });
+
+      if (Capacitor.isNativePlatform()) {
+        const { value: canShare } = await Share.canShare();
+        if (!canShare) {
+          throw new Error("Este dispositivo no permite compartir archivos.");
+        }
+
+        const { uri } = await Filesystem.writeFile({
+          path: `resumen-sinastria-${id}.png`,
           data: await blobToBase64(image),
           directory: Directory.Cache,
           recursive: true,
         });
         await Share.share({
-          title: "Sinastría de AstraRed",
-          text: shareText,
+          title: "Resumen de sinastría de AstraRed",
+          text,
           files: [uri],
-          dialogTitle: "Compartir sinastría",
+          dialogTitle: "Compartir resumen por WhatsApp",
         });
-        setShareNotice("Elige WhatsApp para enviar la tarjeta de sinastría.");
+        setShareNotice("Selecciona WhatsApp para compartir la imagen y el resumen.");
         return;
       }
 
-      if (typeof navigator.share === "function" && navigator.canShare?.({ files: [file] })) {
+      if (
+        typeof navigator.share === "function" &&
+        navigator.canShare?.({ files: [file] })
+      ) {
         try {
           await navigator.share({
             files: [file],
-            title: "Sinastría de AstraRed",
-            text: shareText,
+            title: "Resumen de sinastría de AstraRed",
+            text,
           });
-          setShareNotice("Elige WhatsApp para enviar la tarjeta de sinastría.");
+          setShareNotice("El menú para compartir recibió la imagen y el resumen.");
           return;
         } catch (cause) {
           if (cause instanceof DOMException && cause.name === "AbortError") {
-            setShareNotice("Se canceló el envío de la tarjeta.");
+            setShareNotice("Se canceló el envío del resumen.");
             return;
           }
+          throw cause;
         }
       }
 
@@ -349,24 +579,28 @@ export function SynastryTool({ me }: SynastryToolProps) {
       download.href = imageUrl;
       download.download = file.name;
       download.click();
-      window.setTimeout(() => URL.revokeObjectURL(imageUrl), 1000);
+      window.setTimeout(() => URL.revokeObjectURL(imageUrl), 1500);
 
-      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
       const whatsappWindow = window.open(whatsappUrl, "_blank");
       if (whatsappWindow) {
         whatsappWindow.opener = null;
-        setShareNotice("La tarjeta se descargó. Adjunta el PNG en WhatsApp para enviarla.");
+        setShareNotice(
+          "La imagen se descargó y WhatsApp se abrió. Adjunta resumen-sinastria-astrared.png.",
+        );
       } else {
-        setShareNotice("La tarjeta se descargó. Abre WhatsApp y adjunta el PNG para enviarla.");
+        setShareNotice(
+          "La imagen se descargó. Abre WhatsApp y adjunta resumen-sinastria-astrared.png.",
+        );
       }
     } catch (cause) {
       setShareError(
         cause instanceof Error
           ? cause.message
-          : "No se pudo preparar la tarjeta para compartir.",
+          : "No se pudo preparar el resumen para WhatsApp.",
       );
     } finally {
-      setSharingId("");
+      setSharingSummaryId("");
     }
   }
 
@@ -468,8 +702,12 @@ export function SynastryTool({ me }: SynastryToolProps) {
           ownerName={me.name}
           deleting={false}
           sharing={sharingId === "preview"}
+          sharingSummary={sharingSummaryId === "preview"}
           onDelete={() => undefined}
           onShare={() => void shareEntry(previewEntry, "preview")}
+          onShareSummary={() =>
+            void shareSummaryWhatsApp(previewEntry, "preview")
+          }
           onView={() => setSelectedReport(previewEntry)}
         />
       )}
@@ -479,6 +717,12 @@ export function SynastryTool({ me }: SynastryToolProps) {
           entry={selectedReport}
           ownerName={me.name}
           onClose={() => setSelectedReport(null)}
+          onShare={() => void shareEntry(selectedReport, selectedReport.id)}
+          onShareSummary={() =>
+            void shareSummaryWhatsApp(selectedReport, selectedReport.id)
+          }
+          sharing={sharingId === selectedReport.id}
+          sharingSummary={sharingSummaryId === selectedReport.id}
         />
       )}
 
@@ -486,8 +730,8 @@ export function SynastryTool({ me }: SynastryToolProps) {
         <div>
           <h3 className="font-serif text-xl text-white">Historial de sinastrías</h3>
           <p className="mt-1 text-xs leading-5 text-slate-400">
-            Solo tú puedes ver y borrar este historial. Las tarjetas se comparten
-            como imágenes, sin publicar un enlace.
+            Solo tú puedes ver y borrar este historial. Exporta el informe PDF
+            o comparte un resumen visual por WhatsApp.
           </p>
         </div>
         {historyError && (
@@ -506,8 +750,10 @@ export function SynastryTool({ me }: SynastryToolProps) {
                 ownerName={me.name}
                 deleting={deletingId === entry.id}
                 sharing={sharingId === entry.id}
+                sharingSummary={sharingSummaryId === entry.id}
                 onDelete={() => void deleteEntry(entry.id)}
                 onShare={() => void shareEntry(entry, entry.id)}
+                onShareSummary={() => void shareSummaryWhatsApp(entry, entry.id)}
                 onView={() => setSelectedReport(entry)}
               />
             ))}
@@ -527,8 +773,10 @@ type SynastryResultCardProps = {
   ownerName: string;
   deleting: boolean;
   sharing: boolean;
+  sharingSummary: boolean;
   onDelete: () => void;
   onShare: () => void;
+  onShareSummary: () => void;
   onView: () => void;
 };
 
@@ -537,62 +785,88 @@ function SynastryResultCard({
   ownerName,
   deleting,
   sharing,
+  sharingSummary,
   onDelete,
   onShare,
+  onShareSummary,
   onView,
 }: SynastryResultCardProps) {
+  const summary = buildSynastrySummary(entry.result);
+
   return (
     <article className="space-y-3 rounded-2xl border border-fuchsia-300/15 bg-slate-950/65 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs text-slate-400">{formatHistoryDate(entry.createdAt)}</p>
           <h4 className="mt-1 font-serif text-lg text-white">
-            {ownerName} ✦ {entry.otherName}
+            {ownerName} · {entry.otherName}
           </h4>
         </div>
-        <p className="rounded-full border border-fuchsia-200/30 px-3 py-1 text-lg font-bold text-fuchsia-100">
-          {entry.result.percent}%
-        </p>
+        <div className="text-right">
+          <p className="rounded-full border border-fuchsia-200/30 px-3 py-1 text-lg font-bold text-fuchsia-100">
+            {summary.score}/100
+          </p>
+          <p className="mt-1 max-w-40 text-xs leading-4 text-slate-400">
+            Compatibilidad astrológica
+          </p>
+        </div>
       </div>
-      {entry.result.timeApproximate && (
-        <p className="text-xs text-amber-200">
-          Hora desconocida o aproximada: Luna y Ascendente no se usaron en todos los aspectos.
-        </p>
-      )}
-      <ul className="space-y-1 text-sm text-slate-300">
-        {entry.result.aspects.slice(0, 3).map((aspect, index) => (
+      <ul className="space-y-1.5 text-sm text-slate-300">
+        {summary.highlights.map((aspect, index) => (
           <li key={`${aspect.a}-${aspect.b}-${aspect.type}-${index}`}>
-            {PLANET_META[aspect.a].name} · {PLANET_META[aspect.b].name}:{" "}
-            {ASPECT_META[aspect.type].name}
+            <span className="font-medium text-white">
+              {PLANET_META[aspect.a].name} · {ASPECT_META[aspect.type].name} ·{" "}
+              {PLANET_META[aspect.b].name}
+            </span>
+            <span className="ml-2 text-xs text-slate-400">
+              Orbe {aspect.orb.toFixed(2)}°
+            </span>
           </li>
         ))}
-        {entry.result.aspects.length === 0 && (
-          <li>Una conexión para explorar más allá de los aspectos principales.</li>
+        {summary.highlights.length === 0 && (
+          <li>No hay contactos disponibles para destacar.</li>
         )}
       </ul>
+      <p className="text-xs text-slate-400">
+        {summary.total} contactos · {summary.harmonious} armónicos ·{" "}
+        {summary.challenging} de ajuste · {summary.conjunctions} conjunciones
+      </p>
+      {summary.timeApproximate && (
+        <p className="text-xs leading-5 text-amber-200">
+          Hora aproximada: los contactos de Luna y Ascendente se omiten.
+        </p>
+      )}
       <div className="flex flex-wrap gap-2 border-t border-slate-800 pt-3">
         <button
           type="button"
           onClick={onView}
           disabled={deleting}
-          className="rounded-lg border border-fuchsia-300/40 px-3 py-2 text-xs font-bold text-fuchsia-100 hover:bg-fuchsia-300/10 disabled:opacity-50"
+          className="min-h-11 rounded-lg border border-fuchsia-300/40 px-3 py-2 text-xs font-bold text-fuchsia-100 hover:bg-fuchsia-300/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200 disabled:opacity-50"
         >
-          Ver informe completo
+          Ver detalles
         </button>
         <button
           type="button"
           onClick={onShare}
           disabled={sharing || deleting}
-          className="rounded-lg bg-fuchsia-300 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-fuchsia-200 disabled:opacity-50"
+          className="min-h-11 rounded-lg bg-fuchsia-300 px-3 py-2 text-xs font-bold text-slate-950 hover:bg-fuchsia-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200 disabled:opacity-50"
         >
-          {sharing ? "Preparando tarjeta..." : "Compartir por WhatsApp"}
+          {sharing ? "Preparando PDF..." : "Compartir PDF"}
+        </button>
+        <button
+          type="button"
+          onClick={onShareSummary}
+          disabled={sharingSummary || deleting || sharing}
+          className="min-h-11 rounded-lg border border-emerald-300/40 px-3 py-2 text-xs font-bold text-emerald-100 hover:bg-emerald-300/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200 disabled:opacity-50"
+        >
+          {sharingSummary ? "Preparando imagen..." : "Resumen por WhatsApp"}
         </button>
         {entry.id !== "preview" && (
           <button
             type="button"
             onClick={onDelete}
-            disabled={deleting || sharing}
-            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-rose-300/50 hover:text-rose-200 disabled:opacity-50"
+            disabled={deleting || sharing || sharingSummary}
+            className="min-h-11 rounded-lg border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-300 hover:border-rose-300/50 hover:text-rose-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200 disabled:opacity-50"
           >
             {deleting ? "Eliminando..." : "Eliminar"}
           </button>
@@ -606,21 +880,31 @@ type SynastryFullReportProps = {
   entry: SynastryEntry;
   ownerName: string;
   onClose: () => void;
+  onShare: () => void;
+  onShareSummary: () => void;
+  sharing: boolean;
+  sharingSummary: boolean;
 };
 
 function SynastryFullReport({
   entry,
   ownerName,
   onClose,
+  onShare,
+  onShareSummary,
+  sharing,
+  sharingSummary,
 }: SynastryFullReportProps) {
-  const aspects = entry.result.aspects;
+  const summary = buildSynastrySummary(entry.result);
+  const charts = entry.result.charts;
+  const interpretation = buildSynastryInterpretation(entry.result);
 
   return (
     <section className="space-y-5 rounded-3xl border border-fuchsia-300/25 bg-slate-950/90 p-5 shadow-xl sm:p-7">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-fuchsia-200">
-            Informe completo de sinastria
+            Resumen de sinastría
           </p>
           <h3 className="mt-2 font-serif text-2xl text-white">
             {ownerName} y {entry.otherName}
@@ -629,54 +913,217 @@ function SynastryFullReport({
             Calculado: {formatHistoryDate(entry.createdAt)}
           </p>
         </div>
-        <div className="rounded-2xl border border-fuchsia-200/30 px-4 py-2 text-center">
-          <p className="text-2xl font-bold text-fuchsia-100">
-            {entry.result.percent}%
-          </p>
-          <p className="text-xs text-slate-400">Resultado</p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onShare}
+            disabled={sharing || sharingSummary}
+            className="min-h-11 rounded-xl bg-fuchsia-300 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-fuchsia-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200 disabled:opacity-50"
+          >
+            {sharing ? "Preparando PDF..." : "Compartir PDF"}
+          </button>
+          <button
+            type="button"
+            onClick={onShareSummary}
+            disabled={sharingSummary || sharing}
+            className="min-h-11 rounded-xl border border-emerald-300/40 px-4 py-2 text-xs font-bold text-emerald-100 hover:bg-emerald-300/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-200 disabled:opacity-50"
+          >
+            {sharingSummary ? "Preparando imagen..." : "Resumen por WhatsApp"}
+          </button>
         </div>
+      </div>
+
+      <div className="space-y-4 rounded-3xl border border-amber-300/30 bg-[radial-gradient(ellipse_at_top,rgba(120,53,15,0.2),transparent_58%),linear-gradient(160deg,#111827,#080817_70%)] p-5 text-center sm:p-7">
+        <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-200">
+          Compatibilidad astrológica
+        </p>
+        <p className="font-serif text-5xl font-bold text-amber-100">
+          {summary.score}<span className="text-2xl text-amber-300">/100</span>
+        </p>
+        <p className="mx-auto max-w-xl text-xs leading-5 text-slate-300">
+          Resultado basado en los aspectos planetarios entre ambas cartas.
+        </p>
+
+        <div className="mx-auto max-w-2xl space-y-3 border-t border-amber-100/15 pt-4 text-left">
+          <h4 className="text-xs font-bold uppercase tracking-[0.18em] text-amber-200">
+            Contactos destacados
+          </h4>
+          {summary.highlights.length > 0 ? (
+            <ul className="grid gap-2 sm:grid-cols-3">
+              {summary.highlights.map((aspect, index) => (
+                <li
+                  key={`${aspect.a}-${aspect.b}-${aspect.type}-${index}`}
+                  className="rounded-xl border border-white/10 bg-slate-950/60 p-3"
+                >
+                  <p className="text-sm font-semibold text-white">
+                    {PLANET_META[aspect.a].name} · {ASPECT_META[aspect.type].name}
+                  </p>
+                  <p className="text-sm text-white">
+                    {PLANET_META[aspect.b].name}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-300">
+                    Orbe {aspect.orb.toFixed(2)}°
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-300">
+              No hay contactos disponibles para destacar.
+            </p>
+          )}
+          <p className="text-xs leading-5 text-slate-300">
+            {summary.total} contactos · {summary.harmonious} armónicos ·{" "}
+            {summary.challenging} de ajuste · {summary.conjunctions} conjunciones
+          </p>
+        </div>
+
+        {summary.timeApproximate && (
+          <p className="rounded-xl border border-amber-200/20 bg-amber-950/30 p-3 text-xs leading-5 text-amber-100">
+            Hora de nacimiento desconocida o aproximada: los contactos de Luna
+            y Ascendente se omiten del análisis.
+          </p>
+        )}
       </div>
 
       {entry.id === "preview" && (
         <p className="rounded-xl border border-amber-300/30 bg-amber-950/30 p-3 text-sm text-amber-100">
-          Vista previa: este resultado todavia no esta guardado en el historial.
+          Vista previa: este resultado todavía no está guardado en el historial.
         </p>
       )}
 
-      <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-        <h4 className="font-semibold text-white">Indicadores calculados</h4>
-        <ul className="space-y-2 text-sm text-slate-300">
-          <li>
-            {entry.result.hasNodalAspect
-              ? "Se detecto al menos un aspecto con el Nodo Norte."
-              : "No se detectaron aspectos con el Nodo Norte."}
-          </li>
-          <li>
-            Indicador Hilo Rojo: {entry.result.hiloRojo ? "activado" : "no activado"}.
-          </li>
-          <li>
-            {entry.result.timeApproximate
-              ? "La hora de nacimiento es desconocida o aproximada; algunos factores dependientes de la hora requieren cautela."
-              : "Las horas de nacimiento fueron tratadas como conocidas."}
-          </li>
-        </ul>
-      </div>
+      <details className="group rounded-2xl border border-slate-700 bg-slate-900/50 p-4">
+        <summary className="min-h-11 cursor-pointer py-2 font-semibold text-amber-100 marker:text-amber-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200">
+          Lectura simbólica por área
+        </summary>
+      <section className="space-y-4 rounded-2xl border border-amber-300/20 bg-slate-900/70 p-4 sm:p-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-amber-300">
+            AstraRed · Estudio de sinastría
+          </p>
+          <h4 className="mt-2 font-serif text-2xl text-white">
+            Lectura interpretativa
+          </h4>
+          <p className="mt-2 text-xs leading-5 text-slate-400">
+            Interpretación astrológica basada en los aspectos registrados y sus
+            dinámicas.
+          </p>
+        </div>
 
+        {interpretation.notes.map((note, index) => (
+          <p
+            key={`interpretation-note-${index}`}
+            className="rounded-xl border border-amber-300/20 bg-amber-950/20 p-3 text-xs leading-5 text-amber-100"
+          >
+            {note}
+          </p>
+        ))}
+
+        {interpretation.sections.length === 0 ? (
+          <p className="rounded-xl border border-slate-700 p-4 text-sm leading-6 text-slate-300">
+            No hay aspectos disponibles para una lectura temática.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {interpretation.sections.map((section) => (
+              <section
+                key={section.id}
+                className="rounded-xl border border-slate-700/80 bg-slate-950/60 p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h5 className="font-semibold text-amber-100">
+                    {section.title}
+                  </h5>
+                  <span className="text-xs text-slate-500">
+                    {section.evidence.length} {section.evidence.length === 1 ? "contacto" : "contactos"}
+                  </span>
+                </div>
+
+                <p className="mt-2 text-sm leading-6 text-slate-300">
+                  {section.summary}
+                </p>
+
+                <div className="mt-3 space-y-3">
+                  {section.evidence.map((item) => (
+                    <article
+                      key={`${section.id}-${item.aspectIndex}`}
+                      className="border-l-2 border-amber-300/50 pl-3"
+                    >
+                      <p className="text-sm font-semibold text-white">
+                        {item.planetAName} de A
+                        <span className="px-2 text-amber-300">·</span>
+                        {item.aspectName}
+                        <span className="px-2 text-amber-300">·</span>
+                        {item.planetBName} de B
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-300">
+                        {item.interpretation}
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        Separación {item.exactAngle.toFixed(2)}° · Orbe{" "}
+                        {item.orb.toFixed(2)}° ({item.orbDescription})
+                      </p>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+
+        <div className="rounded-xl border border-amber-300/20 bg-slate-950/70 p-4">
+          <h5 className="font-semibold text-amber-100">
+            Nota de lectura
+          </h5>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            {interpretation.conclusion}
+          </p>
+        </div>
+      </section>
+      </details>
+
+      <details className="group rounded-2xl border border-slate-700 bg-slate-900/50 p-4">
+        <summary className="min-h-11 cursor-pointer py-2 font-semibold text-white marker:text-fuchsia-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200">
+          Rueda doble de sinastría
+        </summary>
+        <div className="pt-4">
+          {charts ? (
+            <SynastryWheel
+              chartA={charts.a}
+              chartB={charts.b}
+              aspects={summary.aspects}
+              nameA={ownerName}
+              nameB={entry.otherName}
+            />
+          ) : (
+            <p className="rounded-xl border border-slate-700 bg-slate-900/50 p-4 text-sm leading-6 text-slate-300">
+              Este registro histórico no conserva las cartas originales; no es
+              posible reconstruir una rueda doble fiable.
+            </p>
+          )}
+        </div>
+      </details>
+
+      <details className="group rounded-2xl border border-slate-700 bg-slate-900/50 p-4">
+        <summary className="min-h-11 cursor-pointer py-2 font-semibold text-white marker:text-fuchsia-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fuchsia-200">
+          Ver todos los aspectos ({summary.total})
+        </summary>
+      <div className="space-y-4 pt-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h4 className="font-serif text-xl text-white">Aspectos encontrados</h4>
+        <h4 className="font-serif text-xl text-white">Aspectos registrados</h4>
         <span className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
-          {aspects.length} aspectos registrados
+          {summary.total} contactos registrados
         </span>
       </div>
 
-      {aspects.length === 0 ? (
+      {summary.aspects.length === 0 ? (
         <p className="rounded-xl border border-slate-800 p-4 text-sm text-slate-400">
-          Este resultado no contiene aspectos registrados.
+          No hay contactos disponibles para mostrar.
         </p>
       ) : (
         <div className="space-y-4">
           {ASPECT_ORDER.map((type) => {
-            const grouped = aspects.filter((aspect) => aspect.type === type);
+            const grouped = summary.aspects.filter((aspect) => aspect.type === type);
 
             if (grouped.length === 0) return null;
 
@@ -707,7 +1154,7 @@ function SynastryFullReport({
                       </p>
                       <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate-400">
                         <span>Orbe: {aspect.orb.toFixed(2)}°</span>
-                        <span>Angulo registrado: {aspect.exactAngle.toFixed(2)}°</span>
+                        <span>Separación angular: {aspect.exactAngle.toFixed(2)}°</span>
                       </div>
                     </div>
                   ))}
@@ -719,10 +1166,11 @@ function SynastryFullReport({
       )}
 
       <p className="text-xs leading-5 text-slate-500">
-        El informe presenta los aspectos almacenados por el motor de sinastria.
-        Los registros antiguos muestran unicamente los aspectos que fueron
-        guardados originalmente; no se reconstruyen datos ausentes.
+        Se muestran los aspectos conservados en el resultado. En registros
+        antiguos no se reconstruyen datos ausentes.
       </p>
+      </div>
+      </details>
 
       <div className="border-t border-slate-800 pt-4">
         <button

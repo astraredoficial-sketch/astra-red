@@ -46,6 +46,14 @@ function aspectHarmony(type: AspectName): number {
   }
 }
 
+export function synastryAspectContribution(
+  aspect: Pick<SynastryAspect, "a" | "b" | "type" | "orb">,
+): number {
+  const maximumOrb = ASPECT_META[aspect.type].orb;
+  const tightness = Math.max(0, 1 - aspect.orb / maximumOrb);
+  return pairWeight(aspect.a, aspect.b) * tightness * aspectHarmony(aspect.type);
+}
+
 function findAspect(delta: number): { type: AspectName; orb: number } | null {
   for (const type of Object.keys(ASPECT_META) as AspectName[]) {
     const meta = ASPECT_META[type];
@@ -80,13 +88,14 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryResult {
       if (!hit) continue;
       const tightness = 1 - hit.orb / ASPECT_META[hit.type].orb;
       scored += weight * tightness * aspectHarmony(hit.type);
-      aspects.push({
+      const aspect: SynastryAspect = {
         a: pa.id,
         b: pb.id,
         type: hit.type,
         orb: Number(hit.orb.toFixed(2)),
         exactAngle: Number(delta.toFixed(2)),
-      });
+      };
+      aspects.push(aspect);
     }
   }
 
@@ -101,7 +110,10 @@ export function computeSynastry(a: NatalChart, b: NatalChart): SynastryResult {
     return nodal && personal && contact && asp.orb <= 6;
   });
 
-  aspects.sort((x, y) => pairWeight(y.a, y.b) - pairWeight(x.a, x.b));
+  aspects.sort(
+    (x, y) =>
+      synastryAspectContribution(y) - synastryAspectContribution(x),
+  );
 
   return {
     percent,
