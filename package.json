@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/astro-chart.test.cjs tests/astronomy-engine.test.cjs tests/chat-safety.test.cjs tests/session-auth.test.cjs",
+    "test": "node --test tests/astro-chart.test.cjs tests/astronomy-engine.test.cjs tests/rectification-candidates.test.cjs tests/rectification-validation.test.cjs tests/rectification-evaluation.test.cjs tests/rectification-runs-route.test.cjs tests/chat-safety.test.cjs tests/session-auth.test.cjs",
     "android:sync": "cap sync android",
     "android:release": "powershell -NoProfile -ExecutionPolicy Bypass -File .\\android\\scripts\\Build-AstraRedRelease.ps1",
     "android:open": "cap open android"

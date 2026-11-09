@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Capacitor } from "@capacitor/core";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
@@ -325,6 +326,34 @@ export default function CartaUi() {
       <AppNav active="carta" />
 
       <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 space-y-8 px-4 py-8 sm:px-6 lg:py-12">
+        <Link
+          href="/rectificacion"
+          className="group flex min-h-20 items-center justify-between gap-4 rounded-2xl border border-rose-200/20 bg-gradient-to-r from-[#211333]/90 to-[#100d1d]/90 px-5 py-4 shadow-lg transition hover:border-rose-200/40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-200 sm:px-7"
+        >
+          <span>
+            <span className="block text-xs font-semibold uppercase tracking-[0.2em] text-rose-200">
+              Herramienta privada
+            </span>
+            <span className="mt-1 block font-serif text-xl font-semibold text-white sm:text-2xl">
+              Explorar horas natales candidatas
+            </span>
+            <span className="mt-1 block text-sm leading-5 text-slate-300">
+              Compara tu intervalo de nacimiento con acontecimientos fechados.
+            </span>
+          </span>
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            className="h-6 w-6 shrink-0 text-rose-200 transition-transform group-hover:translate-x-1"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M5 12h14m-6-6 6 6-6 6" />
+          </svg>
+        </Link>
         <article className="relative w-full min-w-0 overflow-hidden rounded-[2rem] bg-[#efe4c7] p-2 text-[#18243a] shadow-[0_30px_100px_rgba(0,0,0,0.4)] sm:p-3">
           <div className="pointer-events-none absolute inset-2 rounded-[1.55rem] border border-[#a88648]/70 sm:inset-3" />
           <div className="pointer-events-none absolute inset-4 rounded-[1.35rem] border border-[#a88648]/25 sm:inset-5" />

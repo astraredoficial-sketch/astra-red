@@ -15,6 +15,80 @@ excluyen los contactos de Luna y Ascendente. La afinidad es una interpretación
 astrológica simbólica, no una medida científica ni una garantía sobre una
 relación.
 
+## Base del motor de rectificación
+
+El módulo interno `src/lib/astro/rectification/candidates.ts` genera una malla
+de horas locales candidatas y conserva para cada una su hora civil y su instante
+UTC. Las horas repetidas durante el retroceso del reloj producen ambas
+ocurrencias; las horas inexistentes durante el adelanto se omiten y se cuentan.
+El paso configurado define la resolución de muestreo, no la precisión de la hora
+de nacimiento. Se limita la generación y evaluación a 300 candidatos por
+ejecución para acotar el consumo de CPU sin agregar servicios de procesamiento.
+
+El evaluador interno `src/lib/astro/rectification/evaluation.ts` calcula
+indicadores de tránsitos, progresiones secundarias y arco solar con pesos
+configurables, inicialmente iguales (1/3 cada una tras normalizar). La matriz
+`traditional-v1` selecciona: matrimonio/separación — Venus, Luna, ASC, DSC y
+regente de casa 7; nacimiento de hijos — Luna, Júpiter, IC y regente de casa 5;
+mudanza — Luna, ASC, IC y regente de casa 4; emigración — Luna, ASC, IC y
+regentes de casas 4 y 9; cambio profesional — Sol, Saturno, MC y regentes de
+casas 6 y 10; ascenso — Sol, Saturno, MC y regente de casa 10; negocio — Sol,
+Mercurio, Júpiter, MC y regentes de casas 2 y 10; crisis personal — Luna,
+Saturno, ASC y regentes de casas 1, 6 y 8; fallecimiento familiar — Luna,
+Saturno, IC y regentes de casas 4 y 8; accidente — Marte, Saturno, ASC y
+regentes de casas 1, 6 y 8; operación — Marte, Luna, ASC y regentes de casas 1,
+6 y 8; otros — Sol, Luna, ASC y MC. Los regentes usan los regentes tradicionales
+de los signos.
+
+Se miden aspectos de 0°, 60°, 90°, 120° y 180° con orbes predeterminados de 2°
+para tránsitos y 1° para progresiones y arco solar. La fuerza de un contacto es
+`max(0, 1 - orbe/orbe máximo)`. En cada instante se escoge el contacto más
+fuerte para cada indicador natal; se promedian los indicadores y luego las
+muestras temporales. La puntuación de un acontecimiento es el promedio de las
+técnicas con sus pesos normalizados; la puntuación final es el promedio de los
+acontecimientos ponderado por relevancia (1–5). Una fecha de un solo día se
+muestrea cada tres horas en hora local; intervalos se muestrean al mediodía,
+hasta 31 fechas representativas. Los tránsitos y posiciones progresadas
+repetidos se reutilizan en memoria durante la evaluación. El costo se acota a
+10.000 muestras candidato-acontecimiento por ejecución; si se supera, hay que
+reducir candidatos o acontecimientos.
+
+El evaluador informa falta de evidencia o ambigüedad y nunca selecciona una
+hora natal como verdadera. La diferencia entre los dos mejores puntajes es
+comparativa, no una probabilidad. El resultado se marca como evidencia
+insuficiente si la mejor puntuación es menor a 0.1, ambiguo si la brecha entre
+los dos mejores es como máximo 0.03, y en otro caso presenta solo un orden
+relativo. La sensibilidad muestra el rango de puntaje al retirar un
+acontecimiento a la vez. La metodología `traditional-v1` es una heurística
+astrológica explícita, no una técnica científicamente validada. Astronomy
+Engine aproxima UT1 con UTC y aplica su modelo delta-T para TT; los cálculos
+históricos dependen también de la calidad de las reglas horarias IANA. Los
+límites actuales son 300 candidatos, 50 acontecimientos, 31 muestras de fecha
+por acontecimiento y 10.000 muestras candidato-acontecimiento. El evaluador
+se ejecuta mediante `POST /api/rectifications/{id}/runs`; `GET` en esa ruta
+consulta el último resultado y el historial reciente. Los resultados son
+no editables, privados por RLS y pueden consultarse o eliminarse por
+identificador (`GET` y `DELETE /api/rectifications/{id}/runs/{runId}`).
+Cada ejecución guarda la versión metodológica, las ponderaciones, los datos
+mínimos necesarios para reproducirla (sin copiar las notas privadas), y el
+resultado. Se conservan las puntuaciones de todos los candidatos y los
+contactos detallados de los cinco primeros para evitar respuestas y registros
+desproporcionados.
+
+La interfaz privada está en `/rectificacion`, enlazada desde Carta Natal.
+Permite crear y eliminar expedientes, registrar, editar y borrar acontecimientos,
+ajustar ponderaciones y consultar evaluaciones e historial. La migración
+`20261109000100_natal_rectification.sql` debe aplicarse en Supabase antes de
+usar la interfaz o las API; no se ejecutó contra una base de datos remota.
+
+La migración `20261109000100_natal_rectification.sql` agrega expedientes,
+acontecimientos privados y auditoría con RLS. Sus rutas REST requieren un token
+de sesión Supabase: `/api/rectifications` administra expedientes y
+`/api/rectifications/{id}/events` permite consultar, crear, editar y eliminar
+acontecimientos. La zona horaria del acontecimiento puede quedar sin definir;
+el evaluador declara que usa la zona natal en ese caso, nunca la zona del
+servidor.
+
 La opción de compartir la carta genera un PNG astral propio (no una captura de
 pantalla) que incluye la rueda, posiciones planetarias, cúspides de casas y
 lecturas. Por privacidad, omite la fecha, hora y lugar de nacimiento. En Android

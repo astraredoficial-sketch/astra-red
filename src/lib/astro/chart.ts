@@ -30,6 +30,19 @@ function eclipticLongitude(body: Astronomy.Body, time: Astronomy.AstroTime): num
   return norm(Astronomy.Ecliptic(vec).elon);
 }
 
+export function computePlanetaryLongitudesAtUtc(
+  instant: Date,
+): Partial<Record<PlanetId, number>> {
+  if (!(instant instanceof Date) || !Number.isFinite(instant.getTime())) {
+    throw new RangeError("El instante UTC no es válido.");
+  }
+
+  const astroTime = Astronomy.MakeTime(instant);
+  return Object.fromEntries(
+    BODIES.map(({ id, body }) => [id, eclipticLongitude(body, astroTime)]),
+  );
+}
+
 function meanNorthNode(time: Astronomy.AstroTime): number {
   const T = time.tt / 36525;
   return norm(125.04452 - 1934.136261 * T + 0.0020708 * T * T + T ** 3 / 450000);
@@ -45,6 +58,7 @@ function ascendant(ramcDeg: number, latDeg: number, obliquityDeg: number): numbe
 }
 
 class PlacidusUnavailableError extends RangeError {}
+class PlacidusSolutionUnavailableError extends RangeError {}
 
 function signedDegrees(deg: number): number {
   return ((deg + 540) % 360) - 180;
@@ -118,8 +132,8 @@ function solvePlacidusCusp(
   const lowValue = equation(low);
   const highValue = equation(high);
   if (lowValue < 0 || highValue > 0) {
-    throw new RangeError(
-      "No se pudieron resolver las cúspides Placidus para esta latitud.",
+    throw new PlacidusSolutionUnavailableError(
+      "No se pudieron resolver las cúspides Placidus para esta fecha y latitud.",
     );
   }
 
@@ -232,37 +246,104 @@ function placement(id: PlanetId, longitude: number, houses: number[]): Placement
   };
 }
 
-export function computeNatalChart(birth: BirthData): NatalChart {
+function chartAnglesAtUtc(
+  instant: Date,
+  latitude: number,
+  longitude: number,
+): {
+  ramc: number;
+  obliquity: number;
+  ascendant: number;
+  midheaven: number;
+} {
+  const astroTime = Astronomy.MakeTime(instant);
+  const obliquity = 23.4392911 - (46.815 / 3600) * (astroTime.tt / 36525);
+  const gastHours = Astronomy.SiderealTime(astroTime);
+  const lstHours = ((gastHours + longitude / 15) % 24 + 24) % 24;
+  const ramc = lstHours * 15;
+  const ramcRadians = (ramc * Math.PI) / 180;
+  const obliquityRadians = (obliquity * Math.PI) / 180;
+
+  return {
+    ramc,
+    obliquity,
+    ascendant: ascendant(ramc, latitude, obliquity),
+    midheaven: norm(
+      (Math.atan2(
+        Math.sin(ramcRadians),
+        Math.cos(ramcRadians) * Math.cos(obliquityRadians),
+      ) *
+        180) /
+        Math.PI,
+    ),
+  };
+}
+
+export function computeNatalAnglesAtUtc(
+  instant: Date,
+  latitude: number,
+  longitude: number,
+): { ascendant: number; midheaven: number; descendant: number; imumCoeli: number } {
+  if (!(instant instanceof Date) || !Number.isFinite(instant.getTime())) {
+    throw new RangeError("El instante UTC no es válido.");
+  }
+  if (
+    !Number.isFinite(latitude) ||
+    latitude < -90 ||
+    latitude > 90 ||
+    !Number.isFinite(longitude) ||
+    longitude < -180 ||
+    longitude > 180
+  ) {
+    throw new RangeError("Las coordenadas geográficas no son válidas.");
+  }
+
+  const angles = chartAnglesAtUtc(instant, latitude, longitude);
+  return {
+    ascendant: angles.ascendant,
+    midheaven: angles.midheaven,
+    descendant: norm(angles.ascendant + 180),
+    imumCoeli: norm(angles.midheaven + 180),
+  };
+}
+
+export function computeNatalChartAtUtc(
+  birth: BirthData,
+  instant: Date,
+): NatalChart {
   const city =
     birth.location ??
     findCity(birth.cityId);
   if (!city) throw new Error("Ciudad no encontrada");
+  if (!(instant instanceof Date) || !Number.isFinite(instant.getTime())) {
+    throw new RangeError("El instante UTC no es válido.");
+  }
 
-  const timeStr = birth.timeUnknown ? "12:00" : birth.time;
-  const utc = civilToUtc(
-    birth.date,
-    timeStr,
-    "timeZone" in city ? city.timeZone : city.tz,
-  );
-  const astroTime = Astronomy.MakeTime(utc);
-  const obliquity = 23.4392911 - (46.815 / 3600) * (astroTime.tt / 36525);
-
-  const gastHours = Astronomy.SiderealTime(astroTime);
+  const astroTime = Astronomy.MakeTime(instant);
   const longitude = "longitude" in city ? city.longitude : city.lng;
   const latitude = "latitude" in city ? city.latitude : city.lat;
-  const lstHours = ((gastHours + longitude / 15) % 24 + 24) % 24;
-  const ramc = lstHours * 15;
-  const ascLon = ascendant(ramc, latitude, obliquity);
+  const angles = chartAnglesAtUtc(instant, latitude, longitude);
+  const ascLon = angles.ascendant;
 
   let houses: number[];
   let houseSystem: NatalChart["houseSystem"];
   try {
-    houses = placidusHouses(ramc, ascLon, latitude, obliquity);
+    houses = placidusHouses(
+      angles.ramc,
+      ascLon,
+      latitude,
+      angles.obliquity,
+    );
     houseSystem = "placidus";
   } catch (error) {
-    if (!(error instanceof PlacidusUnavailableError)) throw error;
+    if (error instanceof PlacidusUnavailableError) {
+      houseSystem = "equal-high-latitude";
+    } else if (error instanceof PlacidusSolutionUnavailableError) {
+      houseSystem = "equal";
+    } else {
+      throw error;
+    }
     houses = Array.from({ length: 12 }, (_, i) => norm(ascLon + i * 30));
-    houseSystem = "equal-high-latitude";
   }
 
   const planets: Placement[] = BODIES.map(({ id, body }) =>
@@ -283,4 +364,16 @@ export function computeNatalChart(birth: BirthData): NatalChart {
     triad: { sun, moon, asc },
     timeUnknown: birth.timeUnknown,
   };
+}
+
+export function computeNatalChart(birth: BirthData): NatalChart {
+  const city = birth.location ?? findCity(birth.cityId);
+  if (!city) throw new Error("Ciudad no encontrada");
+
+  const utc = civilToUtc(
+    birth.date,
+    birth.timeUnknown ? "12:00" : birth.time,
+    "timeZone" in city ? city.timeZone : city.tz,
+  );
+  return computeNatalChartAtUtc(birth, utc);
 }

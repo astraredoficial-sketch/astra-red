@@ -1,8 +1,10 @@
-﻿export function civilToUtc(
+export class NonexistentCivilTimeError extends RangeError {}
+
+export function civilToUtcCandidates(
   date: string,
   time: string,
   timeZone: string,
-): Date {
+): Date[] {
   const dateMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
   const timeMatch = /^(\d{2}):(\d{2})$/.exec(time);
   if (!dateMatch || !timeMatch) {
@@ -79,9 +81,17 @@
     .sort((a, b) => a - b);
 
   if (matches.length === 0) {
-    throw new RangeError(
+    throw new NonexistentCivilTimeError(
       "Esa hora local no existió por el cambio de horario de verano.",
     );
   }
-  return new Date(matches[0]);
+  return matches.map((instant) => new Date(instant));
+}
+
+export function civilToUtc(
+  date: string,
+  time: string,
+  timeZone: string,
+): Date {
+  return civilToUtcCandidates(date, time, timeZone)[0];
 }

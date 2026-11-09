@@ -25,7 +25,10 @@ Module._resolveFilename = function (request, parent, isMain, options) {
   return originalResolveFilename.call(this, request, parent, isMain, options);
 };
 
-const { computeNatalChart } = require("../src/lib/astro/chart.ts");
+const {
+  computeNatalChart,
+  computeNatalChartAtUtc,
+} = require("../src/lib/astro/chart.ts");
 const { getNatalAspects, formatArcMinutes } = require("../src/lib/astro/aspects.ts");
 const { formatDegree, roundedPosition } = require("../src/lib/astro/constants.ts");
 const { computeSynastry } = require("../src/lib/astro/synastry.ts");
@@ -394,6 +397,26 @@ test("en latitudes donde Placidus no está definido se identifica el uso de casa
     const distance = (next - chart.houses[i] + 360) % 360;
     assert.ok(Math.abs(distance - 30) < 1e-8);
   }
+});
+
+test("usa casas iguales cuando no se pueden resolver cúspides Placidus para una hora candidata", () => {
+  const chart = computeNatalChartAtUtc(
+    {
+      date: "1990-01-01",
+      time: "04:10",
+      cityId: "",
+      timeUnknown: false,
+      location: {
+        latitude: 40.7,
+        longitude: -74,
+        timeZone: "UTC",
+      },
+    },
+    new Date("1990-01-01T04:10:00.000Z"),
+  );
+
+  assert.equal(chart.houseSystem, "equal");
+  assert.ok(Math.abs(chart.houses[0] - chart.triad.asc.longitude) < 1e-8);
 });
 
 test("el catálogo expone todos los países y ciudades con coordenadas y zona horaria", async () => {
