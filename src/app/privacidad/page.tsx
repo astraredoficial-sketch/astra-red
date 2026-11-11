@@ -4,7 +4,7 @@ import { publicPageMetadata } from "@/lib/seo";
 export const metadata = publicPageMetadata({
   title: "Política de privacidad",
   description:
-    "Cómo AstraRed usa, protege y conserva los datos de cuenta, nacimiento, perfil, conversación y rectificación natal.",
+    "Cómo AstraRed usa, protege y conserva los datos de cuenta, nacimiento, perfil, conversación, sinastría y rectificación natal.",
   path: "/privacidad",
 });
 
@@ -58,6 +58,14 @@ export default function PrivacyPage() {
             acontecimientos de tu vida. Usamos estos datos para calcular y
             guardar comparaciones en tus expedientes. No se muestran en tu
             perfil y son accesibles desde tu cuenta.
+          </li>
+          <li>
+            <strong>Historial de sinastrías:</strong> cuando calculas una
+            comparación manual, guardamos el nombre que eliges para identificar
+            el informe y el resultado calculado en tu cuenta. La fecha, hora y
+            localidad de nacimiento de la otra persona se utilizan para el
+            cálculo, pero no se guardan en ese historial. Puedes eliminar los
+            informes guardados desde la herramienta.
           </li>
           <li>
             <strong>Perfil:</strong> nombre que eliges mostrar, identidad,

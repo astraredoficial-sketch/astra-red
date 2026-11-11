@@ -5,28 +5,46 @@ import { publicPageMetadata } from "@/lib/seo";
 export const metadata = publicPageMetadata({
   title: "Guías de astrología",
   description:
-    "Guías breves para entender la carta natal, el calendario lunar, la sinastría y la rectificación de hora natal desde una perspectiva simbólica.",
+    "Guías prácticas para usar las herramientas de carta natal, sinastría, calendario astral, ciclos lunares y revolución solar de AstraRed.",
   path: "/guias",
 });
 
 const guides = [
   {
-    title: "Cómo empezar a leer tu carta natal",
+    title: "Cómo usar tu carta natal",
     href: "/guias/carta-natal",
     description:
-      "Una introducción al Sol, la Luna y el Ascendente, y a cómo leerlos en conjunto.",
+      "Explora tu rueda, el Sol, la Luna, el Ascendente, las casas y los aspectos.",
   },
   {
-    title: "Fases lunares y calendario astral",
+    title: "Cómo usar el calendario astral",
     href: "/guias/calendario-lunar",
     description:
-      "Qué significa cada fase y cómo usar un calendario como herramienta de reflexión.",
+      "Consulta tu cielo de hoy, explora fases y guarda fechas para planificar con intención.",
   },
   {
-    title: "Qué es la sinastría",
+    title: "Cómo calcular una sinastría",
     href: "/guias/sinastria",
     description:
-      "Una mirada simbólica a la comparación de cartas y a las afinidades entre personas.",
+      "Compara dos cartas, revisa los aspectos y entiende los límites de la puntuación.",
+  },
+  {
+    title: "Destinos astrales y Hilo Rojo",
+    href: "/guias/destinos-astrales",
+    description:
+      "Explora perfiles compatibles, expresa interés y entiende cuándo hay una conexión mutua.",
+  },
+  {
+    title: "Cómo consultar tu ciclo personal",
+    href: "/guias/ciclo-personal",
+    description:
+      "Usa el retorno lunar como referencia para una pausa de reflexión y cuidado cotidiano.",
+  },
+  {
+    title: "Cómo consultar la revolución solar",
+    href: "/guias/revolucion-solar",
+    description:
+      "Calcula el retorno anual del Sol y explora su carta como lectura simbólica.",
   },
   {
     title: "Cómo usar la rectificación de hora natal",
@@ -40,8 +58,8 @@ export default function GuidesPage() {
   return (
     <PublicDocument
       eyebrow="AstraRed · Guías"
-      title="Astrología para explorar con curiosidad"
-      introduction="Ideas prácticas para acercarte a tu carta natal, los ciclos lunares y la sinastría, sin fórmulas mágicas ni promesas absolutas."
+      title="Guías para usar las herramientas de AstraRed"
+      introduction="Instrucciones para explorar cartas y ciclos astrales, comparar afinidades y aprovechar cada herramienta con curiosidad, criterio y cuidado de tus datos."
     >
       <div className="grid gap-4 sm:grid-cols-2">
         {guides.map((guide) => (

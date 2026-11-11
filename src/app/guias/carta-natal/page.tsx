@@ -3,9 +3,9 @@ import { PublicDocument } from "@/components/PublicDocument";
 import { publicPageMetadata } from "@/lib/seo";
 
 export const metadata = publicPageMetadata({
-  title: "Cómo empezar a leer tu carta natal",
+  title: "Cómo usar y leer tu carta natal",
   description:
-    "Conoce el papel del Sol, la Luna y el Ascendente en una carta natal y cómo interpretarlos como un conjunto simbólico.",
+    "Aprende a consultar la carta natal de AstraRed, leer el Sol, la Luna, el Ascendente, casas y aspectos, y compartir tu informe.",
   path: "/guias/carta-natal",
   type: "article",
 });
@@ -14,9 +14,20 @@ export default function NatalChartGuide() {
   return (
     <PublicDocument
       eyebrow="Guía · Carta natal"
-      title="Cómo empezar a leer tu carta natal"
-      introduction="Una carta natal es una representación simbólica del cielo para una fecha, hora y lugar de nacimiento. Puedes comenzar por tres puntos conocidos: Sol, Luna y Ascendente."
+      title="Cómo usar y leer tu carta natal"
+      introduction="La herramienta Carta natal de AstraRed presenta una representación simbólica del cielo para tus datos de nacimiento. Esta guía explica dónde consultar tu carta, qué muestra y cómo leerla sin reducirla a una etiqueta."
     >
+      <section>
+        <h2>Abre tu carta</h2>
+        <p>
+          Inicia sesión y entra en{" "}
+          <Link href="/carta">Carta natal</Link>. La herramienta usa los datos
+          de nacimiento asociados a tu cuenta para mostrar la rueda, las
+          posiciones planetarias, las casas, los aspectos y una lectura de
+          Sol, Luna y Ascendente. Si aún no tienes datos de nacimiento en tu
+          perfil, complétalos desde tu cuenta antes de continuar.
+        </p>
+      </section>
       <section>
         <h2>El Sol: una identidad en desarrollo</h2>
         <p>
@@ -57,13 +68,34 @@ export default function NatalChartGuide() {
           rasgos comprobados.
         </p>
       </section>
+      <section>
+        <h2>Hora desconocida y carta para compartir</h2>
+        <p>
+          Si no conoces tu hora de nacimiento, AstraRed utiliza el mediodía
+          como referencia y lo indica en la carta. En ese caso, la Luna, el
+          Ascendente y las casas pueden variar; toma esas posiciones con
+          cautela. Si conoces un intervalo posible, puedes explorar la{" "}
+          <Link href="/guias/rectificacion-natal">
+            guía de rectificación de hora natal
+          </Link>
+          .
+        </p>
+        <p>
+          Puedes descargar tu carta en PDF o compartirla. El PDF de la carta
+          natal no incluye tu fecha, hora ni lugar de nacimiento; aun así,
+          revisa cualquier archivo antes de enviarlo.
+        </p>
+      </section>
       <p>
-        Si quieres comparar dos cartas, continúa con nuestra guía sobre{" "}
-        <Link href="/guias/sinastria">qué es la sinastría</Link>.
+        Para comparar dos cartas, consulta{" "}
+        <Link href="/guias/sinastria">la guía de sinastría</Link>. También
+        puedes explorar la{" "}
+        <Link href="/guias/revolucion-solar">revolución solar</Link> y el{" "}
+        <Link href="/guias/ciclo-personal">ciclo personal lunar</Link>.
       </p>
       <p>
         <Link href="/acceso?mode=signup">Crea tu cuenta en AstraRed</Link>{" "}
-        y revisa cómo se tratan tus datos de nacimiento en la{" "}
+        y conoce cómo se tratan tus datos de nacimiento en la{" "}
         <Link href="/privacidad">política de privacidad</Link>.
       </p>
     </PublicDocument>

@@ -22,8 +22,12 @@ const footerGroups = [
     title: "Guías",
     links: [
       { label: "Todas las guías", href: "/guias" },
-      { label: "Fases de la Luna", href: "/guias/calendario-lunar" },
-      { label: "Entender la sinastría", href: "/guias/sinastria" },
+      { label: "Carta natal", href: "/guias/carta-natal" },
+      { label: "Calendario astral", href: "/guias/calendario-lunar" },
+      { label: "Sinastría", href: "/guias/sinastria" },
+      { label: "Destinos y Hilo Rojo", href: "/guias/destinos-astrales" },
+      { label: "Ciclo personal", href: "/guias/ciclo-personal" },
+      { label: "Revolución solar", href: "/guias/revolucion-solar" },
       {
         label: "Rectificación de hora natal",
         href: "/guias/rectificacion-natal",
