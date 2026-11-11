@@ -12,6 +12,7 @@ const footerGroups = [
   {
     title: "Explora",
     links: [
+      { label: "Horóscopo de hoy", href: "/horoscopo" },
       { label: "Carta natal", href: "/guias/carta-natal" },
       { label: "Afinidades", href: "/guias/sinastria" },
       { label: "Destinos astrales", href: "/destinos" },
