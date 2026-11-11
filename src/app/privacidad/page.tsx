@@ -4,7 +4,7 @@ import { publicPageMetadata } from "@/lib/seo";
 export const metadata = publicPageMetadata({
   title: "Política de privacidad",
   description:
-    "Cómo AstraRed usa, protege y conserva los datos de cuenta, nacimiento, perfil y conversación.",
+    "Cómo AstraRed usa, protege y conserva los datos de cuenta, nacimiento, perfil, conversación y rectificación natal.",
   path: "/privacidad",
 });
 
@@ -16,8 +16,8 @@ export default function PrivacyPage() {
       introduction="En AstraRed cuidamos la información que nos confías. Aquí explicamos qué datos usamos, para qué, con quién se comparten y cómo puedes ejercer control sobre ellos."
     >
       <p className="text-sm text-muted">
-        Vigente desde el 16 de octubre de 2026 · Última actualización: 16 de
-        octubre de 2026
+        Vigente desde el 16 de octubre de 2026 · Última actualización: 11 de
+        noviembre de 2026
       </p>
 
       <section>
@@ -49,6 +49,15 @@ export default function PrivacyPage() {
             ciudad, país, coordenadas y zona horaria. Se usan para calcular tu
             carta y se guardan por separado de la información visible de tu
             perfil. No mostramos estos datos de entrada en tu perfil.
+          </li>
+          <li>
+            <strong>Rectificación de hora natal:</strong> fecha y lugar de
+            nacimiento, coordenadas, zona horaria e intervalo de horas
+            candidatas; también puedes guardar categorías, fechas o intervalos,
+            precisión, relevancia, zona horaria y notas opcionales sobre
+            acontecimientos de tu vida. Usamos estos datos para calcular y
+            guardar comparaciones en tus expedientes. No se muestran en tu
+            perfil y son accesibles desde tu cuenta.
           </li>
           <li>
             <strong>Perfil:</strong> nombre que eliges mostrar, identidad,
@@ -86,10 +95,11 @@ export default function PrivacyPage() {
           La fecha, hora y ubicación de nacimiento no forman parte de tu perfil
           visible. El perfil puede mostrar las posiciones astrológicas
           calculadas, que sí pueden ser vistas por otras personas autenticadas.
-          Puedes solicitar la eliminación de tu cuenta y de los datos asociados
-          desde los ajustes de la cuenta o escribiéndonos; las copias de
-          respaldo y ciertos registros técnicos pueden permanecer durante los
-          periodos limitados descritos en esta política.
+          Puedes eliminar tus expedientes y sus resultados desde la herramienta,
+          y solicitar la eliminación de tu cuenta y los datos asociados desde
+          sus ajustes o escribiéndonos. Las copias de respaldo y ciertos
+          registros técnicos pueden permanecer durante los periodos limitados
+          descritos en esta política.
         </p>
       </section>
 
@@ -100,6 +110,10 @@ export default function PrivacyPage() {
           <li>
             Calcular cartas, afinidades y contenido astral que solicitas; mostrar
             perfiles de acuerdo con tus preferencias.
+          </li>
+          <li>
+            Comparar horas natales candidatas con las fechas de acontecimientos
+            que registras en la herramienta de rectificación.
           </li>
           <li>
             Habilitar conexiones, mensajes y avisos; prevenir abuso, investigar

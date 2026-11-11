@@ -24,6 +24,10 @@ const footerGroups = [
       { label: "Todas las guías", href: "/guias" },
       { label: "Fases de la Luna", href: "/guias/calendario-lunar" },
       { label: "Entender la sinastría", href: "/guias/sinastria" },
+      {
+        label: "Rectificación de hora natal",
+        href: "/guias/rectificacion-natal",
+      },
     ],
   },
   {
@@ -84,21 +88,15 @@ export async function SiteFooter() {
 
         <div className="flex flex-col gap-6 pt-6">
           <p className="max-w-4xl text-xs leading-5 text-muted">
-            Promoción de inauguración: un mes sin costo desde la apertura
-            pública. Después, el Calendario astral y Hilo Rojo requerirán VIP.
-            Planes: USD 4.99/mes o USD 34.99/año. La fecha de inauguración y las
-            condiciones de compra se informarán antes de activar cualquier
-            cobro. Cada plan será un pago único por su periodo, sin renovación
-            automática.
+            Todas las funciones de AstraRed están disponibles sin costo. Si lo
+            deseas, puedes apoyarnos con una aportación voluntaria; no
+            desbloquea funciones.
           </p>
           <div className="flex flex-col gap-4 text-xs text-muted sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1">
               <p>
                 © {currentYear} AstraRed · Servicio para personas mayores de 18
                 años · Venezuela
-              </p>
-              <p>
-                Las aportaciones son voluntarias y no habilitan funciones VIP.
               </p>
             </div>
             <a

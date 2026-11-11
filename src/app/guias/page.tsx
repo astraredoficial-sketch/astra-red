@@ -5,7 +5,7 @@ import { publicPageMetadata } from "@/lib/seo";
 export const metadata = publicPageMetadata({
   title: "Guías de astrología",
   description:
-    "Guías breves para entender la carta natal, el calendario lunar y la sinastría desde una perspectiva simbólica.",
+    "Guías breves para entender la carta natal, el calendario lunar, la sinastría y la rectificación de hora natal desde una perspectiva simbólica.",
   path: "/guias",
 });
 
@@ -27,6 +27,12 @@ const guides = [
     href: "/guias/sinastria",
     description:
       "Una mirada simbólica a la comparación de cartas y a las afinidades entre personas.",
+  },
+  {
+    title: "Cómo usar la rectificación de hora natal",
+    href: "/guias/rectificacion-natal",
+    description:
+      "Compara horas natales candidatas con acontecimientos importantes y fechados de tu vida.",
   },
 ];
 

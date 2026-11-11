@@ -6,6 +6,7 @@ const publicRoutes = [
   "/guias/carta-natal",
   "/guias/calendario-lunar",
   "/guias/sinastria",
+  "/guias/rectificacion-natal",
   "/privacidad",
   "/terminos",
   "/android",
