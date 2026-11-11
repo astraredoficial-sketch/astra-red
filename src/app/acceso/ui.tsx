@@ -94,7 +94,22 @@ export function AccesoUi({
       .maybeSingle();
 
     if (profileError) throw profileError;
-    router.replace(profile?.chart ? "/carta" : "/onboarding");
+    const requestedPath = new URLSearchParams(window.location.search).get("next");
+    let returnPath = "/carta";
+    if (requestedPath) {
+      try {
+        const target = new URL(requestedPath, window.location.origin);
+        if (
+          target.origin === window.location.origin &&
+          target.pathname === "/horoscopo"
+        ) {
+          returnPath = `${target.pathname}${target.search}${target.hash}`;
+        }
+      } catch {
+        returnPath = "/carta";
+      }
+    }
+    router.replace(profile?.chart ? returnPath : "/onboarding");
   }
 
   async function signOutToCreateAccount() {

@@ -2,6 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import { AppNav } from "@/components/AppNav";
+import { useSession } from "@/hooks/useSession";
 import { SIGN_GLYPHS, SIGNS } from "@/lib/astro/constants";
 import {
   calculateDailyHoroscope,
@@ -360,6 +363,8 @@ async function createHoroscopeShareImage(
 }
 
 export function DailyHoroscopeExperience() {
+  const router = useRouter();
+  const { ready, store, me, error: sessionError } = useSession();
   const [horoscope, setHoroscope] = useState<DailyHoroscope | null>(null);
   const selectedSign = useSyncExternalStore(
     subscribeToLocationChanges,
@@ -372,6 +377,17 @@ export function DailyHoroscopeExperience() {
   const [whatsappFallbackUrl, setWhatsappFallbackUrl] = useState("");
 
   useEffect(() => {
+    if (!ready || sessionError || me) return;
+    const returnTo = `${window.location.pathname}${window.location.search}`;
+    router.replace(
+      store?.currentUserId
+        ? "/onboarding"
+        : `/acceso?mode=login&next=${encodeURIComponent(returnTo)}`,
+    );
+  }, [me, ready, router, sessionError, store?.currentUserId]);
+
+  useEffect(() => {
+    if (!me) return;
     let active = true;
     let currentKey = "";
     const updateIfLocalDayChanged = () => {
@@ -401,7 +417,7 @@ export function DailyHoroscopeExperience() {
       active = false;
       window.clearInterval(intervalId);
     };
-  }, []);
+  }, [me]);
 
   const reading: DailyHoroscopeReading | null =
     selectedSign === null ? null : horoscope?.readings[selectedSign] ?? null;
@@ -417,7 +433,7 @@ export function DailyHoroscopeExperience() {
   }
 
   async function shareReading() {
-    if (!reading || !horoscope || sharing) return;
+    if (!me || !reading || !horoscope || sharing) return;
     setSharing(true);
     setShareStatus("");
     setWhatsappFallbackUrl("");
@@ -470,12 +486,40 @@ export function DailyHoroscopeExperience() {
     }
   }
 
+  if (!ready || (!me && !sessionError)) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#080711] px-6 text-center text-[#e8dff0]">
+        <p>Verificando tu sesión para abrir el horóscopo…</p>
+      </main>
+    );
+  }
+
+  if (sessionError || !me) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#080711] px-6 text-center">
+        <div className="max-w-lg">
+          <p role="alert" className="text-sm leading-6 text-rose-200">
+            {sessionError || "Inicia sesión para consultar tu horóscopo."}
+          </p>
+          <Link
+            href="/acceso?mode=login"
+            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full border border-amber-100/35 px-5 py-2 text-sm font-semibold text-amber-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-100"
+          >
+            Ir a iniciar sesión
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="starfield min-h-screen bg-[#07060c] px-4 pb-16 pt-5 text-ink sm:px-8 sm:pt-7">
+    <div className="starfield min-h-screen bg-[#07060c] text-ink">
+      <AppNav />
+      <main className="min-h-[calc(100vh-5rem)] px-4 pb-16 pt-5 sm:px-8 sm:pt-7">
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center justify-between gap-4">
           <Link
-            href="/"
+            href="/carta"
             className="inline-flex min-h-11 items-center gap-2 text-sm text-[#d8cde0] transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-100"
           >
             <svg
@@ -490,7 +534,7 @@ export function DailyHoroscopeExperience() {
             >
               <path d="m15 18-6-6 6-6M9 12h12" />
             </svg>
-            Inicio
+            Mis herramientas
           </Link>
           <Link
             href="/guias"
@@ -779,6 +823,7 @@ export function DailyHoroscopeExperience() {
           </section>
         )}
       </div>
-    </main>
+      </main>
+    </div>
   );
 }

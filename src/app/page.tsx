@@ -182,45 +182,6 @@ export default function Home() {
         </section>
 
         <section
-          aria-labelledby="horoscope-title"
-          className="mt-4 grid w-full gap-5 rounded-3xl border border-amber-100/15 bg-[radial-gradient(ellipse_at_100%_0%,rgba(165,119,178,0.15),transparent_46%),linear-gradient(145deg,#15111e,#0b0a12)] p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-7"
-        >
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-100/75">
-              Una pausa bajo el cielo de hoy
-            </p>
-            <h2
-              id="horoscope-title"
-              className="mt-2 font-serif text-3xl leading-tight text-white sm:text-4xl"
-            >
-              Tu horóscopo diario
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#d2c8dc]">
-              Elige tu signo y explora una lectura gratuita sobre amor,
-              proyectos y bienestar, calculada para tu día local.
-            </p>
-          </div>
-          <Link
-            href="/horoscopo"
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-amber-100/35 bg-amber-100/[0.06] px-5 py-3 text-sm font-semibold text-amber-50 transition-colors hover:border-amber-100/65 hover:bg-amber-100/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-100"
-          >
-            Leer mi horóscopo
-            <svg
-              aria-hidden="true"
-              className="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14m-6-6 6 6-6 6" />
-            </svg>
-          </Link>
-        </section>
-
-        <section
           aria-labelledby="calendar-title"
           className="calendar-preview mt-4 grid w-full gap-5 rounded-3xl border border-white/10 p-4 text-left sm:grid-cols-[1fr_1fr] sm:items-center sm:p-6"
         >
