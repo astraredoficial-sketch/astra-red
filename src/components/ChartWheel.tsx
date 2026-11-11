@@ -20,7 +20,15 @@ const RING_PLANETS: PlanetId[] = [
   "node",
 ];
 
-export function ChartWheel({ chart, className = "" }: { chart: NatalChart; className?: string }) {
+export function ChartWheel({
+  chart,
+  className = "",
+  ariaLabel = "Carta natal",
+}: {
+  chart: NatalChart;
+  className?: string;
+  ariaLabel?: string;
+}) {
   const cx = 160;
   const cy = 160;
   const asc = chart.triad.asc.longitude;
@@ -60,7 +68,7 @@ export function ChartWheel({ chart, className = "" }: { chart: NatalChart; class
   ];
 
   return (
-    <svg viewBox="0 0 320 320" className={className} role="img" aria-label="Carta natal">
+    <svg viewBox="0 0 320 320" className={className} role="img" aria-label={ariaLabel}>
       <defs>
         <radialGradient id="void" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#182b48" />
