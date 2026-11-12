@@ -514,7 +514,7 @@ export function DailyHoroscopeExperience() {
 
   return (
     <div className="starfield min-h-screen bg-[#07060c] text-ink">
-      <AppNav />
+      <AppNav active="horoscopo" />
       <main className="min-h-[calc(100vh-5rem)] px-4 pb-16 pt-5 sm:px-8 sm:pt-7">
       <div className="mx-auto max-w-6xl">
         <header className="flex items-center justify-between gap-4">

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { AppNav } from "@/components/AppNav";
@@ -99,7 +98,7 @@ const PRECISION_LABELS: Record<RectificationEvent["datePrecision"], string> = {
 };
 
 const STATUS_LABELS: Record<RectificationEvaluationResult["status"], string> = {
-  insufficient_evidence: "Evidencia insuficiente",
+  insufficient_evidence: "Coincidencias limitadas",
   ambiguous: "Resultado ambiguo",
   relative_ranking: "Orden comparativo",
 };
@@ -792,7 +791,7 @@ export function RectificationUi() {
 
   return (
     <div className="starfield min-h-screen overflow-x-clip text-white">
-      <AppNav active="carta" />
+      <AppNav active="rectificacion" />
       <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
         <header className="relative mb-8 overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-[#211333]/95 via-[#100d1d]/95 to-[#160c19]/95 p-6 shadow-[0_25px_90px_rgba(0,0,0,0.28)] sm:mb-10 sm:p-10">
           <div
@@ -800,22 +799,17 @@ export function RectificationUi() {
             className="pointer-events-none absolute -right-16 -top-24 h-72 w-72 rounded-full bg-violet-600/15 blur-3xl"
           />
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-rose-200">
-            Herramienta privada · método experimental
+            Herramienta privada · comparación de cartas natales
           </p>
           <h1 className="mt-3 font-serif text-4xl font-semibold sm:text-5xl">
-            Rectificación natal
+            Rectificación de hora natal
           </h1>
           <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-            Compara horas candidatas con fechas de acontecimientos importantes.
-            La puntuación ordena coincidencias heurísticas; no es una
-            probabilidad ni demuestra cuál fue tu hora de nacimiento.
+            Calcula cartas para las horas de tu intervalo y compáralas con
+            acontecimientos importantes. Explora cuáles muestran mayor
+            correspondencia según tránsitos, progresiones secundarias y arco
+            solar.
           </p>
-          <Link
-            href="/carta"
-            className="mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl border border-white/20 px-4 py-2 text-sm font-medium text-slate-100 transition hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            Volver a Carta Natal
-          </Link>
         </header>
 
         {pageError && (
@@ -1436,9 +1430,10 @@ function EvaluationResults({ run }: { run: RectificationRun }) {
       </div>
       <p className="mt-3 text-sm leading-6 text-slate-300">
         {run.score_gap === null
-          ? "Solo se evaluó una hora candidata; no hay una brecha de comparación."
-          : `Diferencia entre los dos mejores puntajes: ${scoreLabel(run.score_gap)}.`}
-        {" "}Este orden es heurístico y no identifica una hora verdadera.
+          ? "Se evaluó una hora candidata; puedes ampliar el intervalo para comparar más opciones."
+          : `Diferencia entre las dos candidatas con mayor correspondencia: ${scoreLabel(run.score_gap)}.`}
+        {" "}Explora los contactos y las técnicas de cada resultado para conocer
+        cómo se construyó la comparación.
       </p>
       <ol className="mt-4 space-y-3">
         {topFive.map((candidate, index) => (
@@ -1532,9 +1527,10 @@ function EvaluationResults({ run }: { run: RectificationRun }) {
         ))}
       </ol>
       <p className="mt-4 text-xs leading-5 text-slate-400">
-        La rectificación astrológica no tiene validación científica para recuperar
-        una hora natal. Estos resultados describen únicamente la consistencia
-        interna de la metodología configurada.
+        La comparación se calcula con los datos, el intervalo, las fechas de
+        acontecimientos y los pesos de técnicas de este expediente. Cuanto más
+        precisos sean tus datos de nacimiento y las fechas registradas, más
+        ajustada será la comparación.
       </p>
     </div>
   );

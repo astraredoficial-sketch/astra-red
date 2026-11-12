@@ -798,10 +798,10 @@ export function evaluateRectificationCandidates(
         : "relative_ranking";
 
   const limitations = [
-    "La puntuación es una comparación heurística de esta metodología, no una probabilidad ni una validación científica de la hora natal.",
-    "Los contactos se muestrean en fechas representativas; la precisión de las posiciones depende de Astronomy Engine y de la calidad histórica de las reglas horarias disponibles.",
-    "Los acontecimientos sin zona horaria explícita se interpretan en la zona natal, nunca en la zona del servidor.",
-    "Las regencias tradicionales y la selección de indicadores por categoría son convenciones astrológicas versionadas, no relaciones causales verificadas.",
+    "Los puntajes comparan la correspondencia calculada entre cada carta candidata y los acontecimientos, según la metodología y los pesos configurados.",
+    "El motor usa Astronomy Engine para calcular posiciones geocéntricas del zodiaco tropical; las fechas de los acontecimientos se evalúan mediante muestras representativas.",
+    "Los acontecimientos sin zona horaria explícita se calculan en la zona natal indicada.",
+    "La selección de indicadores por categoría y las regencias tradicionales siguen la metodología astrológica versionada.",
   ];
 
   return {

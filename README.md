@@ -96,6 +96,23 @@ se comparte el archivo mediante el menú nativo; sincroniza Capacitor con
 `npm run android:sync` después de instalar dependencias para registrar los
 plugins de archivos y compartir.
 
+## Revolución solar
+
+La herramienta privada `/revolucion-solar` calcula el retorno anual del Sol a su
+longitud eclíptica tropical aparente natal mediante Astronomy Engine. Calcula la
+carta del instante encontrado para las coordenadas del lugar de nacimiento y
+usa la zona horaria IANA guardada para mostrar la hora local. No requiere APIs,
+servicios externos, tablas nuevas ni migraciones de base de datos.
+
+Si la hora natal es desconocida, se usa el mediodía local para estimar la
+longitud del Sol y se marca el resultado como aproximado. Si la hora local
+conocida ocurrió dos veces por un cambio horario, el cálculo se detiene en vez
+de escoger una de las dos ocurrencias sin confirmación. Las lecturas de ciclo,
+vínculos, trabajo y recursos, bienestar cotidiano y crecimiento se generan con
+reglas locales; son interpretativas, no predicciones ni afirmaciones
+científicamente validadas. El método queda identificado como
+`astronomy-engine-apparent-sun-longitude-v1`.
+
 El país, la ciudad y las coordenadas se guardan en `birth_details` para calcular
 la carta, pero no se leen desde la tabla pública de perfiles. La migración
 `20261012000300_private_birth_location.sql` retira a las cuentas autenticadas

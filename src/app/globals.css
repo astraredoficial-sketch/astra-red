@@ -140,7 +140,7 @@ body {
   pointer-events: none;
 }
 
-.starfield > * {
+.starfield > :not(.app-nav) {
   position: relative;
   z-index: 1;
 }

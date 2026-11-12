@@ -6,7 +6,6 @@ import {
   useSyncExternalStore,
   type FormEvent,
 } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/AppNav";
 import { ChartWheel } from "@/components/ChartWheel";
@@ -232,15 +231,8 @@ export default function RevolucionSolarUi() {
 
   return (
     <div className="flex min-h-screen w-full min-w-0 flex-col bg-[#080d1b] text-slate-100">
-      <AppNav active="carta" />
+      <AppNav active="revolucion-solar" />
       <main className="mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-8 sm:px-6 lg:py-12">
-        <Link
-          href="/carta"
-          className="inline-flex min-h-11 items-center gap-2 text-sm text-amber-200 transition hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-200"
-        >
-          <span aria-hidden="true">←</span> Volver a mi carta natal
-        </Link>
-
         <header className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-200/75">
             Herramienta privada · Astronomy Engine
