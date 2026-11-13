@@ -81,6 +81,47 @@ test("una fecha y zona iguales producen una lectura estable", () => {
   assert.deepEqual(first, second);
 });
 
+test("la prosa principal cambia al día siguiente para los doce signos", () => {
+  const previous = calculateDailyHoroscope("2026-11-11", "America/Caracas");
+  const current = calculateDailyHoroscope("2026-11-12", "America/Caracas");
+
+  assert.equal(new Set(current.readings.map(({ overview }) => overview)).size, 12);
+  for (const [index, reading] of current.readings.entries()) {
+    assert.notEqual(reading.overview, previous.readings[index].overview);
+  }
+});
+
+test("la prosa diaria también cambia al cruzar el fin de año", () => {
+  const previous = calculateDailyHoroscope("2026-12-31", "America/Caracas");
+  const current = calculateDailyHoroscope("2027-01-01", "America/Caracas");
+
+  for (const [index, reading] of current.readings.entries()) {
+    assert.notEqual(reading.overview, previous.readings[index].overview);
+  }
+});
+
+test("cada signo recibe prosa distinta durante un ciclo anual", () => {
+  const proseBySign = Array.from({ length: 12 }, () => new Set());
+  const start = new Date("2026-11-12T00:00:00.000Z");
+
+  for (let offset = 0; offset < 365; offset += 1) {
+    const date = new Date(start);
+    date.setUTCDate(date.getUTCDate() + offset);
+    const horoscope = calculateDailyHoroscope(
+      date.toISOString().slice(0, 10),
+      "America/Caracas",
+    );
+
+    horoscope.readings.forEach((reading, index) => {
+      proseBySign[index].add(reading.overview);
+    });
+  }
+
+  for (const prose of proseBySign) {
+    assert.equal(prose.size, 365);
+  }
+});
+
 test("rechaza fechas civiles y zonas horarias inválidas", () => {
   assert.throws(
     () => calculateDailyHoroscope("2026-02-30", "UTC"),

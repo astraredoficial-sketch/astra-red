@@ -136,6 +136,46 @@ const LUNAR_PHASES = [
   "Luna menguante",
 ] as const;
 
+const DAILY_PROSE_OPENERS = [
+  "Hoy te puede servir",
+  "La invitación de hoy es",
+  "Una posibilidad para hoy es",
+  "Tu punto de partida podría ser",
+  "Vale la pena",
+  "Prueba a",
+  "Puedes comenzar por",
+] as const;
+
+const DAILY_PROSE_ACTIONS = [
+  "escuchar lo que necesitas antes de responder",
+  "darle un orden sencillo a una prioridad",
+  "hacer una pausa antes de asumir un compromiso",
+  "aclarar una expectativa con una pregunta directa",
+  "dividir un pendiente en pasos que puedas completar",
+  "reservar un momento sin interrupciones",
+  "pedir la información que te falta para decidir",
+  "reconocer un avance sin exigirte resolverlo todo",
+  "revisar qué acuerdo necesita más claridad",
+  "elegir una alternativa que puedas sostener",
+  "expresar un límite con respeto",
+] as const;
+
+const DAILY_PROSE_CLOSINGS = [
+  "No hace falta resolver todo hoy para avanzar.",
+  "Una conversación clara puede cambiar cómo ves una situación.",
+  "Avanzar con calma también es avanzar.",
+  "Deja espacio para ajustar el plan si aparece información nueva.",
+  "Elige un paso que dependa de ti.",
+  "Tu atención es un recurso: úsala con intención.",
+  "Puedes cambiar de estrategia sin abandonar lo que te importa.",
+  "Reconoce lo que ya resolviste antes de añadir otra tarea.",
+  "Una pausa breve puede ayudarte a mirar el asunto con perspectiva.",
+  "Busca reciprocidad y claridad en los acuerdos.",
+  "Dale prioridad a lo que sí puedes sostener hoy.",
+  "Nombra con honestidad qué necesitas y qué puedes ofrecer.",
+  "Cierra el día reconociendo una decisión consciente.",
+] as const;
+
 export interface DailyHoroscopeReading {
   sign: string;
   signIndex: number;
@@ -199,8 +239,23 @@ function phaseFor(sunLongitude: number, moonLongitude: number) {
   return LUNAR_PHASES[phaseIndex];
 }
 
+function dailyProseForSign(dayOrdinal: number, signIndex: number): string {
+  // Coprime strides make each prose part advance on every successive date.
+  const index = (day: number, step: number, length: number) =>
+    ((day * step + signIndex) % length + length) % length;
+  const opener =
+    DAILY_PROSE_OPENERS[index(dayOrdinal, 1, DAILY_PROSE_OPENERS.length)];
+  const action =
+    DAILY_PROSE_ACTIONS[index(dayOrdinal, 5, DAILY_PROSE_ACTIONS.length)];
+  const closing =
+    DAILY_PROSE_CLOSINGS[index(dayOrdinal, 3, DAILY_PROSE_CLOSINGS.length)];
+
+  return `${opener} ${action}. ${closing}`;
+}
+
 function readingForSign(
   date: string,
+  dayOrdinal: number,
   signIndex: number,
   transitSigns: Record<(typeof DAILY_BODIES)[number], number>,
 ): DailyHoroscopeReading {
@@ -214,6 +269,7 @@ function readingForSign(
   const venusTheme = HOUSE_THEMES[venusHouse - 1];
   const mercuryTheme = HOUSE_THEMES[mercuryHouse - 1];
   const marsTheme = HOUSE_THEMES[marsHouse - 1];
+  const dailyProse = dailyProseForSign(dayOrdinal, signIndex);
   const dateSeed = [...date.replaceAll("-", "")].reduce(
     (sum, digit) => sum + Number(digit),
     0,
@@ -235,7 +291,7 @@ function readingForSign(
     glyph: SIGN_GLYPHS[signIndex],
     element,
     focus: focus.name,
-    overview: focus.focus,
+    overview: `${focus.focus} ${dailyProse}`,
     love: venusTheme.love,
     work: `${mercuryTheme.work} ${HOUSE_THEMES[houseFor(signIndex, transitSigns.saturn) - 1].work}`,
     wellbeing: moonTheme.wellbeing,
@@ -273,6 +329,9 @@ export function calculateDailyHoroscope(
   timeZone: string,
 ): DailyHoroscope {
   assertValidDateAndTimeZone(date, timeZone);
+  const dayOrdinal = Math.floor(
+    Date.parse(`${date}T00:00:00.000Z`) / 86_400_000,
+  );
   const calculatedAt = localDayAtNoon(date, timeZone);
   const longitudes = computePlanetaryLongitudesAtUtc(calculatedAt);
   const transitSigns = Object.fromEntries(
@@ -300,7 +359,7 @@ export function calculateDailyHoroscope(
       lunarPhase: phaseFor(sunLongitude, moonLongitude),
     },
     readings: SIGNS.map((_, signIndex) =>
-      readingForSign(date, signIndex, transitSigns),
+      readingForSign(date, dayOrdinal, signIndex, transitSigns),
     ),
   };
 }
