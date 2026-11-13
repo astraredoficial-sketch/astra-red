@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 const publicRoutes = [
   "",
   "/guias",
+  "/guias/horoscopo-diario",
   "/guias/carta-natal",
   "/guias/calendario-lunar",
   "/guias/sinastria",

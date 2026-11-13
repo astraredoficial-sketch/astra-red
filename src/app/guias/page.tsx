@@ -5,11 +5,17 @@ import { publicPageMetadata } from "@/lib/seo";
 export const metadata = publicPageMetadata({
   title: "Guías de astrología",
   description:
-    "Guías prácticas para usar las herramientas de carta natal, sinastría, calendario astral, ciclos lunares y revolución solar de AstraRed.",
+    "Guías prácticas para el horóscopo diario y las herramientas de carta natal, sinastría, calendario astral, ciclos lunares y revolución solar de AstraRed.",
   path: "/guias",
 });
 
 const guides = [
+  {
+    title: "Cómo se crea el horóscopo diario",
+    href: "/guias/horoscopo-diario",
+    description:
+      "Conoce cómo se calcula el cielo de tu fecha local, cómo varía la prosa por signo y cuáles son los límites de la lectura.",
+  },
   {
     title: "Cómo usar tu carta natal",
     href: "/guias/carta-natal",
