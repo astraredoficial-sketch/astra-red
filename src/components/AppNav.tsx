@@ -365,11 +365,11 @@ export function AppNav({ active }: Props) {
 
   return (
     <header className="app-nav bg-slate-950/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 w-full shadow-lg">
-      <div className="mx-auto flex h-16 w-full max-w-7xl min-w-0 items-center px-3 sm:h-20 sm:justify-between sm:px-6">
+      <div className="mx-auto flex h-16 w-full max-w-7xl min-w-0 items-center px-3 sm:h-20 sm:justify-between sm:px-6 2xl:max-w-[1440px]">
         <Link 
           href="/carta" 
           onNavigate={closeToolMenu}
-          className="hidden shrink-0 cursor-pointer items-center gap-3 transition group hover:scale-105 sm:flex"
+          className="hidden shrink-0 cursor-pointer items-center gap-3 transition group hover:scale-105 lg:flex"
           aria-label="AstraRed, ir a Carta Natal"
         >
           <BrandMark size="sm" />
@@ -391,7 +391,9 @@ export function AppNav({ active }: Props) {
             aria-current={active === "carta" ? "page" : undefined}
           >
             <NavIcon name="carta" />
-            <span className="sr-only sm:not-sr-only">Carta Natal</span>
+            <span className={active === "carta" ? "hidden lg:inline" : "hidden xl:inline"}>
+              Carta Natal
+            </span>
           </Link>
           <details ref={toolMenuRef} className="relative flex min-w-0 flex-1 sm:flex-none">
             <summary
@@ -405,10 +407,12 @@ export function AppNav({ active }: Props) {
               }
             >
               <NavIcon name="herramientas" />
-              <span className="sr-only sm:not-sr-only">Herramientas Astrales</span>
+              <span className={isToolActive ? "hidden lg:inline" : "hidden xl:inline"}>
+                Herramientas Astrales
+              </span>
               <svg
                 aria-hidden="true"
-                className="hidden h-4 w-4 shrink-0 xl:block"
+                className="hidden h-4 w-4 shrink-0 lg:block"
                 viewBox="0 0 20 20"
                 fill="none"
                 stroke="currentColor"
@@ -481,7 +485,9 @@ export function AppNav({ active }: Props) {
                     </span>
                   )}
                 </span>
-                <span className="sr-only sm:not-sr-only">{item.label}</span>
+                <span className={isActive ? "hidden lg:inline" : "hidden 2xl:inline"}>
+                  {item.label}
+                </span>
                 {item.id === "mensajes" && (
                   <span className="sr-only" role="status" aria-live="polite">
                     {unreadError ||
@@ -523,7 +529,7 @@ export function AppNav({ active }: Props) {
               <path d="M5 8h12v8a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8Z" />
               <path d="M17 10h1a3 3 0 1 1 0 6h-1M8 4c1 1 1 2 0 3m5-3c1 1 1 2 0 3M4 22h15" />
             </svg>
-            <span className="sr-only sm:not-sr-only">Dona un café</span>
+            <span className="hidden lg:inline">Dona un café</span>
           </a>
         </nav>
       </div>
