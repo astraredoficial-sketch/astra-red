@@ -34,4 +34,4 @@
 - Keep email confirmation redirects on `https://astrared.vip`; existing emails may retain their original redirect.
 - Do not claim Search Console indexing, traffic, conversion, retention, revenue, or fundraising results without verified data.
 - Preserve user-owned untracked work and stage only files relevant to a requested change.
-- The historical `beta_vip_access` flag and VIP RPC are retired by `supabase/migrations/20261112000100_free_access_without_vip.sql`. Apply the migration before releasing the free-access update to production; never bypass authorization in client code.
+- The launch `beta_vip_access` flag is disabled by `supabase/migrations/20261112000100_free_access_without_vip.sql`; membership tables and RPCs remain intact for possible future use. Apply the migration before releasing the free-access update to production; never bypass authorization in client code.

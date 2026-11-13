@@ -13,7 +13,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Public canonical domain: `https://astrared.vip`. Vercel remains the hosting and deployment platform.
 - Product: Spanish (Latin American) astrology and connection app for adults 18+.
 - All tools and experiences are free. The only support option is a voluntary Ko-fi donation; there are no ads, memberships, paywalls, or purchases, and donating never unlocks features.
-- The historical `beta_vip_access` flag and VIP RPC are retired by `supabase/migrations/20261112000100_free_access_without_vip.sql`. Apply this migration before releasing the free-access update to production.
+- The launch `beta_vip_access` flag is disabled by `supabase/migrations/20261112000100_free_access_without_vip.sql`; membership tables and RPCs remain intact for possible future use. Apply this migration before releasing the free-access update to production.
 - Birth date/time and birthplace are private chart inputs. Do not expose them in public profile data.
 - Keep the interface concise, responsive, dark/editorial, and accessible. Use SVG icons instead of decorative emoji; preserve functional lunar/zodiac symbols.
 - SEO is Spanish-first and editorial: create a small number of original guides, avoid mass-generated zodiac pages, and do not invent traffic, reviews, or product claims.
