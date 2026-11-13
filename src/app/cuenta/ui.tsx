@@ -534,10 +534,9 @@ export function CuentaUi() {
                     </li>
                   </ul>
                   <p className="mt-3 text-xs text-slate-400">
-                    La promoción de inauguración incluye un mes sin costo.
-                    Después, el Calendario astral y Hilo Rojo requerirán VIP:
-                    USD 4.99/mes o USD 34.99/año. No se activará una compra sin
-                    tu aceptación expresa.
+                    Todas las funciones están disponibles sin costo. Si lo
+                    deseas, puedes apoyar AstraRed con una aportación voluntaria;
+                    no desbloquea funciones.
                   </p>
                 </div>
                 <Link
@@ -619,7 +618,7 @@ export function CuentaUi() {
               </h2>
               <p className="text-sm leading-6 text-slate-300">
                 Se borrarán tu perfil, carta natal, datos de nacimiento,
-                conexiones, mensajes, calendario astral, membresía VIP y fotos.
+                conexiones, mensajes, fechas guardadas en el calendario y fotos.
                 No se puede deshacer. Para volver a usar AstraRed tendrás que
                 registrarte de nuevo.
               </p>

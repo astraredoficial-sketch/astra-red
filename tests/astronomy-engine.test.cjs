@@ -19,7 +19,7 @@ const {
   ASTRAL_ACTIVITIES,
   calculateCurrentSky,
   calculateRealAstralData,
-  findOptimalAstralDates,
+  findTraditionAlignedDates,
   getDateKeyInTimeZone,
   getAstralCalendarDays,
   getUtcInstantAtLocalNoon,
@@ -53,7 +53,7 @@ test("el calendario lunar muestra todos los días del mes, incluso en año bisie
 });
 
 test("las recomendaciones de fase creciente solo incluyen fechas crecientes", () => {
-  const dates = findOptimalAstralDates("hair-growth", 2027, 3, 3);
+  const dates = findTraditionAlignedDates("hair-growth", 2027, 3, 3);
 
   assert.ok(dates.length > 0 && dates.length <= 3);
   assert.ok(
@@ -63,7 +63,7 @@ test("las recomendaciones de fase creciente solo incluyen fechas crecientes", ()
 });
 
 test("las recomendaciones de fase menguante solo incluyen fechas menguantes", () => {
-  const dates = findOptimalAstralDates("pruning-harvest", 2027, 3, 3);
+  const dates = findTraditionAlignedDates("pruning-harvest", 2027, 3, 3);
 
   assert.ok(dates.length > 0 && dates.length <= 3);
   assert.ok(
@@ -120,7 +120,7 @@ test("las fechas lunares del calendario conservan el día civil y usan mediodía
 });
 
 test("las fechas sugeridas también se calculan al mediodía de la zona elegida", () => {
-  const suggestedDates = findOptimalAstralDates(
+  const suggestedDates = findTraditionAlignedDates(
     "moon-observation",
     2026,
     10,
@@ -230,7 +230,7 @@ test("el calendario ofrece intenciones de hogar, vehículos, relaciones y trabaj
 });
 
 test("las sugerencias incluyen signo lunar, índice y criterios de la intención", () => {
-  const dates = findOptimalAstralDates("home-purchase", 2027, 3, 3);
+  const dates = findTraditionAlignedDates("home-purchase", 2027, 3, 3);
 
   assert.equal(dates.length, 3);
   assert.ok(
@@ -240,13 +240,21 @@ test("las sugerencias incluyen signo lunar, índice y criterios de la intención
         date.score >= 0 &&
         date.score <= 100 &&
         date.recommendation.includes("Mercurio") &&
-        date.recommendation.includes("Luna en"),
+        date.recommendation.includes("Luna en") &&
+        !date.recommendation.includes("Mercurio directo favorece"),
+    ),
+  );
+  assert.ok(
+    dates.every((date) =>
+      /Mercurio (directo se asocia, según esta tradición, con|retrógrado invita a revisar)/.test(
+        date.recommendation,
+      ),
     ),
   );
 });
 
 test("las recomendaciones de boda consideran a Venus y el signo lunar", () => {
-  const dates = findOptimalAstralDates("wedding", 2027, 6, 6);
+  const dates = findTraditionAlignedDates("wedding", 2027, 6, 6);
 
   assert.ok(dates.length > 0 && dates.length <= 3);
   assert.ok(
@@ -260,7 +268,7 @@ test("las recomendaciones de boda consideran a Venus y el signo lunar", () => {
 
 test("el motor rechaza rangos de calendario inválidos", () => {
   assert.throws(
-    () => findOptimalAstralDates("planting", 2027, 0, 13),
+    () => findTraditionAlignedDates("planting", 2027, 0, 13),
     RangeError,
   );
   assert.throws(

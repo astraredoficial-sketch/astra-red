@@ -37,6 +37,10 @@ const { compatibilityPercent } = require("../supabase/functions/_shared/synastry
 const { civilToUtc } = require("../src/lib/astro/time.ts");
 const { isAtLeastAge } = require("../src/lib/age.ts");
 const { GET: getLocations } = require("../src/app/api/locations/route.ts");
+const {
+  generateLifeSummary,
+  generatePlanetReadings,
+} = require("../src/lib/astro/interpreter.ts");
 
 const birth = {
   date: "2000-01-01",
@@ -57,6 +61,29 @@ test("la carta natal contiene los doce puntos esperados", () => {
     chart.planets.map((planet) => planet.id).sort(),
     expected.sort(),
   );
+});
+
+test("las lecturas natales conectan cada planeta con su función y signo en español", () => {
+  const chart = computeNatalChart(birth);
+  const readings = generatePlanetReadings(chart);
+  const summary = generateLifeSummary(chart);
+
+  assert.equal(readings.length, chart.planets.length);
+  assert.ok(readings.every((reading) => reading.interpretation.includes("En astrología")));
+  assert.ok(readings.every((reading) => !/\b(SUN|MOON|MERCURY|VENUS|MARS)\b/.test(reading.interpretation)));
+  assert.match(readings.find((reading) => reading.planet === "sun").interpretation, /el Sol se asocia con la identidad/);
+  assert.match(summary, /Tu Sol en/);
+  assert.match(summary, /no determina tu personalidad ni predice/);
+});
+
+test("las lecturas natales omiten casas y Luna/Ascendente sin hora fiable", () => {
+  const chart = computeNatalChart({ ...birth, timeUnknown: true });
+  const readings = generatePlanetReadings(chart);
+  const summary = generateLifeSummary(chart);
+
+  assert.ok(readings.every((reading) => !reading.interpretation.includes("casa")));
+  assert.match(summary, /no se interpretan las casas ni la Luna o el Ascendente/);
+  assert.doesNotMatch(summary, /Tu Luna en|El Ascendente en/);
 });
 
 test("las longitudes, los signos, los grados y las casas están dentro de rango", () => {

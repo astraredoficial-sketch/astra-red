@@ -5,12 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AppNav } from "@/components/AppNav";
-import { VipConnectionAlert } from "@/components/VipConnectionAlert";
+import { HighSynastryNotice } from "@/components/HighSynastryNotice";
 import { useSession } from "@/hooks/useSession";
 import { computeSynastry } from "@/lib/astro/synastry";
 import { filterProfilesForUser } from "@/lib/filters";
 import { supabase } from "@/lib/supabase/client";
-import type { UserProfile } from "@/lib/types";
 
 export function DestinosUi() {
   const router = useRouter();
@@ -20,13 +19,7 @@ export function DestinosUi() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [vipAlertProfile, setVipAlertProfile] = useState<UserProfile | null>(
-    null,
-  );
-  const [vipCheckError, setVipCheckError] = useState<{
-    profileId: string;
-    message: string;
-  } | null>(null);
+  const [dismissedSynastryKey, setDismissedSynastryKey] = useState("");
 
   useEffect(() => {
     if (!ready || sessionError) return;
@@ -92,36 +85,12 @@ export function DestinosUi() {
     }
   }
 
-  useEffect(() => {
-    if (!me || !current || current.compatibility.percent !== 100) return;
-
-    let active = true;
-    const targetProfile = current.profile;
-
-    async function checkVipMemberships() {
-      const { data, error: vipError } = await supabase.rpc(
-        "are_both_users_vip",
-        { target_user_id: targetProfile.id },
-      );
-
-      if (!active) return;
-      if (vipError) {
-        console.error("No se pudo comprobar la membresía VIP:", vipError);
-        setVipCheckError({
-          profileId: targetProfile.id,
-          message: `No se pudo comprobar la membresía VIP: ${vipError.message}`,
-        });
-        return;
-      }
-      setVipCheckError(null);
-      if (data === true) setVipAlertProfile(targetProfile);
-    }
-
-    void checkVipMemberships();
-    return () => {
-      active = false;
-    };
-  }, [current, me]);
+  const highSynastryProfile =
+    me &&
+    current?.compatibility.percent === 100 &&
+    dismissedSynastryKey !== `${me.id}:${current.profile.id}`
+      ? current.profile
+      : null;
 
   async function handleSwipe(action: "like" | "pass") {
     if (!me || !current || busy) return;
@@ -390,17 +359,15 @@ export function DestinosUi() {
             {error}
           </p>
         )}
-        {vipCheckError && vipCheckError.profileId === current?.profile.id && (
-          <p role="alert" className="mt-4 max-w-lg text-center text-sm text-rose-300">
-            {vipCheckError.message}
-          </p>
-        )}
       </main>
-      {me && vipAlertProfile && (
-        <VipConnectionAlert
+      {me && highSynastryProfile && current && (
+        <HighSynastryNotice
           me={me}
-          other={vipAlertProfile}
-          onClose={() => setVipAlertProfile(null)}
+          other={highSynastryProfile}
+          score={current.compatibility.percent}
+          onClose={() =>
+            setDismissedSynastryKey(`${me.id}:${highSynastryProfile.id}`)
+          }
         />
       )}
           </div>

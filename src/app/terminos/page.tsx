@@ -5,7 +5,7 @@ import { publicPageMetadata } from "@/lib/seo";
 export const metadata = publicPageMetadata({
   title: "Términos de uso",
   description:
-    "Condiciones de acceso, membresía, contenido y seguridad para usar AstraRed.",
+    "Condiciones de acceso gratuito, contenido, privacidad y seguridad para usar AstraRed.",
   path: "/terminos",
 });
 
@@ -14,11 +14,11 @@ export default function TermsPage() {
     <PublicDocument
       eyebrow="Legal · Condiciones"
       title="Términos de uso"
-      introduction="Estas condiciones explican cómo usar AstraRed de forma segura, cómo funcionan las cuentas y qué reglas aplican a las funciones gratuitas y de membresía."
+      introduction="Estas condiciones explican cómo usar AstraRed de forma segura, cómo funcionan las cuentas y qué reglas aplican al servicio gratuito y a las aportaciones voluntarias."
     >
       <p className="text-sm text-muted">
-        Vigentes desde el 16 de octubre de 2026 · Última actualización: 16 de
-        octubre de 2026
+        Vigentes desde el 12 de noviembre de 2026 · Última actualización: 12 de
+        noviembre de 2026
       </p>
 
       <section>
@@ -46,31 +46,17 @@ export default function TermsPage() {
       </section>
 
       <section>
-        <h2>3. Promoción y funciones de pago</h2>
+        <h2>3. Acceso gratuito y aportaciones voluntarias</h2>
         <p>
-          La promoción de inauguración ofrece un mes sin costo desde la fecha de
-          apertura pública, que se anunciará en AstraRed. Finalizada la
-          promoción, el Calendario astral y Hilo Rojo requerirán una membresía
-          VIP; el resto de las funciones seguirá sujeto a lo que se indique en
-          el servicio.
+          Todas las herramientas y experiencias de AstraRed están disponibles
+          sin costo. No hay membresías, compras dentro del servicio ni
+          funciones que se desbloqueen mediante un pago.
         </p>
         <p>
-          Los planes VIP aprobados son USD 4.99 por mes o USD 34.99 por año.
-          A la fecha de vigencia de estos términos, AstraRed no procesa pagos
-          de membresía ni tiene membresías VIP activas. La promoción inaugural
-          no tiene costo. Antes de habilitar una compra, mostraremos
-          el precio total, duración, proveedor de pago, reembolsos, impuestos
-          aplicables y cualquier limitación, y solicitaremos tu aceptación
-          expresa.
-        </p>
-        <p>
-          Los planes indicados no constituyen autorización para cobrarte ni
-          crean una suscripción. La membresía se contratará únicamente cuando
-          exista una pantalla de compra habilitada y completes su aceptación.
-          Cada plan será un pago único por el periodo elegido y no se renovará
-          automáticamente; un nuevo periodo requerirá una nueva compra. Las
-          aportaciones efectuadas mediante Ko-fi son voluntarias, se procesan
-          fuera de AstraRed y no compran una membresía.
+          Si deseas apoyar el proyecto, puedes hacer una aportación voluntaria
+          mediante Ko-fi, un servicio externo. Donar no es necesario para usar
+          AstraRed y no otorga acceso especial, ventajas ni cambios en las
+          funciones.
         </p>
       </section>
 
@@ -148,9 +134,8 @@ export default function TermsPage() {
           Procuramos mantener AstraRed disponible y seguro, pero pueden
           presentarse interrupciones por mantenimiento, incidentes técnicos o
           causas fuera de nuestro control. Podemos actualizar o retirar
-          funciones; informaremos los cambios relevantes y no reduciremos
-          derechos ya adquiridos por una membresía sin respetar las condiciones
-          aplicables y la normativa correspondiente.
+          funciones e informaremos los cambios relevantes conforme a la
+          normativa aplicable.
         </p>
       </section>
 

@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { UserProfile } from "@/lib/types";
 
-interface VipConnectionAlertProps {
+interface HighSynastryNoticeProps {
   me: UserProfile;
   other: UserProfile;
+  score: number;
   onClose: () => void;
 }
 
@@ -29,23 +30,24 @@ function ProfilePortrait({ profile }: { profile: UserProfile }) {
   );
 }
 
-export function VipConnectionAlert({
+export function HighSynastryNotice({
   me,
   other,
+  score,
   onClose,
-}: VipConnectionAlertProps) {
+}: HighSynastryNoticeProps) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-slate-950/90 p-4 backdrop-blur-md">
       <section
         role="dialog"
         aria-modal="true"
-        aria-labelledby="vip-connection-title"
+        aria-labelledby="synastry-notice-title"
         className="relative my-auto w-full max-w-xl space-y-6 rounded-3xl border border-amber-300/50 bg-[radial-gradient(ellipse_at_top,rgba(120,53,15,0.26),transparent_52%),linear-gradient(160deg,#111827,#080817_65%)] p-6 text-center shadow-[0_0_50px_rgba(244,63,94,0.2)] sm:p-8"
       >
         <button
           type="button"
           onClick={onClose}
-          aria-label="Cerrar alerta de conexión"
+          aria-label="Cerrar aviso de coincidencia"
           className="absolute right-4 top-4 grid size-9 place-items-center rounded-full border border-white/15 text-xl text-slate-300 transition hover:bg-white/10 hover:text-white"
         >
           ×
@@ -53,16 +55,16 @@ export function VipConnectionAlert({
 
         <div className="space-y-2 pr-7">
           <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-rose-300 sm:text-xs">
-            Hilo Rojo · Afinidad mutua
+            Hilo Rojo · Comparación simbólica
           </p>
           <h2
-            id="vip-connection-title"
+            id="synastry-notice-title"
             className="font-serif text-3xl font-bold text-amber-100 sm:text-4xl"
           >
-            Conexión de Hilo Rojo
+            Coincidencia destacada
           </h2>
           <p className="text-sm text-rose-200">
-            ¡Compatibilidad astral del 100%!
+            {score}/100 en las reglas de esta lectura
           </p>
         </div>
 
@@ -119,8 +121,9 @@ export function VipConnectionAlert({
         </div>
 
         <p className="text-sm leading-6 text-slate-300">
-          La lectura astrológica muestra una afinidad destacada. Explora los
-          aspectos que sus cartas comparten.
+          Este puntaje compara posiciones astrológicas de forma simbólica; no
+          mide sentimientos ni interés mutuo, no confirma compatibilidad en la
+          vida real y no predice cómo irá una relación.
         </p>
 
         <div className="space-y-3">

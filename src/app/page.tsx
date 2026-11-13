@@ -136,8 +136,8 @@ export default function Home() {
             </Link>
           </div>
           <p className="mt-3 text-xs text-muted">
-            Para personas mayores de 18 años · Un mes promocional de
-            inauguración sin costo
+            Para personas mayores de 18 años · Todas las funciones son
+            gratuitas; apoyar a AstraRed es opcional
           </p>
         </section>
 

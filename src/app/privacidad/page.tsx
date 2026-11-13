@@ -16,7 +16,7 @@ export default function PrivacyPage() {
       introduction="En AstraRed cuidamos la información que nos confías. Aquí explicamos qué datos usamos, para qué, con quién se comparten y cómo puedes ejercer control sobre ellos."
     >
       <p className="text-sm text-muted">
-        Vigente desde el 16 de octubre de 2026 · Última actualización: 11 de
+        Vigente desde el 12 de noviembre de 2026 · Última actualización: 12 de
         noviembre de 2026
       </p>
 
@@ -170,19 +170,14 @@ export default function PrivacyPage() {
           Si decides realizar una aportación voluntaria, Ko-fi y el proveedor de
           pago que elijas —por ejemplo, PayPal si está disponible— procesan la
           operación bajo sus propias condiciones y políticas. Esa aportación no
-          es una compra de acceso ni activa una suscripción de AstraRed.
-        </p>
-        <p>
-          A la fecha de esta política, AstraRed no procesa pagos de membresía.
-          Antes de habilitar VIP informaremos qué proveedor procesa el pago y
-          qué datos necesita para completar la compra; el proveedor tratará los
-          datos de pago de acuerdo con su propia política.
+          es una compra, no es necesaria para usar AstraRed y no desbloquea
+          funciones.
         </p>
         <p>
           Podemos comunicar información cuando sea necesario para responder a
           una obligación legal válida, proteger a las personas, investigar
-          fraude o hacer cumplir estas condiciones. No compartimos perfiles con
-          anunciantes para publicidad dirigida.
+          fraude o hacer cumplir estas condiciones. AstraRed no muestra
+          anuncios ni comparte perfiles con anunciantes.
         </p>
       </section>
 

@@ -6,10 +6,8 @@
 - `https://astrared.vip` is the public canonical URL and email-confirmation destination.
 - Vercel remains the hosting/deployment platform; do not remove it or change DNS as part of domain canonicalization.
 - AstraRed is positioned as a public product, not a beta.
-- Launch promotion: one month at no cost from the public inauguration date, which is still to be announced.
-- After the promotion, Calendario astral and Hilo Rojo require VIP membership. Approved prices are USD $4.99 for one month or USD $34.99 for one year, as one-time non-renewing purchases. No membership checkout or charges are active yet; never imply that a purchase can already be completed.
-- Before checkout goes live, disclose total price, tax treatment, payment provider, duration, refund conditions, and access rules, and require explicit purchase confirmation. Do not implement recurring billing.
-- During the launch promotion, Hilo Rojo eligibility is controlled by the `beta_vip_access` flag in `public.app_feature_flags`; its Supabase migration must be applied for the server-side RPC to enable it. After the promotion, turn this flag off through the protected server-side table and verify VIP access in production; never bypass the RPC in client code.
+- All AstraRed features are free. There are no VIP tiers, paid memberships, advertising, or membership checkout. The only support option is a voluntary Ko-fi donation; it never unlocks features or changes access.
+- The Android APK is distributed directly from `https://astrared.vip` and is not currently published on Google Play. Do not imply Play Store availability, Play approval, or Play Protect certification.
 
 ## Audience, content, and UX
 
@@ -19,7 +17,7 @@
 - Prefer a restrained, premium celestial editorial style: dark backgrounds, existing rose/purple/gold brand colors, readable contrast, and measured motion.
 - Replace decorative emoji with SVG icons. Keep meaningful lunar and zodiac symbols where they communicate actual calendar or chart information.
 - Publish a few useful original guides, not mass-generated pages for every sign or pairing.
-- No third-party analytics or ad tracking are approved. Do not add them without explicit consent.
+- No advertising, advertising SDKs, or third-party analytics are approved. Do not add advertising or paid feature gates; keep the Ko-fi donation voluntary and external.
 
 ## Privacy and legal
 
@@ -28,7 +26,7 @@
 - Public operator name: AstraRed. Contact: `astrared.oficial@gmail.com`. Jurisdictional context: Venezuela.
 - The current infrastructure includes Vercel hosting and Supabase authentication, database, and storage.
 - Ko-fi support page: `https://ko-fi.com/astrared` (PayPal is linked as a payment method on Ko-fi).
-- Legal pages are published product policies, but a Venezuela-qualified lawyer should review the operator identity, address, consumer subscription disclosures, and privacy obligations before paid memberships launch.
+- Legal pages are published product policies, but a Venezuela-qualified lawyer should review the operator identity, address, donation disclosures, and privacy obligations.
 - Public legal operator currently identified as AstraRed, based in Barinas, Venezuela; contact: `astrared.oficial@gmail.com`. No street mailing address or incorporated legal entity has been provided.
 
 ## Product and technical safeguards
@@ -36,4 +34,4 @@
 - Keep email confirmation redirects on `https://astrared.vip`; existing emails may retain their original redirect.
 - Do not claim Search Console indexing, traffic, conversion, retention, revenue, or fundraising results without verified data.
 - Preserve user-owned untracked work and stage only files relevant to a requested change.
-- Change promotional/VIP access server-side through the protected `public.app_feature_flags` table, never by bypassing the RPC in client code.
+- The historical `beta_vip_access` flag and VIP RPC are retired by `supabase/migrations/20261112000100_free_access_without_vip.sql`. Apply the migration before releasing the free-access update to production; never bypass authorization in client code.

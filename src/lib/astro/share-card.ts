@@ -304,7 +304,7 @@ function createCardSvg(
   for (const reading of readings) {
     sections.push(`
       <text x="82" y="${cursorY}" fill="#f0d99b" font-family="serif" font-size="26">
-        ${escapeXml(reading.title)} · ${escapeXml(reading.sign)} · Casa ${reading.house}
+        ${escapeXml(reading.title)} · ${escapeXml(reading.sign)}${chart.timeUnknown ? "" : ` · Casa ${reading.house}`}
       </text>`);
     cursorY += 38;
     const block = textBlock(reading.interpretation, 88, cursorY, 79, 23, 34);

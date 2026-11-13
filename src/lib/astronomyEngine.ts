@@ -309,7 +309,7 @@ function getRecommendation(
     reasons.push(
       mercuryRetrograde
         ? "Mercurio retrógrado invita a revisar fechas, documentos y detalles antes de avanzar"
-        : "Mercurio directo favorece, según la tradición, acuerdos y coordinación",
+        : "Mercurio directo se asocia, según esta tradición, con acuerdos y coordinación",
     );
   }
   if (guidance.venusSensitive) {
@@ -515,7 +515,7 @@ export function getAstralCalendarDays(
   });
 }
 
-export function findOptimalAstralDates(
+export function findTraditionAlignedDates(
   activity: AstralActivity,
   year: number,
   startMonth: number,

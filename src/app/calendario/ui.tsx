@@ -11,7 +11,7 @@ import {
   type AstralCalendarDay,
   type AstralCalculationResult,
   calculateCurrentSky,
-  findOptimalAstralDates,
+  findTraditionAlignedDates,
   getDateKeyInTimeZone,
   getAstralCalendarDays,
   type CurrentSkyReading,
@@ -334,7 +334,7 @@ export function CalendarioUi() {
   const recommendations = useMemo(
     () =>
       monthIsValid
-        ? findOptimalAstralDates(
+        ? findTraditionAlignedDates(
             activity,
             year,
             month,
@@ -494,16 +494,20 @@ export function CalendarioUi() {
           </div>
         </section>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-emerald-300/20 bg-emerald-950/25 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm leading-6 text-emerald-100">
-            <span className="font-bold">Promoción de inauguración:</span> un
-            mes sin costo desde la apertura pública. Después, el Calendario
-            astral y Hilo Rojo requerirán VIP. Los planes serán USD 4.99/mes o
-            USD 34.99/año. Solo habrá cobros cuando completes una compra
-            expresa.
+        <div
+          role="note"
+          className="flex flex-col gap-3 rounded-2xl border border-amber-300/20 bg-amber-950/25 p-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p className="text-sm leading-6 text-amber-100">
+            <span className="font-bold">Una guía simbólica, no una predicción.</span>{" "}
+            Las fechas reflejan reglas de una tradición astrológica basadas en
+            la Luna y, para algunas intenciones, Mercurio o Venus. No hay
+            evidencia de que elegir una fecha determine el resultado. Para
+            decisiones importantes, considera información práctica y, cuando
+            corresponda, orientación profesional.
           </p>
-          <span className="shrink-0 rounded-full border border-emerald-300/20 px-3 py-1 text-xs font-semibold text-emerald-200">
-            Promoción anunciada
+          <span className="shrink-0 rounded-full border border-amber-300/20 px-3 py-1 text-xs font-semibold text-amber-200">
+            Coincidencia simbólica
           </span>
         </div>
 
@@ -787,9 +791,10 @@ export function CalendarioUi() {
                 Elige tu intención
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Cada fecha combina fase y signo lunar con el movimiento de
-                Mercurio o Venus cuando son relevantes para tu intención. Son
-                criterios de la tradición astrológica, no garantías.
+                La guía ordena fechas según fase y signo lunar y, en algunas
+                intenciones, el movimiento de Mercurio o Venus. Son criterios
+                simbólicos; el orden no mide la probabilidad de que algo salga
+                bien.
               </p>
             </div>
 
@@ -818,7 +823,7 @@ export function CalendarioUi() {
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-300">
-                  Fechas sugeridas
+                  Fechas que coinciden con la guía
                 </h3>
                 <span className="text-xs text-slate-500">{monthTitle}</span>
               </div>
@@ -875,7 +880,8 @@ export function CalendarioUi() {
                         {result.recommendation}
                       </p>
                       <p className="mt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                        Índice astrológico orientativo: {result.score}/100
+                        Coincidencia con las reglas de la guía: {result.score}
+                        /100 · no es una probabilidad
                       </p>
                     </article>
                   );

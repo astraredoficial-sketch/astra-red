@@ -311,7 +311,7 @@ export function CicloPersonalUi() {
         ) : null}
 
         <section
-          aria-labelledby="vip-cycle-heading"
+          aria-labelledby="lunar-cycle-heading"
           className="relative mt-7 overflow-hidden rounded-[2rem] border border-amber-200/20 bg-gradient-to-br from-[#10172e]/95 via-[#100c20]/95 to-[#190d23]/95 p-5 shadow-[0_20px_80px_rgba(0,0,0,0.3)] backdrop-blur-xl sm:p-8 lg:p-10"
         >
           <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-fuchsia-500/10 blur-3xl" />
@@ -319,8 +319,8 @@ export function CicloPersonalUi() {
 
           <div className="relative">
             <div className="mb-7 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-200">AstraRed VIP · Bienestar simbólico</p>
-              <h2 id="vip-cycle-heading" className="mt-3 font-serif text-2xl font-semibold text-white sm:text-3xl">
+              <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyan-200">AstraRed · Bienestar simbólico</p>
+              <h2 id="lunar-cycle-heading" className="mt-3 font-serif text-2xl font-semibold text-white sm:text-3xl">
                 Ciclo Personal y Cuidado Lunar
               </h2>
               <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-300">

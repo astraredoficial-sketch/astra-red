@@ -12,8 +12,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 - Public canonical domain: `https://astrared.vip`. Vercel remains the hosting and deployment platform.
 - Product: Spanish (Latin American) astrology and connection app for adults 18+.
-- AstraRed is positioned as a public product, not a beta. The launch promotion is one month free from an inauguration date still to be announced. Afterward, Calendario astral and Hilo Rojo require VIP: approved prices are USD 4.99 for one month or USD 34.99 for one year, sold as one-time non-renewing periods. No membership checkout or charges are active; do not imply purchases are available before payment integration and explicit confirmation are implemented.
-- During the launch promotion, Hilo Rojo eligibility is controlled by `beta_vip_access` in `public.app_feature_flags`; apply the Supabase migration before expecting the server-side RPC to enable it. Once promotion ends, disable the flag server-side and verify the VIP entitlement flow.
+- All tools and experiences are free. The only support option is a voluntary Ko-fi donation; there are no ads, memberships, paywalls, or purchases, and donating never unlocks features.
+- The historical `beta_vip_access` flag and VIP RPC are retired by `supabase/migrations/20261112000100_free_access_without_vip.sql`. Apply this migration before releasing the free-access update to production.
 - Birth date/time and birthplace are private chart inputs. Do not expose them in public profile data.
 - Keep the interface concise, responsive, dark/editorial, and accessible. Use SVG icons instead of decorative emoji; preserve functional lunar/zodiac symbols.
 - SEO is Spanish-first and editorial: create a small number of original guides, avoid mass-generated zodiac pages, and do not invent traffic, reviews, or product claims.
